@@ -1,0 +1,53 @@
+type User {
+  id: ID!
+  email: String!
+  username: String!
+  firstName: String!
+  lastName: String!
+  birthDate: String
+  phone: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type AuthPayload {
+  user: User!
+  token: String!
+  expiresAt: String!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  username: String!
+  firstName: String = ""
+  lastName: String = ""
+  birthDate: String
+  phone: String = ""
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input UpdateUserInput {
+  username: String
+  firstName: String
+  lastName: String
+  birthDate: String
+  clearBirthDate: Boolean = false
+  phone: String
+}
+
+type Query {
+  getUser(id: ID!): User!
+  users(limit: Int = 20, offset: Int = 0): [User!]!
+}
+
+type Mutation {
+  register(input: RegisterInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  updateUser(id: ID!, input: UpdateUserInput!): User!
+  deleteUser(id: ID!): Boolean!
+}
