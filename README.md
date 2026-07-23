@@ -1,27 +1,40 @@
-# Laserbeak 
+# Laserbeak
 
-Laserbeak - это единая точка входа для фронтенда. Он предоставляет gqlgen GraphQL и делегирует пользовательские операции другим сервисам через GraphQL-over-HTTP. У него нет пользовательской бизнес-логики.
+Laserbeak - GraphQL API Gateway / BFF для frontend `soundwave`. Frontend обращается только к Laserbeak, а Laserbeak делегирует операции внутренним сервисам.
 
-## Configuration
+## Функционал
 
-| Переменная | Стандратно | Значение |
-|---|---|---|
-| `PORT` | `8081` | HTTP порт |
-| `ARCEE_GRAPHQL_URL` | `http://localhost:8080/query` | Arcee GraphQL endpoint |
-| `ARCEE_TIMEOUT` | `5s` | тайм-аут для запросов в Arcee |
-| `JWT_SECRET` | - | HS256 секрет |
-| `JWT_ISSUER` | `arcee` | JWT издатель |
-| `CORS_ORIGINS` | `http://localhost:5173` | CORS |
+- единый GraphQL endpoint для frontend;
+- регистрация, вход и профиль через Arcee;
+- admin-only управление пользователями через Arcee;
+- чтение и управление каталогом через Ironhide;
+- проверка JWT и роли `admin`;
+- отдельный request log для пользовательских HTTP-запросов и upstream-вызовов.
+
+## Бизнес-логика
+
+Laserbeak не владеет пользовательской или каталоговой бизнес-логикой. Он проверяет внешний контракт, авторизацию и маршрутизирует запросы в сервис-владелец данных. Admin-only mutations разрешаются пользователям с ролью `admin` в JWT, который выпускает Arcee.
+
+Ошибки для frontend обезличены, а технические детали пишутся в structured logs. Логи пользовательских запросов при запуске через `ratchet` доступны отдельно от Docker stdout.
 
 ## Запуск
 
+Локально gateway запускается в составе общего окружения из `ratchet`:
+
 ```bash
-export JWT_SECRET=local-development-secret-change-me
-make run
+cd ../ratchet
+cp .env.example .env
+make up
+make request-logs
 ```
 
-- GraphQL: `POST http://localhost:8081/graphql`
-- Playground: `GET http://localhost:8081/playground`
-- Health: `GET http://localhost:8081/health`
+Для разработки самого сервиса:
 
-Регистрация и вход в систему являются публичными. Для других операций требуется `Authorization: Bearer <jwt>`. Шлюз проверяет тот же секрет JWT и пересылает исходный заголовок в другие сервисы.
+```bash
+make generate
+make test
+make integration
+make build
+```
+
+GraphQL endpoint при локальном запуске стека: `http://localhost:8081/graphql`.

@@ -8,6 +8,7 @@ import (
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/overmindv/laserbeak/internal/apperror"
 	"github.com/overmindv/laserbeak/internal/client/arcee"
+	"github.com/overmindv/laserbeak/internal/client/ironhide"
 	"github.com/overmindv/laserbeak/internal/middleware"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
@@ -17,6 +18,7 @@ func ErrorPresenter(log *slog.Logger) gqlgen.ErrorPresenterFunc {
 		presented := gqlgen.DefaultErrorPresenter(ctx, err)
 		code, message := errorCodeAndMessage(err)
 		if code == "GRAPHQL_ERROR" {
+			presented.Message = message
 			if presented.Extensions == nil {
 				presented.Extensions = map[string]any{}
 			}
@@ -42,17 +44,24 @@ func ErrorPresenter(log *slog.Logger) gqlgen.ErrorPresenterFunc {
 
 func errorCodeAndMessage(err error) (string, string) {
 	if errors.Is(err, apperror.ErrUnauthenticated) {
-		return "UNAUTHENTICATED", "authentication required"
+		return "UNAUTHENTICATED", "Не удалось выполнить действие."
+	}
+	if errors.Is(err, apperror.ErrPermissionDenied) {
+		return "PERMISSION_DENIED", "Не удалось выполнить действие."
 	}
 
 	if gqlErr, ok := err.(*gqlerror.Error); ok && gqlErr.Err == nil {
-		return "GRAPHQL_ERROR", gqlErr.Message
+		return "GRAPHQL_ERROR", "Не удалось выполнить действие."
 	}
 
 	var upstreamError *arcee.Error
 	if errors.As(err, &upstreamError) {
-		return upstreamError.Code, upstreamError.Message
+		return upstreamError.Code, "Не удалось выполнить действие."
+	}
+	var catalogError *ironhide.Error
+	if errors.As(err, &catalogError) {
+		return catalogError.Code, "Не удалось выполнить действие."
 	}
 
-	return "INTERNAL_SERVER_ERROR", "internal server error"
+	return "INTERNAL_SERVER_ERROR", "Не удалось выполнить действие."
 }

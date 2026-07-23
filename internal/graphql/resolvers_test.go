@@ -15,6 +15,8 @@ type userServiceStub struct {
 	register              arcee.RegisterInput
 	login                 arcee.LoginInput
 	getID                 string
+	getUsername           string
+	listSearch            string
 	listLimit, listOffset int
 	updateID              string
 	update                arcee.UpdateUserInput
@@ -56,8 +58,14 @@ func (s *userServiceStub) GetUser(_ context.Context, id string) (*arcee.User, er
 	return upstreamUser(), nil
 }
 
-func (s *userServiceStub) ListUsers(_ context.Context, limit, offset int) ([]*arcee.User, error) {
-	s.listLimit, s.listOffset = limit, offset
+func (s *userServiceStub) GetUserByUsername(_ context.Context, username string) (*arcee.User, error) {
+	s.getUsername = username
+
+	return upstreamUser(), nil
+}
+
+func (s *userServiceStub) ListUsers(_ context.Context, search string, limit, offset int) ([]*arcee.User, error) {
+	s.listSearch, s.listLimit, s.listOffset = search, limit, offset
 
 	return []*arcee.User{upstreamUser()}, nil
 }
@@ -72,6 +80,22 @@ func (s *userServiceStub) DeleteUser(_ context.Context, id string) (bool, error)
 	s.deleteID = id
 
 	return true, nil
+}
+
+func (s *userServiceStub) SetUserAdmin(_ context.Context, id string, admin bool) (*arcee.User, error) {
+	user := upstreamUser()
+	user.ID = id
+	user.IsAdmin = admin
+
+	return user, nil
+}
+
+func (s *userServiceStub) SetUserAdminByUsername(_ context.Context, username string, admin bool) (*arcee.User, error) {
+	user := upstreamUser()
+	user.Username = username
+	user.IsAdmin = admin
+
+	return user, nil
 }
 
 func TestPublicResolversMapRequests(t *testing.T) {
@@ -123,16 +147,17 @@ func TestProtectedResolversMapRequests(t *testing.T) {
 	root := &Resolver{Users: stub}
 	query, mutation := &queryResolver{Resolver: root}, &mutationResolver{Resolver: root}
 
-	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "user-id", Token: "jwt"})
+	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "user-id", Token: "jwt", Roles: []string{"admin"}})
 	if user, err := query.GetUser(ctx, "user-id"); err != nil || user.ID != "user-id" {
 		t.Fatalf("GetUser() = %+v, %v", user, err)
 	}
 
 	limit, offset := 10, 2
-	if users, err := query.Users(ctx, &limit, &offset); err != nil || len(users) != 1 {
+	search := "user"
+	if users, err := query.Users(ctx, &search, &limit, &offset); err != nil || len(users) != 1 {
 		t.Fatalf("Users() = %+v, %v", users, err)
 	}
-	if stub.listLimit != 10 || stub.listOffset != 2 {
+	if stub.listSearch != "user" || stub.listLimit != 10 || stub.listOffset != 2 {
 		t.Fatalf("list mapping failed")
 	}
 
