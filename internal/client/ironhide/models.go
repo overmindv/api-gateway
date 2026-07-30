@@ -1,7 +1,7 @@
 package ironhide
 
 type University struct {
-	ID         string  `json:"id"`
+	ID         string  `json:"id,omitempty"`
 	Name       string  `json:"name"`
 	ShortName  string  `json:"short_name"`
 	City       string  `json:"city"`
@@ -9,12 +9,12 @@ type University struct {
 	WebsiteURL string  `json:"website_url"`
 	LogoFileID *string `json:"logo_file_id"`
 	Status     string  `json:"status"`
-	CreatedAt  string  `json:"created_at"`
-	UpdatedAt  string  `json:"updated_at"`
+	CreatedAt  string  `json:"created_at,omitempty"`
+	UpdatedAt  string  `json:"updated_at,omitempty"`
 }
 
 type Program struct {
-	ID           string  `json:"id"`
+	ID           string  `json:"id,omitempty"`
 	UniversityID *string `json:"university_id"`
 	Name         string  `json:"name"`
 	ShortName    string  `json:"short_name"`
@@ -22,12 +22,12 @@ type Program struct {
 	DegreeLevel  string  `json:"degree_level"`
 	StartYear    *int    `json:"start_year"`
 	Status       string  `json:"status"`
-	CreatedAt    string  `json:"created_at"`
-	UpdatedAt    string  `json:"updated_at"`
+	CreatedAt    string  `json:"created_at,omitempty"`
+	UpdatedAt    string  `json:"updated_at,omitempty"`
 }
 
 type Course struct {
-	ID          string  `json:"id"`
+	ID          string  `json:"id,omitempty"`
 	ProgramID   *string `json:"program_id"`
 	Name        string  `json:"name"`
 	Slug        string  `json:"slug"`
@@ -35,12 +35,12 @@ type Course struct {
 	Semester    *int    `json:"semester"`
 	YearNumber  *int    `json:"year_number"`
 	Status      string  `json:"status"`
-	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   string  `json:"updated_at"`
+	CreatedAt   string  `json:"created_at,omitempty"`
+	UpdatedAt   string  `json:"updated_at,omitempty"`
 }
 
 type Topic struct {
-	ID            string  `json:"id"`
+	ID            string  `json:"id,omitempty"`
 	CourseID      *string `json:"course_id"`
 	ParentTopicID *string `json:"parent_topic_id"`
 	Title         string  `json:"title"`
@@ -49,8 +49,8 @@ type Topic struct {
 	OrderIndex    int     `json:"order_index"`
 	Difficulty    string  `json:"difficulty"`
 	Status        string  `json:"status"`
-	CreatedAt     string  `json:"created_at"`
-	UpdatedAt     string  `json:"updated_at"`
+	CreatedAt     string  `json:"created_at,omitempty"`
+	UpdatedAt     string  `json:"updated_at,omitempty"`
 }
 
 type TopicTreeNode struct {
