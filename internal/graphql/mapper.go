@@ -7,15 +7,18 @@ import (
 
 func toUser(user *arcee.User) *model.User {
 	return &model.User{
-		ID:        user.ID,
-		Email:     user.Email,
-		Username:  user.Username,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		BirthDate: user.BirthDate,
-		Phone:     user.Phone,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		ID:          user.ID,
+		Email:       user.Email,
+		Username:    user.Username,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		BirthDate:   user.BirthDate,
+		Phone:       user.Phone,
+		Roles:       user.Roles,
+		IsAdmin:     user.IsAdmin,
+		IsSuperuser: user.IsSuperuser,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
 	}
 }
 

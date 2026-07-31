@@ -15,7 +15,7 @@ import (
 	"github.com/overmindv/laserbeak/internal/middleware"
 )
 
-const userFields = `id email username firstName lastName birthDate phone createdAt updatedAt`
+const userFields = `id email username firstName lastName birthDate phone roles isAdmin isSuperuser createdAt updatedAt`
 
 type Client struct {
 	url       string
@@ -95,12 +95,32 @@ func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
 	return data.User, nil
 }
 
-func (c *Client) ListUsers(ctx context.Context, limit, offset int) ([]*User, error) {
+func (c *Client) GetUserByUsername(ctx context.Context, username string) (*User, error) {
+	var data struct {
+		UserByUsername *User `json:"userByUsername"`
+	}
+
+	err := c.call(ctx, "UserByUsername", `query UserByUsername($username: String!) { userByUsername(username: $username) { `+userFields+` } }`, map[string]any{"username": username}, true, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	if data.UserByUsername == nil {
+		return nil, &Error{
+			Code:    "BAD_GATEWAY",
+			Message: "arcee returned an empty user response",
+		}
+	}
+
+	return data.UserByUsername, nil
+}
+
+func (c *Client) ListUsers(ctx context.Context, search string, limit, offset int) ([]*User, error) {
 	var data struct {
 		Users []*User `json:"users"`
 	}
 
-	err := c.call(ctx, "ListUsers", `query ListUsers($limit: Int, $offset: Int) { users(limit: $limit, offset: $offset) { `+userFields+` } }`, map[string]any{"limit": limit, "offset": offset}, true, &data)
+	err := c.call(ctx, "ListUsers", `query ListUsers($search: String, $limit: Int, $offset: Int) { users(search: $search, limit: $limit, offset: $offset) { `+userFields+` } }`, map[string]any{"search": search, "limit": limit, "offset": offset}, true, &data)
 
 	return data.Users, err
 }
@@ -133,6 +153,46 @@ func (c *Client) DeleteUser(ctx context.Context, id string) (bool, error) {
 	err := c.call(ctx, "DeleteUser", `mutation DeleteUser($id: ID!) { deleteUser(id: $id) }`, map[string]any{"id": id}, true, &data)
 
 	return data.DeleteUser, err
+}
+
+func (c *Client) SetUserAdmin(ctx context.Context, id string, admin bool) (*User, error) {
+	var data struct {
+		SetUserAdmin *User `json:"setUserAdmin"`
+	}
+
+	err := c.call(ctx, "SetUserAdmin", `mutation SetUserAdmin($id: ID!, $admin: Boolean!) { setUserAdmin(id: $id, admin: $admin) { `+userFields+` } }`, map[string]any{"id": id, "admin": admin}, true, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	if data.SetUserAdmin == nil {
+		return nil, &Error{
+			Code:    "BAD_GATEWAY",
+			Message: "arcee returned an empty admin response",
+		}
+	}
+
+	return data.SetUserAdmin, nil
+}
+
+func (c *Client) SetUserAdminByUsername(ctx context.Context, username string, admin bool) (*User, error) {
+	var data struct {
+		SetUserAdminByUsername *User `json:"setUserAdminByUsername"`
+	}
+
+	err := c.call(ctx, "SetUserAdminByUsername", `mutation SetUserAdminByUsername($username: String!, $admin: Boolean!) { setUserAdminByUsername(username: $username, admin: $admin) { `+userFields+` } }`, map[string]any{"username": username, "admin": admin}, true, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	if data.SetUserAdminByUsername == nil {
+		return nil, &Error{
+			Code:    "BAD_GATEWAY",
+			Message: "arcee returned an empty admin response",
+		}
+	}
+
+	return data.SetUserAdminByUsername, nil
 }
 
 func (c *Client) Health(ctx context.Context) error {

@@ -17,7 +17,10 @@ func TestJWTAuthenticator(t *testing.T) {
 	authenticator.now = func() time.Time { return now }
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Subject: "user-id", Issuer: "arcee", IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour)),
+		Subject:   "user-id",
+		Issuer:    "arcee",
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour)),
 	})
 
 	value, err := token.SignedString([]byte("secret"))
@@ -37,6 +40,31 @@ func TestJWTAuthenticator(t *testing.T) {
 
 	if _, err := authenticator.Parse("invalid"); !errors.Is(err, apperror.ErrUnauthenticated) {
 		t.Fatalf("expected malformed token rejection, got %v", err)
+	}
+}
+
+func TestRequireAdminAllowsAdminAndSuperuser(t *testing.T) {
+	t.Parallel()
+
+	for _, roles := range [][]string{{"admin"}, {"superuser"}} {
+		ctx := ContextWithAuth(t.Context(), AuthInfo{
+			UserID: "user-id",
+			Token:  "token",
+			Roles:  roles,
+		})
+
+		if _, err := RequireAdmin(ctx); err != nil {
+			t.Fatalf("RequireAdmin(%v) = %v", roles, err)
+		}
+	}
+
+	ctx := ContextWithAuth(t.Context(), AuthInfo{
+		UserID: "user-id",
+		Token:  "token",
+		Roles:  []string{"student"},
+	})
+	if _, err := RequireAdmin(ctx); !errors.Is(err, apperror.ErrPermissionDenied) {
+		t.Fatalf("expected permission denied, got %v", err)
 	}
 }
 

@@ -11,6 +11,8 @@ import (
 
 const RequestIDHeader = "X-Request-ID"
 
+// RequestIDMiddleware добавляет request_id в response header и context запроса.
+// На вход получает следующий handler, на выход возвращает middleware handler с сохранением X-Request-ID.
 func RequestIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestID := strings.TrimSpace(r.Header.Get(RequestIDHeader))
@@ -29,11 +31,15 @@ type responseRecorder struct {
 	bytes  int
 }
 
+// WriteHeader сохраняет HTTP status для последующего request logging.
+// На вход получает status code, на выход записывает его в исходный ResponseWriter.
 func (r *responseRecorder) WriteHeader(status int) {
 	r.status = status
 	r.ResponseWriter.WriteHeader(status)
 }
 
+// Write сохраняет размер response body для request logging.
+// На вход получает байты ответа, на выход возвращает результат исходного ResponseWriter.
 func (r *responseRecorder) Write(body []byte) (int, error) {
 	if r.status == 0 {
 		r.WriteHeader(http.StatusOK)
@@ -44,11 +50,21 @@ func (r *responseRecorder) Write(body []byte) (int, error) {
 	return written, err
 }
 
-func Logging(log *slog.Logger, next http.Handler) http.Handler {
+// Logging пишет краткую запись о HTTP-запросе, пропуская пути из ignoredPaths.
+// На вход получает logger, следующий handler и список исключённых путей, на выход возвращает HTTP middleware.
+func Logging(log *slog.Logger, next http.Handler, ignoredPaths ...string) http.Handler {
+	ignored := make(map[string]struct{}, len(ignoredPaths))
+	for _, path := range ignoredPaths {
+		ignored[path] = struct{}{}
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
 		recorder := &responseRecorder{ResponseWriter: w}
 		next.ServeHTTP(recorder, r)
+		if _, ok := ignored[r.URL.Path]; ok || log == nil {
+			return
+		}
 		status := recorder.status
 		if status == 0 {
 			status = http.StatusOK

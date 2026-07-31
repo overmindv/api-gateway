@@ -2,10 +2,87 @@
 
 package model
 
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
+)
+
 type AuthPayload struct {
 	User      *User  `json:"user"`
 	Token     string `json:"token"`
 	ExpiresAt string `json:"expiresAt"`
+}
+
+type CatalogBindingInput struct {
+	UniversityID *string `json:"universityId,omitempty"`
+	ProgramID    *string `json:"programId,omitempty"`
+	CourseID     *string `json:"courseId,omitempty"`
+	TopicID      *string `json:"topicId,omitempty"`
+}
+
+type CatalogFilter struct {
+	Search *string        `json:"search,omitempty"`
+	Status *CatalogStatus `json:"status,omitempty"`
+}
+
+type CatalogValidationResult struct {
+	Valid bool `json:"valid"`
+}
+
+type Course struct {
+	ID          string        `json:"id"`
+	ProgramID   *string       `json:"programId,omitempty"`
+	Name        string        `json:"name"`
+	Slug        string        `json:"slug"`
+	Description string        `json:"description"`
+	Semester    *int          `json:"semester,omitempty"`
+	YearNumber  *int          `json:"yearNumber,omitempty"`
+	Status      CatalogStatus `json:"status"`
+	CreatedAt   string        `json:"createdAt"`
+	UpdatedAt   string        `json:"updatedAt"`
+}
+
+type CreateCourseInput struct {
+	ProgramID   *string        `json:"programId,omitempty"`
+	Name        string         `json:"name"`
+	Slug        *string        `json:"slug,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Semester    *int           `json:"semester,omitempty"`
+	YearNumber  *int           `json:"yearNumber,omitempty"`
+	Status      *CatalogStatus `json:"status,omitempty"`
+}
+
+type CreateProgramInput struct {
+	UniversityID *string        `json:"universityId,omitempty"`
+	Name         string         `json:"name"`
+	ShortName    *string        `json:"shortName,omitempty"`
+	Faculty      *string        `json:"faculty,omitempty"`
+	DegreeLevel  *DegreeLevel   `json:"degreeLevel,omitempty"`
+	StartYear    *int           `json:"startYear,omitempty"`
+	Status       *CatalogStatus `json:"status,omitempty"`
+}
+
+type CreateTopicInput struct {
+	CourseID      *string          `json:"courseId,omitempty"`
+	ParentTopicID *string          `json:"parentTopicId,omitempty"`
+	Title         string           `json:"title"`
+	Slug          *string          `json:"slug,omitempty"`
+	Description   *string          `json:"description,omitempty"`
+	OrderIndex    *int             `json:"orderIndex,omitempty"`
+	Difficulty    *TopicDifficulty `json:"difficulty,omitempty"`
+	Status        *CatalogStatus   `json:"status,omitempty"`
+}
+
+type CreateUniversityInput struct {
+	Name       string         `json:"name"`
+	ShortName  *string        `json:"shortName,omitempty"`
+	City       *string        `json:"city,omitempty"`
+	Country    *string        `json:"country,omitempty"`
+	WebsiteURL *string        `json:"websiteUrl,omitempty"`
+	LogoFileID *string        `json:"logoFileId,omitempty"`
+	Status     *CatalogStatus `json:"status,omitempty"`
 }
 
 type LoginInput struct {
@@ -14,6 +91,24 @@ type LoginInput struct {
 }
 
 type Mutation struct {
+}
+
+type PaginationInput struct {
+	Limit  *int `json:"limit,omitempty"`
+	Offset *int `json:"offset,omitempty"`
+}
+
+type Program struct {
+	ID           string        `json:"id"`
+	UniversityID *string       `json:"universityId,omitempty"`
+	Name         string        `json:"name"`
+	ShortName    string        `json:"shortName"`
+	Faculty      string        `json:"faculty"`
+	DegreeLevel  DegreeLevel   `json:"degreeLevel"`
+	StartYear    *int          `json:"startYear,omitempty"`
+	Status       CatalogStatus `json:"status"`
+	CreatedAt    string        `json:"createdAt"`
+	UpdatedAt    string        `json:"updatedAt"`
 }
 
 type Query struct {
@@ -29,6 +124,84 @@ type RegisterInput struct {
 	Phone     *string `json:"phone,omitempty"`
 }
 
+type Topic struct {
+	ID            string          `json:"id"`
+	CourseID      *string         `json:"courseId,omitempty"`
+	ParentTopicID *string         `json:"parentTopicId,omitempty"`
+	Title         string          `json:"title"`
+	Slug          string          `json:"slug"`
+	Description   string          `json:"description"`
+	OrderIndex    int             `json:"orderIndex"`
+	Difficulty    TopicDifficulty `json:"difficulty"`
+	Status        CatalogStatus   `json:"status"`
+	CreatedAt     string          `json:"createdAt"`
+	UpdatedAt     string          `json:"updatedAt"`
+}
+
+type TopicPrerequisite struct {
+	TopicID             string `json:"topicId"`
+	PrerequisiteTopicID string `json:"prerequisiteTopicId"`
+	CreatedAt           string `json:"createdAt"`
+}
+
+type TopicPrerequisiteInput struct {
+	TopicID             string `json:"topicId"`
+	PrerequisiteTopicID string `json:"prerequisiteTopicId"`
+}
+
+type TopicTreeNode struct {
+	Topic    *Topic           `json:"topic"`
+	Children []*TopicTreeNode `json:"children"`
+}
+
+type University struct {
+	ID         string        `json:"id"`
+	Name       string        `json:"name"`
+	ShortName  string        `json:"shortName"`
+	City       string        `json:"city"`
+	Country    string        `json:"country"`
+	WebsiteURL string        `json:"websiteUrl"`
+	LogoFileID *string       `json:"logoFileId,omitempty"`
+	Status     CatalogStatus `json:"status"`
+	CreatedAt  string        `json:"createdAt"`
+	UpdatedAt  string        `json:"updatedAt"`
+}
+
+type UpdateCourseInput struct {
+	Name        string  `json:"name"`
+	Slug        *string `json:"slug,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Semester    *int    `json:"semester,omitempty"`
+	YearNumber  *int    `json:"yearNumber,omitempty"`
+}
+
+type UpdateProgramInput struct {
+	Name        string       `json:"name"`
+	ShortName   *string      `json:"shortName,omitempty"`
+	Faculty     *string      `json:"faculty,omitempty"`
+	DegreeLevel *DegreeLevel `json:"degreeLevel,omitempty"`
+	StartYear   *int         `json:"startYear,omitempty"`
+}
+
+type UpdateTopicInput struct {
+	ParentTopicID    *string          `json:"parentTopicId,omitempty"`
+	ClearParentTopic *bool            `json:"clearParentTopic,omitempty"`
+	Title            string           `json:"title"`
+	Slug             *string          `json:"slug,omitempty"`
+	Description      *string          `json:"description,omitempty"`
+	OrderIndex       *int             `json:"orderIndex,omitempty"`
+	Difficulty       *TopicDifficulty `json:"difficulty,omitempty"`
+}
+
+type UpdateUniversityInput struct {
+	Name       string  `json:"name"`
+	ShortName  *string `json:"shortName,omitempty"`
+	City       *string `json:"city,omitempty"`
+	Country    *string `json:"country,omitempty"`
+	WebsiteURL *string `json:"websiteUrl,omitempty"`
+	LogoFileID *string `json:"logoFileId,omitempty"`
+}
+
 type UpdateUserInput struct {
 	Username       *string `json:"username,omitempty"`
 	FirstName      *string `json:"firstName,omitempty"`
@@ -39,13 +212,197 @@ type UpdateUserInput struct {
 }
 
 type User struct {
-	ID        string  `json:"id"`
-	Email     string  `json:"email"`
-	Username  string  `json:"username"`
-	FirstName string  `json:"firstName"`
-	LastName  string  `json:"lastName"`
-	BirthDate *string `json:"birthDate,omitempty"`
-	Phone     *string `json:"phone,omitempty"`
-	CreatedAt string  `json:"createdAt"`
-	UpdatedAt string  `json:"updatedAt"`
+	ID          string   `json:"id"`
+	Email       string   `json:"email"`
+	Username    string   `json:"username"`
+	FirstName   string   `json:"firstName"`
+	LastName    string   `json:"lastName"`
+	BirthDate   *string  `json:"birthDate,omitempty"`
+	Phone       *string  `json:"phone,omitempty"`
+	Roles       []string `json:"roles"`
+	IsAdmin     bool     `json:"isAdmin"`
+	IsSuperuser bool     `json:"isSuperuser"`
+	CreatedAt   string   `json:"createdAt"`
+	UpdatedAt   string   `json:"updatedAt"`
+}
+
+type CatalogStatus string
+
+const (
+	CatalogStatusDraft    CatalogStatus = "draft"
+	CatalogStatusActive   CatalogStatus = "active"
+	CatalogStatusHidden   CatalogStatus = "hidden"
+	CatalogStatusArchived CatalogStatus = "archived"
+)
+
+var AllCatalogStatus = []CatalogStatus{
+	CatalogStatusDraft,
+	CatalogStatusActive,
+	CatalogStatusHidden,
+	CatalogStatusArchived,
+}
+
+func (e CatalogStatus) IsValid() bool {
+	switch e {
+	case CatalogStatusDraft, CatalogStatusActive, CatalogStatusHidden, CatalogStatusArchived:
+		return true
+	}
+	return false
+}
+
+func (e CatalogStatus) String() string {
+	return string(e)
+}
+
+func (e *CatalogStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CatalogStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CatalogStatus", str)
+	}
+	return nil
+}
+
+func (e CatalogStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *CatalogStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e CatalogStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type DegreeLevel string
+
+const (
+	DegreeLevelBachelor   DegreeLevel = "bachelor"
+	DegreeLevelMaster     DegreeLevel = "master"
+	DegreeLevelSpecialist DegreeLevel = "specialist"
+	DegreeLevelPhd        DegreeLevel = "phd"
+	DegreeLevelOther      DegreeLevel = "other"
+)
+
+var AllDegreeLevel = []DegreeLevel{
+	DegreeLevelBachelor,
+	DegreeLevelMaster,
+	DegreeLevelSpecialist,
+	DegreeLevelPhd,
+	DegreeLevelOther,
+}
+
+func (e DegreeLevel) IsValid() bool {
+	switch e {
+	case DegreeLevelBachelor, DegreeLevelMaster, DegreeLevelSpecialist, DegreeLevelPhd, DegreeLevelOther:
+		return true
+	}
+	return false
+}
+
+func (e DegreeLevel) String() string {
+	return string(e)
+}
+
+func (e *DegreeLevel) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DegreeLevel(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DegreeLevel", str)
+	}
+	return nil
+}
+
+func (e DegreeLevel) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *DegreeLevel) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e DegreeLevel) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type TopicDifficulty string
+
+const (
+	TopicDifficultyIntro    TopicDifficulty = "intro"
+	TopicDifficultyBasic    TopicDifficulty = "basic"
+	TopicDifficultyMedium   TopicDifficulty = "medium"
+	TopicDifficultyHard     TopicDifficulty = "hard"
+	TopicDifficultyAdvanced TopicDifficulty = "advanced"
+)
+
+var AllTopicDifficulty = []TopicDifficulty{
+	TopicDifficultyIntro,
+	TopicDifficultyBasic,
+	TopicDifficultyMedium,
+	TopicDifficultyHard,
+	TopicDifficultyAdvanced,
+}
+
+func (e TopicDifficulty) IsValid() bool {
+	switch e {
+	case TopicDifficultyIntro, TopicDifficultyBasic, TopicDifficultyMedium, TopicDifficultyHard, TopicDifficultyAdvanced:
+		return true
+	}
+	return false
+}
+
+func (e TopicDifficulty) String() string {
+	return string(e)
+}
+
+func (e *TopicDifficulty) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TopicDifficulty(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TopicDifficulty", str)
+	}
+	return nil
+}
+
+func (e TopicDifficulty) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TopicDifficulty) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TopicDifficulty) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

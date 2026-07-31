@@ -8,6 +8,7 @@ type authKey struct{}
 type AuthInfo struct {
 	UserID string
 	Token  string
+	Roles  []string
 	Err    error
 }
 

@@ -12,16 +12,31 @@ import (
 )
 
 type JWTAuthenticator struct {
-	secret []byte
-	issuer string
-	now    func() time.Time
+	secret       []byte
+	issuer       string
+	adminUserIDs map[string]struct{}
+	now          func() time.Time
 }
 
-func NewJWTAuthenticator(secret, issuer string) *JWTAuthenticator {
+type claims struct {
+	Roles []string `json:"roles"`
+	Role  string   `json:"role"`
+	jwt.RegisteredClaims
+}
+
+func NewJWTAuthenticator(secret, issuer string, adminUserIDLists ...[]string) *JWTAuthenticator {
+	adminUserIDs := make(map[string]struct{})
+	for _, list := range adminUserIDLists {
+		for _, userID := range list {
+			adminUserIDs[userID] = struct{}{}
+		}
+	}
+
 	return &JWTAuthenticator{
-		secret: []byte(secret),
-		issuer: issuer,
-		now:    time.Now,
+		secret:       []byte(secret),
+		issuer:       issuer,
+		adminUserIDs: adminUserIDs,
+		now:          time.Now,
 	}
 }
 
@@ -31,22 +46,44 @@ func (a *JWTAuthenticator) Parse(header string) (AuthInfo, error) {
 		return AuthInfo{}, apperror.ErrUnauthenticated
 	}
 
-	claims := &jwt.RegisteredClaims{}
+	parsedClaims := &claims{}
 
-	token, err := jwt.ParseWithClaims(parts[1], claims, func(token *jwt.Token) (any, error) {
+	token, err := jwt.ParseWithClaims(parts[1], parsedClaims, func(token *jwt.Token) (any, error) {
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, errors.New("unexpected jwt signing method")
 		}
 		return a.secret, nil
 	}, jwt.WithIssuer(a.issuer), jwt.WithExpirationRequired(), jwt.WithIssuedAt(), jwt.WithTimeFunc(a.now))
-	if err != nil || !token.Valid || claims.Subject == "" {
+	if err != nil || !token.Valid || parsedClaims.Subject == "" {
 		return AuthInfo{}, apperror.ErrUnauthenticated
+	}
+	roles := append([]string(nil), parsedClaims.Roles...)
+	if parsedClaims.Role != "" {
+		roles = append(roles, parsedClaims.Role)
+	}
+	if _, ok := a.adminUserIDs[parsedClaims.Subject]; ok {
+		roles = append(roles, "admin")
 	}
 
 	return AuthInfo{
-		UserID: claims.Subject,
+		UserID: parsedClaims.Subject,
 		Token:  parts[1],
+		Roles:  roles,
 	}, nil
+}
+
+func RequireAdmin(ctx context.Context) (AuthInfo, error) {
+	info, err := RequireAuth(ctx)
+	if err != nil {
+		return AuthInfo{}, err
+	}
+	for _, role := range info.Roles {
+		if strings.EqualFold(role, "admin") || strings.EqualFold(role, "superuser") {
+			return info, nil
+		}
+	}
+
+	return AuthInfo{}, apperror.ErrPermissionDenied
 }
 
 func JWT(authenticator *JWTAuthenticator, next http.Handler) http.Handler {

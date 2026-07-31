@@ -1,7 +1,8 @@
 LOCAL_BIN := $(CURDIR)/bin
 GQLGEN := $(LOCAL_BIN)/gqlgen
+GOLANGCI_LINT := $(LOCAL_BIN)/golangci-lint
 
-.PHONY: run build test generate graphql proto up down logs tidy
+.PHONY: run build test integration lint generate graphql tidy
 
 # Запуск
 run:
@@ -17,23 +18,19 @@ test:
 	go test -coverprofile=coverage.out ./internal/client/arcee ./internal/graphql ./internal/middleware ./internal/config ./internal/server
 	go tool cover -func=coverage.out | tail -1
 
+# Запуск интеграционных тестов gateway
+integration:
+	go test ./tests/integration/...
+
+# Проверка линтером
+lint: $(GOLANGCI_LINT)
+	$(GOLANGCI_LINT) run
+
 # Генерация GraphQL
 generate: graphql
 
 graphql: $(GQLGEN)
 	$(GQLGEN) generate
-
-# Запуск всей системы
-up:
-	docker compose up --build -d
-
-# Остановка всей системы
-down:
-	docker compose down -v
-
-# Логи
-logs:
-	docker compose logs -f laserbeak
 
 # Обновление go mod
 tidy:
@@ -41,3 +38,6 @@ tidy:
 
 $(GQLGEN):
 	GOBIN="$(LOCAL_BIN)" go install github.com/99designs/gqlgen@v0.17.81
+
+$(GOLANGCI_LINT):
+	GOBIN="$(LOCAL_BIN)" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6

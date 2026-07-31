@@ -9,6 +9,7 @@ import (
 	"errors"
 
 	"github.com/overmindv/laserbeak/internal/client/arcee"
+	"github.com/overmindv/laserbeak/internal/client/ironhide"
 	"github.com/overmindv/laserbeak/internal/graphql/generated"
 	"github.com/overmindv/laserbeak/internal/graphql/model"
 	"github.com/overmindv/laserbeak/internal/middleware"
@@ -75,6 +76,279 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 	return response, nil
 }
 
+// SetUserAdmin is the resolver for the setUserAdmin field.
+func (r *mutationResolver) SetUserAdmin(ctx context.Context, id string, admin bool) (*model.User, error) {
+	if _, err := middleware.RequireAdmin(ctx); err != nil {
+		return nil, err
+	}
+	response, err := r.Users.SetUserAdmin(ctx, id, admin)
+	if err != nil {
+		return nil, err
+	}
+	if response == nil {
+		return nil, errors.New("arcee returned an empty admin response")
+	}
+
+	return toUser(response), nil
+}
+
+// SetUserAdminByUsername is the resolver for the setUserAdminByUsername field.
+func (r *mutationResolver) SetUserAdminByUsername(ctx context.Context, username string, admin bool) (*model.User, error) {
+	if _, err := middleware.RequireAdmin(ctx); err != nil {
+		return nil, err
+	}
+	response, err := r.Users.SetUserAdminByUsername(ctx, username, admin)
+	if err != nil {
+		return nil, err
+	}
+	if response == nil {
+		return nil, errors.New("arcee returned an empty admin response")
+	}
+
+	return toUser(response), nil
+}
+
+// CreateUniversity is the resolver for the createUniversity field.
+func (r *mutationResolver) CreateUniversity(ctx context.Context, input model.CreateUniversityInput) (*model.University, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.CreateUniversity(ctx, ironhide.University{Name: input.Name, ShortName: stringValue(input.ShortName), City: stringValue(input.City), Country: stringValue(input.Country), WebsiteURL: stringValue(input.WebsiteURL), LogoFileID: input.LogoFileID, Status: statusValue(input.Status)}, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return universityModel(result), nil
+}
+
+// UpdateUniversity is the resolver for the updateUniversity field.
+func (r *mutationResolver) UpdateUniversity(ctx context.Context, id string, input model.UpdateUniversityInput) (*model.University, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.UpdateUniversity(ctx, id, ironhide.University{Name: input.Name, ShortName: stringValue(input.ShortName), City: stringValue(input.City), Country: stringValue(input.Country), WebsiteURL: stringValue(input.WebsiteURL), LogoFileID: input.LogoFileID}, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return universityModel(result), nil
+}
+
+// DeleteUniversity is the resolver for the deleteUniversity field.
+func (r *mutationResolver) DeleteUniversity(ctx context.Context, id string) (bool, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return false, err
+	}
+	err = r.Catalog.DeleteUniversity(ctx, id, actor)
+
+	return err == nil, err
+}
+
+// ChangeUniversityStatus is the resolver for the changeUniversityStatus field.
+func (r *mutationResolver) ChangeUniversityStatus(ctx context.Context, id string, status model.CatalogStatus) (*model.University, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.ChangeUniversityStatus(ctx, id, status.String(), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return universityModel(result), nil
+}
+
+// CreateProgram is the resolver for the createProgram field.
+func (r *mutationResolver) CreateProgram(ctx context.Context, input model.CreateProgramInput) (*model.Program, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.CreateProgram(ctx, ironhide.Program{UniversityID: input.UniversityID, Name: input.Name, ShortName: stringValue(input.ShortName), Faculty: stringValue(input.Faculty), DegreeLevel: degreeValue(input.DegreeLevel), StartYear: input.StartYear, Status: statusValue(input.Status)}, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return programModel(result), nil
+}
+
+// UpdateProgram is the resolver for the updateProgram field.
+func (r *mutationResolver) UpdateProgram(ctx context.Context, id string, input model.UpdateProgramInput) (*model.Program, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.UpdateProgram(ctx, id, ironhide.Program{Name: input.Name, ShortName: stringValue(input.ShortName), Faculty: stringValue(input.Faculty), DegreeLevel: degreeValue(input.DegreeLevel), StartYear: input.StartYear}, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return programModel(result), nil
+}
+
+// DeleteProgram is the resolver for the deleteProgram field.
+func (r *mutationResolver) DeleteProgram(ctx context.Context, id string) (bool, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return false, err
+	}
+	err = r.Catalog.DeleteProgram(ctx, id, actor)
+
+	return err == nil, err
+}
+
+// ChangeProgramStatus is the resolver for the changeProgramStatus field.
+func (r *mutationResolver) ChangeProgramStatus(ctx context.Context, id string, status model.CatalogStatus) (*model.Program, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.ChangeProgramStatus(ctx, id, status.String(), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return programModel(result), nil
+}
+
+// CreateCourse is the resolver for the createCourse field.
+func (r *mutationResolver) CreateCourse(ctx context.Context, input model.CreateCourseInput) (*model.Course, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.CreateCourse(ctx, ironhide.Course{ProgramID: input.ProgramID, Name: input.Name, Slug: stringValue(input.Slug), Description: stringValue(input.Description), Semester: input.Semester, YearNumber: input.YearNumber, Status: statusValue(input.Status)}, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return courseModel(result), nil
+}
+
+// UpdateCourse is the resolver for the updateCourse field.
+func (r *mutationResolver) UpdateCourse(ctx context.Context, id string, input model.UpdateCourseInput) (*model.Course, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.UpdateCourse(ctx, id, ironhide.Course{Name: input.Name, Slug: stringValue(input.Slug), Description: stringValue(input.Description), Semester: input.Semester, YearNumber: input.YearNumber}, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return courseModel(result), nil
+}
+
+// DeleteCourse is the resolver for the deleteCourse field.
+func (r *mutationResolver) DeleteCourse(ctx context.Context, id string) (bool, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return false, err
+	}
+	err = r.Catalog.DeleteCourse(ctx, id, actor)
+
+	return err == nil, err
+}
+
+// ChangeCourseStatus is the resolver for the changeCourseStatus field.
+func (r *mutationResolver) ChangeCourseStatus(ctx context.Context, id string, status model.CatalogStatus) (*model.Course, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.ChangeCourseStatus(ctx, id, status.String(), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return courseModel(result), nil
+}
+
+// CreateTopic is the resolver for the createTopic field.
+func (r *mutationResolver) CreateTopic(ctx context.Context, input model.CreateTopicInput) (*model.Topic, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.CreateTopic(ctx, ironhide.Topic{CourseID: input.CourseID, ParentTopicID: input.ParentTopicID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty), Status: statusValue(input.Status)}, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return topicModel(result), nil
+}
+
+// UpdateTopic is the resolver for the updateTopic field.
+func (r *mutationResolver) UpdateTopic(ctx context.Context, id string, input model.UpdateTopicInput) (*model.Topic, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	parentID := input.ParentTopicID
+	if boolValue(input.ClearParentTopic) {
+		parentID = nil
+	}
+	result, err := r.Catalog.UpdateTopic(ctx, id, ironhide.Topic{ParentTopicID: parentID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty)}, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return topicModel(result), nil
+}
+
+// DeleteTopic is the resolver for the deleteTopic field.
+func (r *mutationResolver) DeleteTopic(ctx context.Context, id string) (bool, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return false, err
+	}
+	err = r.Catalog.DeleteTopic(ctx, id, actor)
+
+	return err == nil, err
+}
+
+// ChangeTopicStatus is the resolver for the changeTopicStatus field.
+func (r *mutationResolver) ChangeTopicStatus(ctx context.Context, id string, status model.CatalogStatus) (*model.Topic, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.ChangeTopicStatus(ctx, id, status.String(), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return topicModel(result), nil
+}
+
+// AddTopicPrerequisite is the resolver for the addTopicPrerequisite field.
+func (r *mutationResolver) AddTopicPrerequisite(ctx context.Context, input model.TopicPrerequisiteInput) (*model.TopicPrerequisite, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Catalog.AddPrerequisite(ctx, input.TopicID, input.PrerequisiteTopicID, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return prerequisiteModel(result), nil
+}
+
+// RemoveTopicPrerequisite is the resolver for the removeTopicPrerequisite field.
+func (r *mutationResolver) RemoveTopicPrerequisite(ctx context.Context, input model.TopicPrerequisiteInput) (bool, error) {
+	actor, err := adminActor(ctx)
+	if err != nil {
+		return false, err
+	}
+	err = r.Catalog.RemovePrerequisite(ctx, input.TopicID, input.PrerequisiteTopicID, actor)
+
+	return err == nil, err
+}
+
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
 	if _, err := middleware.RequireAuth(ctx); err != nil {
@@ -91,12 +365,28 @@ func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, er
 	return toUser(response), nil
 }
 
-// Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int) ([]*model.User, error) {
-	if _, err := middleware.RequireAuth(ctx); err != nil {
+// UserByUsername is the resolver for the userByUsername field.
+func (r *queryResolver) UserByUsername(ctx context.Context, username string) (*model.User, error) {
+	if _, err := middleware.RequireAdmin(ctx); err != nil {
 		return nil, err
 	}
-	response, err := r.Resolver.Users.ListUsers(ctx, intValue(limit, 20), intValue(offset, 0))
+	response, err := r.Resolver.Users.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+	if response == nil {
+		return nil, errors.New("arcee returned an empty get response")
+	}
+
+	return toUser(response), nil
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context, search *string, limit *int, offset *int) ([]*model.User, error) {
+	if _, err := middleware.RequireAdmin(ctx); err != nil {
+		return nil, err
+	}
+	response, err := r.Resolver.Users.ListUsers(ctx, stringValue(search), intValue(limit, 20), intValue(offset, 0))
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +398,140 @@ func (r *queryResolver) Users(ctx context.Context, limit *int, offset *int) ([]*
 	}
 
 	return users, nil
+}
+
+// Universities is the resolver for the universities field.
+func (r *queryResolver) Universities(ctx context.Context, filter *model.CatalogFilter, pagination *model.PaginationInput) ([]*model.University, error) {
+	result, err := r.Catalog.ListUniversities(ctx, catalogOptions(filter, pagination))
+	if err != nil {
+		return nil, err
+	}
+	output := make([]*model.University, 0, len(result))
+	for _, item := range result {
+		output = append(output, universityModel(item))
+	}
+
+	return output, nil
+}
+
+// University is the resolver for the university field.
+func (r *queryResolver) University(ctx context.Context, id string) (*model.University, error) {
+	result, err := r.Catalog.GetUniversity(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return universityModel(result), nil
+}
+
+// Programs is the resolver for the programs field.
+func (r *queryResolver) Programs(ctx context.Context, universityID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) ([]*model.Program, error) {
+	result, err := r.Catalog.ListPrograms(ctx, stringValue(universityID), catalogOptions(filter, pagination))
+	if err != nil {
+		return nil, err
+	}
+	output := make([]*model.Program, 0, len(result))
+	for _, item := range result {
+		output = append(output, programModel(item))
+	}
+
+	return output, nil
+}
+
+// Program is the resolver for the program field.
+func (r *queryResolver) Program(ctx context.Context, id string) (*model.Program, error) {
+	result, err := r.Catalog.GetProgram(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return programModel(result), nil
+}
+
+// Courses is the resolver for the courses field.
+func (r *queryResolver) Courses(ctx context.Context, programID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) ([]*model.Course, error) {
+	result, err := r.Catalog.ListCourses(ctx, stringValue(programID), catalogOptions(filter, pagination))
+	if err != nil {
+		return nil, err
+	}
+	output := make([]*model.Course, 0, len(result))
+	for _, item := range result {
+		output = append(output, courseModel(item))
+	}
+
+	return output, nil
+}
+
+// Course is the resolver for the course field.
+func (r *queryResolver) Course(ctx context.Context, id string) (*model.Course, error) {
+	result, err := r.Catalog.GetCourse(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return courseModel(result), nil
+}
+
+// Topics is the resolver for the topics field.
+func (r *queryResolver) Topics(ctx context.Context, courseID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) ([]*model.Topic, error) {
+	result, err := r.Catalog.ListTopics(ctx, stringValue(courseID), catalogOptions(filter, pagination))
+	if err != nil {
+		return nil, err
+	}
+	output := make([]*model.Topic, 0, len(result))
+	for _, item := range result {
+		output = append(output, topicModel(item))
+	}
+
+	return output, nil
+}
+
+// Topic is the resolver for the topic field.
+func (r *queryResolver) Topic(ctx context.Context, id string) (*model.Topic, error) {
+	result, err := r.Catalog.GetTopic(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return topicModel(result), nil
+}
+
+// TopicTree is the resolver for the topicTree field.
+func (r *queryResolver) TopicTree(ctx context.Context, courseID *string) ([]*model.TopicTreeNode, error) {
+	result, err := r.Catalog.TopicTree(ctx, stringValue(courseID))
+	if err != nil {
+		return nil, err
+	}
+	output := make([]*model.TopicTreeNode, 0, len(result))
+	for _, item := range result {
+		output = append(output, treeModel(item))
+	}
+
+	return output, nil
+}
+
+// TopicPrerequisites is the resolver for the topicPrerequisites field.
+func (r *queryResolver) TopicPrerequisites(ctx context.Context, topicID string) ([]*model.TopicPrerequisite, error) {
+	result, err := r.Catalog.ListPrerequisites(ctx, topicID)
+	if err != nil {
+		return nil, err
+	}
+	output := make([]*model.TopicPrerequisite, 0, len(result))
+	for _, item := range result {
+		output = append(output, prerequisiteModel(item))
+	}
+
+	return output, nil
+}
+
+// ValidateCatalogBinding is the resolver for the validateCatalogBinding field.
+func (r *queryResolver) ValidateCatalogBinding(ctx context.Context, input model.CatalogBindingInput) (*model.CatalogValidationResult, error) {
+	result, err := r.Catalog.ValidateBinding(ctx, ironhide.Binding{UniversityID: input.UniversityID, ProgramID: input.ProgramID, CourseID: input.CourseID, TopicID: input.TopicID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.CatalogValidationResult{Valid: result.Valid}, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

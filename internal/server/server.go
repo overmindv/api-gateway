@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/overmindv/laserbeak/internal/client/arcee"
+	"github.com/overmindv/laserbeak/internal/client/ironhide"
 	"github.com/overmindv/laserbeak/internal/config"
 	graphqldelivery "github.com/overmindv/laserbeak/internal/graphql"
 	"github.com/overmindv/laserbeak/internal/middleware"
@@ -22,10 +23,12 @@ type Server struct {
 
 type healthChecker interface{ Health(context.Context) error }
 
-func New(cfg config.HTTP, users arcee.UserService, health healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger) *Server {
+// New собирает HTTP server Laserbeak со всеми middleware и routes.
+// На вход получает конфигурацию, clients, health checker, authenticator и loggers, на выход возвращает готовый Server.
+func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogService, health healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
 	mux := http.NewServeMux()
 
-	mux.Handle("POST /graphql", graphqldelivery.Handler(users, log))
+	mux.Handle("POST /graphql", graphqldelivery.Handler(users, catalog, requestLog))
 	mux.Handle("GET /playground", graphqldelivery.Playground())
 
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +48,7 @@ func New(cfg config.HTTP, users arcee.UserService, health healthChecker, authent
 	var handler http.Handler = mux
 	handler = middleware.JWT(authenticator, handler)
 	handler = middleware.CORS(cfg.CORSOrigins, handler)
-	handler = middleware.Logging(log, handler)
+	handler = middleware.Logging(requestLog, handler, "/health", "/healthz")
 	handler = middleware.RequestIDMiddleware(handler)
 
 	return &Server{
@@ -60,6 +63,8 @@ func New(cfg config.HTTP, users arcee.UserService, health healthChecker, authent
 	}
 }
 
+// Run запускает HTTP listener и корректно завершает server по context cancellation.
+// На вход получает context жизненного цикла, на выход возвращает ошибку запуска или shutdown.
 func (s *Server) Run(ctx context.Context) error {
 	listener, err := net.Listen("tcp", s.config.Address)
 	if err != nil {
