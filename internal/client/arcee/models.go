@@ -6,21 +6,27 @@ type UserService interface {
 	Register(context.Context, RegisterInput) (*AuthPayload, error)
 	Login(context.Context, LoginInput) (*AuthPayload, error)
 	GetUser(context.Context, string) (*User, error)
-	ListUsers(context.Context, int, int) ([]*User, error)
+	GetUserByUsername(context.Context, string) (*User, error)
+	ListUsers(context.Context, string, int, int) ([]*User, error)
 	UpdateUser(context.Context, string, UpdateUserInput) (*User, error)
 	DeleteUser(context.Context, string) (bool, error)
+	SetUserAdmin(context.Context, string, bool) (*User, error)
+	SetUserAdminByUsername(context.Context, string, bool) (*User, error)
 }
 
 type User struct {
-	ID        string  `json:"id"`
-	Email     string  `json:"email"`
-	Username  string  `json:"username"`
-	FirstName string  `json:"firstName"`
-	LastName  string  `json:"lastName"`
-	BirthDate *string `json:"birthDate"`
-	Phone     *string `json:"phone"`
-	CreatedAt string  `json:"createdAt"`
-	UpdatedAt string  `json:"updatedAt"`
+	ID          string   `json:"id"`
+	Email       string   `json:"email"`
+	Username    string   `json:"username"`
+	FirstName   string   `json:"firstName"`
+	LastName    string   `json:"lastName"`
+	BirthDate   *string  `json:"birthDate"`
+	Phone       *string  `json:"phone"`
+	Roles       []string `json:"roles"`
+	IsAdmin     bool     `json:"isAdmin"`
+	IsSuperuser bool     `json:"isSuperuser"`
+	CreatedAt   string   `json:"createdAt"`
+	UpdatedAt   string   `json:"updatedAt"`
 }
 
 type AuthPayload struct {

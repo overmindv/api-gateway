@@ -6,9 +6,37 @@ type User {
   lastName: String!
   birthDate: String
   phone: String
+  roles: [String!]!
+  isAdmin: Boolean!
+  isSuperuser: Boolean!
   createdAt: String!
   updatedAt: String!
 }
+
+enum CatalogStatus { draft active hidden archived }
+enum DegreeLevel { bachelor master specialist phd other }
+enum TopicDifficulty { intro basic medium hard advanced }
+
+type University { id: ID!, name: String!, shortName: String!, city: String!, country: String!, websiteUrl: String!, logoFileId: ID, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
+type Program { id: ID!, universityId: ID, name: String!, shortName: String!, faculty: String!, degreeLevel: DegreeLevel!, startYear: Int, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
+type Course { id: ID!, programId: ID, name: String!, slug: String!, description: String!, semester: Int, yearNumber: Int, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
+type Topic { id: ID!, courseId: ID, parentTopicId: ID, title: String!, slug: String!, description: String!, orderIndex: Int!, difficulty: TopicDifficulty!, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
+type TopicTreeNode { topic: Topic!, children: [TopicTreeNode!]! }
+type TopicPrerequisite { topicId: ID!, prerequisiteTopicId: ID!, createdAt: String! }
+type CatalogValidationResult { valid: Boolean! }
+
+input CatalogFilter { search: String = "", status: CatalogStatus }
+input PaginationInput { limit: Int = 50, offset: Int = 0 }
+input CreateUniversityInput { name: String!, shortName: String = "", city: String = "", country: String = "", websiteUrl: String = "", logoFileId: ID, status: CatalogStatus = draft }
+input UpdateUniversityInput { name: String!, shortName: String = "", city: String = "", country: String = "", websiteUrl: String = "", logoFileId: ID }
+input CreateProgramInput { universityId: ID, name: String!, shortName: String = "", faculty: String = "", degreeLevel: DegreeLevel = other, startYear: Int, status: CatalogStatus = draft }
+input UpdateProgramInput { name: String!, shortName: String = "", faculty: String = "", degreeLevel: DegreeLevel = other, startYear: Int }
+input CreateCourseInput { programId: ID, name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int, status: CatalogStatus = draft }
+input UpdateCourseInput { name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int }
+input CreateTopicInput { courseId: ID, parentTopicId: ID, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic, status: CatalogStatus = draft }
+input UpdateTopicInput { parentTopicId: ID, clearParentTopic: Boolean = false, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic }
+input TopicPrerequisiteInput { topicId: ID!, prerequisiteTopicId: ID! }
+input CatalogBindingInput { universityId: ID, programId: ID, courseId: ID, topicId: ID }
 
 type AuthPayload {
   user: User!
@@ -42,7 +70,19 @@ input UpdateUserInput {
 
 type Query {
   getUser(id: ID!): User!
-  users(limit: Int = 20, offset: Int = 0): [User!]!
+  userByUsername(username: String!): User!
+  users(search: String = "", limit: Int = 20, offset: Int = 0): [User!]!
+  universities(filter: CatalogFilter, pagination: PaginationInput): [University!]!
+  university(id: ID!): University!
+  programs(universityId: ID, filter: CatalogFilter, pagination: PaginationInput): [Program!]!
+  program(id: ID!): Program!
+  courses(programId: ID, filter: CatalogFilter, pagination: PaginationInput): [Course!]!
+  course(id: ID!): Course!
+  topics(courseId: ID, filter: CatalogFilter, pagination: PaginationInput): [Topic!]!
+  topic(id: ID!): Topic!
+  topicTree(courseId: ID): [TopicTreeNode!]!
+  topicPrerequisites(topicId: ID!): [TopicPrerequisite!]!
+  validateCatalogBinding(input: CatalogBindingInput!): CatalogValidationResult!
 }
 
 type Mutation {
@@ -50,4 +90,24 @@ type Mutation {
   login(input: LoginInput!): AuthPayload!
   updateUser(id: ID!, input: UpdateUserInput!): User!
   deleteUser(id: ID!): Boolean!
+  setUserAdmin(id: ID!, admin: Boolean!): User!
+  setUserAdminByUsername(username: String!, admin: Boolean!): User!
+  createUniversity(input: CreateUniversityInput!): University!
+  updateUniversity(id: ID!, input: UpdateUniversityInput!): University!
+  deleteUniversity(id: ID!): Boolean!
+  changeUniversityStatus(id: ID!, status: CatalogStatus!): University!
+  createProgram(input: CreateProgramInput!): Program!
+  updateProgram(id: ID!, input: UpdateProgramInput!): Program!
+  deleteProgram(id: ID!): Boolean!
+  changeProgramStatus(id: ID!, status: CatalogStatus!): Program!
+  createCourse(input: CreateCourseInput!): Course!
+  updateCourse(id: ID!, input: UpdateCourseInput!): Course!
+  deleteCourse(id: ID!): Boolean!
+  changeCourseStatus(id: ID!, status: CatalogStatus!): Course!
+  createTopic(input: CreateTopicInput!): Topic!
+  updateTopic(id: ID!, input: UpdateTopicInput!): Topic!
+  deleteTopic(id: ID!): Boolean!
+  changeTopicStatus(id: ID!, status: CatalogStatus!): Topic!
+  addTopicPrerequisite(input: TopicPrerequisiteInput!): TopicPrerequisite!
+  removeTopicPrerequisite(input: TopicPrerequisiteInput!): Boolean!
 }
