@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/overmindv/laserbeak/internal/apperror"
+	"github.com/overmindv/api-gateway/internal/apperror"
 )
 
 type JWTAuthenticator struct {

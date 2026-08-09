@@ -9,11 +9,12 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/overmindv/laserbeak/internal/client/arcee"
-	"github.com/overmindv/laserbeak/internal/client/ironhide"
-	"github.com/overmindv/laserbeak/internal/config"
-	"github.com/overmindv/laserbeak/internal/middleware"
-	"github.com/overmindv/laserbeak/internal/server"
+	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/config"
+	"github.com/overmindv/api-gateway/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/server"
 )
 
 func main() {
@@ -34,14 +35,15 @@ func main() {
 
 	users := arcee.New(cfg.Arcee, requestLog)
 	catalog := ironhide.New(cfg.Ironhide.URL, cfg.Ironhide.Timeout, requestLog)
+	tasks := tasksit.New(cfg.TasksIT.URL, cfg.TasksIT.Timeout, requestLog)
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
-	httpServer := server.New(cfg.HTTP, users, catalog, users, authenticator, log, requestLog)
+	httpServer := server.New(cfg.HTTP, users, catalog, tasks, users, authenticator, log, requestLog)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	if err := httpServer.Run(ctx); err != nil {
-		log.Error("run laserbeak", "error", err)
+		log.Error("run api-gateway", "error", err)
 		os.Exit(1)
 	}
 }

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/overmindv/laserbeak/internal/apperror"
-	"github.com/overmindv/laserbeak/internal/client/arcee"
-	"github.com/overmindv/laserbeak/internal/graphql/model"
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/apperror"
+	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/graphql/model"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type userServiceStub struct {

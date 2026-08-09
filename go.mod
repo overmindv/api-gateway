@@ -1,4 +1,4 @@
-module github.com/overmindv/laserbeak
+module github.com/overmindv/api-gateway
 
 go 1.25.0
 

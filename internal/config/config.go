@@ -13,6 +13,7 @@ type Config struct {
 	HTTP     HTTP
 	Arcee    Arcee
 	Ironhide Ironhide
+	TasksIT  TasksIT
 	JWT      JWT
 }
 
@@ -35,13 +36,19 @@ type Ironhide struct {
 	URL     string
 	Timeout time.Duration
 }
+
+type TasksIT struct {
+	URL     string
+	Timeout time.Duration
+}
+
 type JWT struct {
 	Secret       string
 	Issuer       string
 	AdminUserIDs []string
 }
 
-// Load читает конфигурацию Laserbeak из environment.
+// Load читает конфигурацию api-gateway из environment.
 // На вход не получает параметров, на выход возвращает нормализованный Config или ошибку валидации.
 func Load() (Config, error) {
 	port := strings.TrimPrefix(env("PORT", "8081"), ":")
@@ -65,6 +72,10 @@ func Load() (Config, error) {
 		Ironhide: Ironhide{
 			URL:     env("IRONHIDE_URL", "http://localhost:8082"),
 			Timeout: envDuration("IRONHIDE_TIMEOUT", 5*time.Second),
+		},
+		TasksIT: TasksIT{
+			URL:     env("TASKS_IT_URL", "http://localhost:8083"),
+			Timeout: envDuration("TASKS_IT_TIMEOUT", 5*time.Second),
 		},
 		JWT: JWT{
 			Secret:       env("JWT_SECRET", "local-development-secret-change-me"),
@@ -95,6 +106,13 @@ func Load() (Config, error) {
 	}
 	if cfg.Ironhide.Timeout <= 0 {
 		return Config{}, fmt.Errorf("IRONHIDE_TIMEOUT must be positive")
+	}
+	parsedTasksITURL, err := url.Parse(cfg.TasksIT.URL)
+	if err != nil || parsedTasksITURL.Host == "" || (parsedTasksITURL.Scheme != "http" && parsedTasksITURL.Scheme != "https") {
+		return Config{}, fmt.Errorf("TASKS_IT_URL must be an absolute HTTP(S) URL")
+	}
+	if cfg.TasksIT.Timeout <= 0 {
+		return Config{}, fmt.Errorf("TASKS_IT_TIMEOUT must be positive")
 	}
 
 	if cfg.JWT.Secret == "" {

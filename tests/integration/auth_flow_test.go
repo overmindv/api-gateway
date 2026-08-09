@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/overmindv/laserbeak/internal/client/arcee"
-	"github.com/overmindv/laserbeak/internal/config"
-	graphqldelivery "github.com/overmindv/laserbeak/internal/graphql"
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/config"
+	graphqldelivery "github.com/overmindv/api-gateway/internal/graphql"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type gatewayUser struct {
@@ -201,7 +201,7 @@ func TestGatewayAuthFlowThroughArceeClient(t *testing.T) {
 	authenticator := middleware.NewJWTAuthenticator(upstream.secret, upstream.issuer)
 	handler := middleware.JWT(
 		authenticator,
-		graphqldelivery.Handler(users, nil, slog.New(slog.NewTextHandler(io.Discard, nil))),
+		graphqldelivery.Handler(users, nil, nil, slog.New(slog.NewTextHandler(io.Discard, nil))),
 	)
 
 	registered := gatewayRegister(t, handler)
