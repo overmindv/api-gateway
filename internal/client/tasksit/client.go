@@ -31,6 +31,54 @@ type Service interface {
 	Health(context.Context) error
 }
 
+type CandidateService interface {
+	ListCandidates(context.Context, CandidateFilter, Actor) (CandidateList, error)
+	GetCandidate(context.Context, string, Actor) (Candidate, error)
+	UpdateCandidate(context.Context, string, CandidateReview, Actor) (Candidate, error)
+	ApproveCandidate(context.Context, string, CandidateReview, Actor) (Task, error)
+	RejectCandidate(context.Context, string, int, string, Actor) (Candidate, error)
+}
+
+// ListCandidates получает очередь модерации с явными фильтрами.
+func (c *Client) ListCandidates(ctx context.Context, filter CandidateFilter, actor Actor) (CandidateList, error) {
+	values := url.Values{}
+	values.Set("limit", strconv.Itoa(filter.Limit))
+	values.Set("offset", strconv.Itoa(filter.Offset))
+	if filter.Status != "" {
+		values.Set("status", filter.Status)
+	}
+	if filter.SourceID != "" {
+		values.Set("source_id", filter.SourceID)
+	}
+	if filter.Difficulty != "" {
+		values.Set("difficulty", filter.Difficulty)
+	}
+
+	return request[CandidateList](c, ctx, http.MethodGet, pathWithQuery("/v1/admin/task-candidates", values), nil, actor)
+}
+
+// GetCandidate получает кандидата с immutable provenance.
+func (c *Client) GetCandidate(ctx context.Context, id string, actor Actor) (Candidate, error) {
+	return request[Candidate](c, ctx, http.MethodGet, "/v1/admin/task-candidates/"+url.PathEscape(id), nil, actor)
+}
+
+// UpdateCandidate сохраняет правки с optimistic revision.
+func (c *Client) UpdateCandidate(ctx context.Context, id string, input CandidateReview, actor Actor) (Candidate, error) {
+	return request[Candidate](c, ctx, http.MethodPut, "/v1/admin/task-candidates/"+url.PathEscape(id), input, actor)
+}
+
+// ApproveCandidate атомарно публикует programming-задачу.
+func (c *Client) ApproveCandidate(ctx context.Context, id string, input CandidateReview, actor Actor) (Task, error) {
+	return request[Task](c, ctx, http.MethodPost, "/v1/admin/task-candidates/"+url.PathEscape(id)+"/approve", input, actor)
+}
+
+// RejectCandidate завершает pending-кандидата.
+func (c *Client) RejectCandidate(ctx context.Context, id string, revision int, reason string, actor Actor) (Candidate, error) {
+	input := map[string]any{"expected_revision": revision, "reason": reason}
+
+	return request[Candidate](c, ctx, http.MethodPost, "/v1/admin/task-candidates/"+url.PathEscape(id)+"/reject", input, actor)
+}
+
 type Client struct {
 	baseURL string
 	http    *http.Client

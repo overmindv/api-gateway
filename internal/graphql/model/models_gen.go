@@ -131,8 +131,24 @@ type ITTask struct {
 	TaskType      ITTaskType       `json:"taskType"`
 	Difficulty    ITTaskDifficulty `json:"difficulty"`
 	Options       []*ITTaskOption  `json:"options"`
+	Tags          []string         `json:"tags"`
+	Examples      []*ITTaskExample `json:"examples"`
+	Constraints   []string         `json:"constraints"`
+	Source        *ITTaskSource    `json:"source,omitempty"`
 	CreatedAt     string           `json:"createdAt"`
 	UpdatedAt     string           `json:"updatedAt"`
+}
+
+type ITTaskExample struct {
+	Input       string `json:"input"`
+	Output      string `json:"output"`
+	Explanation string `json:"explanation"`
+}
+
+type ITTaskExampleInput struct {
+	Input       string  `json:"input"`
+	Output      string  `json:"output"`
+	Explanation *string `json:"explanation,omitempty"`
 }
 
 type ITTaskFilter struct {
@@ -142,12 +158,15 @@ type ITTaskFilter struct {
 }
 
 type ITTaskInput struct {
-	TopicID    *string              `json:"topicId,omitempty"`
-	Title      string               `json:"title"`
-	Statement  string               `json:"statement"`
-	TaskType   ITTaskType           `json:"taskType"`
-	Difficulty *ITTaskDifficulty    `json:"difficulty,omitempty"`
-	Options    []*ITTaskOptionInput `json:"options"`
+	TopicID     *string               `json:"topicId,omitempty"`
+	Title       string                `json:"title"`
+	Statement   string                `json:"statement"`
+	TaskType    ITTaskType            `json:"taskType"`
+	Difficulty  *ITTaskDifficulty     `json:"difficulty,omitempty"`
+	Options     []*ITTaskOptionInput  `json:"options"`
+	Tags        []string              `json:"tags,omitempty"`
+	Examples    []*ITTaskExampleInput `json:"examples,omitempty"`
+	Constraints []string              `json:"constraints,omitempty"`
 }
 
 type ITTaskList struct {
@@ -166,6 +185,13 @@ type ITTaskOption struct {
 type ITTaskOptionInput struct {
 	Text      string `json:"text"`
 	IsCorrect bool   `json:"isCorrect"`
+}
+
+type ITTaskSource struct {
+	SourceID    string  `json:"sourceId"`
+	SourceName  string  `json:"sourceName"`
+	SourceURL   string  `json:"sourceUrl"`
+	PublishedAt *string `json:"publishedAt,omitempty"`
 }
 
 type ITTaskSummary struct {
@@ -218,6 +244,109 @@ type RegisterInput struct {
 	LastName  *string `json:"lastName,omitempty"`
 	BirthDate *string `json:"birthDate,omitempty"`
 	Phone     *string `json:"phone,omitempty"`
+}
+
+type StartTaskCollectionInput struct {
+	IdempotencyKey    string   `json:"idempotencyKey"`
+	TelegramChannels  []string `json:"telegramChannels,omitempty"`
+	PublishedFrom     *string  `json:"publishedFrom,omitempty"`
+	PublishedTo       *string  `json:"publishedTo,omitempty"`
+	WebsiteUrls       []string `json:"websiteUrls,omitempty"`
+	MaxItemsPerSource *int     `json:"maxItemsPerSource,omitempty"`
+}
+
+type TaskCandidate struct {
+	ID                string              `json:"id"`
+	Status            TaskCandidateStatus `json:"status"`
+	Revision          int                 `json:"revision"`
+	ExternalID        string              `json:"externalId"`
+	SourceID          string              `json:"sourceId"`
+	SourceName        string              `json:"sourceName"`
+	SourceURL         string              `json:"sourceUrl"`
+	SourcePublishedAt *string             `json:"sourcePublishedAt,omitempty"`
+	RetrievedAt       string              `json:"retrievedAt"`
+	CollectionJobID   string              `json:"collectionJobId"`
+	TopicID           *string             `json:"topicId,omitempty"`
+	Title             string              `json:"title"`
+	Statement         string              `json:"statement"`
+	Difficulty        ITTaskDifficulty    `json:"difficulty"`
+	Tags              []string            `json:"tags"`
+	Examples          []*ITTaskExample    `json:"examples"`
+	Constraints       []string            `json:"constraints"`
+	ApprovedTaskID    *string             `json:"approvedTaskId,omitempty"`
+	RejectionReason   string              `json:"rejectionReason"`
+	CreatedAt         string              `json:"createdAt"`
+	UpdatedAt         string              `json:"updatedAt"`
+}
+
+type TaskCandidateFilter struct {
+	Status     *TaskCandidateStatus `json:"status,omitempty"`
+	SourceID   *string              `json:"sourceId,omitempty"`
+	Difficulty *ITTaskDifficulty    `json:"difficulty,omitempty"`
+}
+
+type TaskCandidateList struct {
+	Items  []*TaskCandidate `json:"items"`
+	Limit  int              `json:"limit"`
+	Offset int              `json:"offset"`
+}
+
+type TaskCandidateReviewInput struct {
+	ExpectedRevision int                   `json:"expectedRevision"`
+	TopicID          *string               `json:"topicId,omitempty"`
+	Title            string                `json:"title"`
+	Statement        string                `json:"statement"`
+	Difficulty       ITTaskDifficulty      `json:"difficulty"`
+	Tags             []string              `json:"tags"`
+	Examples         []*ITTaskExampleInput `json:"examples"`
+	Constraints      []string              `json:"constraints"`
+}
+
+type TaskCollectionJob struct {
+	ID                       string                  `json:"id"`
+	Trigger                  string                  `json:"trigger"`
+	RequestedBy              *string                 `json:"requestedBy,omitempty"`
+	IdempotencyKey           string                  `json:"idempotencyKey"`
+	PublishedFrom            *string                 `json:"publishedFrom,omitempty"`
+	PublishedTo              *string                 `json:"publishedTo,omitempty"`
+	MaxItemsPerSource        int                     `json:"maxItemsPerSource"`
+	Status                   TaskCollectionJobStatus `json:"status"`
+	CollectedTotal           int                     `json:"collectedTotal"`
+	ImportedTotal            int                     `json:"importedTotal"`
+	DuplicatesTotal          int                     `json:"duplicatesTotal"`
+	InvalidTotal             int                     `json:"invalidTotal"`
+	ErrorCount               int                     `json:"errorCount"`
+	ErrorMessage             string                  `json:"errorMessage"`
+	NotificationAcknowledged bool                    `json:"notificationAcknowledged"`
+	StartedAt                *string                 `json:"startedAt,omitempty"`
+	FinishedAt               *string                 `json:"finishedAt,omitempty"`
+	CreatedAt                string                  `json:"createdAt"`
+	UpdatedAt                string                  `json:"updatedAt"`
+	Sources                  []*TaskCollectionSource `json:"sources"`
+}
+
+type TaskCollectionJobList struct {
+	Items  []*TaskCollectionJob `json:"items"`
+	Limit  int                  `json:"limit"`
+	Offset int                  `json:"offset"`
+}
+
+type TaskCollectionSource struct {
+	ID              string                     `json:"id"`
+	Kind            string                     `json:"kind"`
+	SourceID        string                     `json:"sourceId"`
+	URL             string                     `json:"url"`
+	Status          TaskCollectionSourceStatus `json:"status"`
+	CollectedTotal  int                        `json:"collectedTotal"`
+	ImportedTotal   int                        `json:"importedTotal"`
+	DuplicatesTotal int                        `json:"duplicatesTotal"`
+	InvalidTotal    int                        `json:"invalidTotal"`
+	ErrorMessage    string                     `json:"errorMessage"`
+}
+
+type TaskCollectionSources struct {
+	TelegramChannels []string `json:"telegramChannels"`
+	WebsiteSources   []string `json:"websiteSources"`
 }
 
 type Topic struct {
@@ -622,16 +751,18 @@ type ITTaskType string
 const (
 	ITTaskTypeSingleChoice   ITTaskType = "single_choice"
 	ITTaskTypeMultipleChoice ITTaskType = "multiple_choice"
+	ITTaskTypeProgramming    ITTaskType = "programming"
 )
 
 var AllITTaskType = []ITTaskType{
 	ITTaskTypeSingleChoice,
 	ITTaskTypeMultipleChoice,
+	ITTaskTypeProgramming,
 }
 
 func (e ITTaskType) IsValid() bool {
 	switch e {
-	case ITTaskTypeSingleChoice, ITTaskTypeMultipleChoice:
+	case ITTaskTypeSingleChoice, ITTaskTypeMultipleChoice, ITTaskTypeProgramming:
 		return true
 	}
 	return false
@@ -667,6 +798,185 @@ func (e *ITTaskType) UnmarshalJSON(b []byte) error {
 }
 
 func (e ITTaskType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type TaskCandidateStatus string
+
+const (
+	TaskCandidateStatusPending  TaskCandidateStatus = "pending"
+	TaskCandidateStatusApproved TaskCandidateStatus = "approved"
+	TaskCandidateStatusRejected TaskCandidateStatus = "rejected"
+)
+
+var AllTaskCandidateStatus = []TaskCandidateStatus{
+	TaskCandidateStatusPending,
+	TaskCandidateStatusApproved,
+	TaskCandidateStatusRejected,
+}
+
+func (e TaskCandidateStatus) IsValid() bool {
+	switch e {
+	case TaskCandidateStatusPending, TaskCandidateStatusApproved, TaskCandidateStatusRejected:
+		return true
+	}
+	return false
+}
+
+func (e TaskCandidateStatus) String() string {
+	return string(e)
+}
+
+func (e *TaskCandidateStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TaskCandidateStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TaskCandidateStatus", str)
+	}
+	return nil
+}
+
+func (e TaskCandidateStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TaskCandidateStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TaskCandidateStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type TaskCollectionJobStatus string
+
+const (
+	TaskCollectionJobStatusQueued    TaskCollectionJobStatus = "queued"
+	TaskCollectionJobStatusRunning   TaskCollectionJobStatus = "running"
+	TaskCollectionJobStatusSucceeded TaskCollectionJobStatus = "succeeded"
+	TaskCollectionJobStatusPartial   TaskCollectionJobStatus = "partial"
+	TaskCollectionJobStatusFailed    TaskCollectionJobStatus = "failed"
+)
+
+var AllTaskCollectionJobStatus = []TaskCollectionJobStatus{
+	TaskCollectionJobStatusQueued,
+	TaskCollectionJobStatusRunning,
+	TaskCollectionJobStatusSucceeded,
+	TaskCollectionJobStatusPartial,
+	TaskCollectionJobStatusFailed,
+}
+
+func (e TaskCollectionJobStatus) IsValid() bool {
+	switch e {
+	case TaskCollectionJobStatusQueued, TaskCollectionJobStatusRunning, TaskCollectionJobStatusSucceeded, TaskCollectionJobStatusPartial, TaskCollectionJobStatusFailed:
+		return true
+	}
+	return false
+}
+
+func (e TaskCollectionJobStatus) String() string {
+	return string(e)
+}
+
+func (e *TaskCollectionJobStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TaskCollectionJobStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TaskCollectionJobStatus", str)
+	}
+	return nil
+}
+
+func (e TaskCollectionJobStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TaskCollectionJobStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TaskCollectionJobStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type TaskCollectionSourceStatus string
+
+const (
+	TaskCollectionSourceStatusQueued    TaskCollectionSourceStatus = "queued"
+	TaskCollectionSourceStatusRunning   TaskCollectionSourceStatus = "running"
+	TaskCollectionSourceStatusSucceeded TaskCollectionSourceStatus = "succeeded"
+	TaskCollectionSourceStatusFailed    TaskCollectionSourceStatus = "failed"
+	TaskCollectionSourceStatusTruncated TaskCollectionSourceStatus = "truncated"
+)
+
+var AllTaskCollectionSourceStatus = []TaskCollectionSourceStatus{
+	TaskCollectionSourceStatusQueued,
+	TaskCollectionSourceStatusRunning,
+	TaskCollectionSourceStatusSucceeded,
+	TaskCollectionSourceStatusFailed,
+	TaskCollectionSourceStatusTruncated,
+}
+
+func (e TaskCollectionSourceStatus) IsValid() bool {
+	switch e {
+	case TaskCollectionSourceStatusQueued, TaskCollectionSourceStatusRunning, TaskCollectionSourceStatusSucceeded, TaskCollectionSourceStatusFailed, TaskCollectionSourceStatusTruncated:
+		return true
+	}
+	return false
+}
+
+func (e TaskCollectionSourceStatus) String() string {
+	return string(e)
+}
+
+func (e *TaskCollectionSourceStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TaskCollectionSourceStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TaskCollectionSourceStatus", str)
+	}
+	return nil
+}
+
+func (e TaskCollectionSourceStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *TaskCollectionSourceStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e TaskCollectionSourceStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

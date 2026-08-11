@@ -9,6 +9,8 @@
 - admin-only управление пользователями через `users`;
 - чтение и управление каталогом через `entities`;
 - тестовые IT-задачи и история решений через `tasks-it`;
+- запуск и журнал сбора через отдельный client `task-hunter`;
+- модерация собранных кандидатов и публикация `programming`-задач;
 - проверка JWT и роли `admin`;
 - отдельный request log для пользовательских HTTP-запросов и upstream-вызовов.
 
@@ -27,6 +29,9 @@
 ```dotenv
 TASKS_IT_URL=http://tasks-it:8080
 TASKS_IT_TIMEOUT=5s
+TASK_HUNTER_URL=http://task-hunter:8080
+TASK_HUNTER_TOKEN=replace-with-a-long-random-gateway-token
+TASK_HUNTER_TIMEOUT=10s
 ```
 
 Локально gateway запускается в составе общего окружения из `infra`:

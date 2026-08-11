@@ -7,6 +7,9 @@
 ```dotenv
 TASKS_IT_URL=http://tasks-it:8080
 TASKS_IT_TIMEOUT=5s
+TASK_HUNTER_URL=http://task-hunter:8080
+TASK_HUNTER_TOKEN=replace-with-a-long-random-gateway-token
+TASK_HUNTER_TIMEOUT=10s
 ```
 
 Gateway передаёт `X-Request-ID`. Для защищённых операций он формирует `X-User-ID` и `X-User-Roles` только из проверенного JWT. Значения из пользовательского HTTP-запроса напрямую не проксируются.
@@ -19,6 +22,8 @@ Gateway передаёт `X-Request-ID`. Для защищённых опера�
 - `adminITTask(id): ITTask!` — текущая версия с `isCorrect`;
 - `itSubmission(id): ITSubmission!` — результат владельца или администратора;
 - `myITSubmissions(taskId, pagination): ITSubmissionList!` — история текущего пользователя.
+- `taskCollectionSources`, `taskCollectionJobs`, `taskCollectionJob` — allowlist и журнал сбора;
+- `taskCandidates`, `taskCandidate` — очередь модерации с provenance и revision.
 
 Публичные query не требуют JWT. Admin query требуют роль `admin` или `superuser`. Query результатов требуют аутентификацию; доступ владельца дополнительно проверяет `tasks-it`.
 
@@ -29,8 +34,12 @@ Gateway передаёт `X-Request-ID`. Для защищённых опера�
 - `changeITTaskStatus(id, status): ITTask!` — publish, archive или restore;
 - `deleteITTask(id): Boolean!` — выполнить soft delete;
 - `submitITTaskAnswer(taskId, input): ITSubmission!` — отправить ответ по выбранной версии.
+- `startTaskCollection`, `acknowledgeTaskCollectionJob` — запустить ручной job и подтвердить terminal-уведомление;
+- `updateTaskCandidate`, `approveTaskCandidate`, `rejectTaskCandidate` — редактировать и завершать кандидата с optimistic locking.
 
 Admin mutations требуют роль `admin` или `superuser`. Отправка ответа требует аутентификацию.
+
+Gateway передаёт `task-hunter` только actor context из проверенного JWT и отдельный service token. Для опубликованной `programming`-задачи GraphQL возвращает `tags`, `examples`, `constraints` и `source`; отправка choice-ответа для неё запрещена кодом `TASK_TYPE_NOT_SUBMITTABLE`.
 
 ## Пример создания
 

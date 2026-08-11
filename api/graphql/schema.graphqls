@@ -39,12 +39,14 @@ input TopicPrerequisiteInput { topicId: ID!, prerequisiteTopicId: ID! }
 input CatalogBindingInput { universityId: ID, programId: ID, courseId: ID, topicId: ID }
 
 enum ITTaskStatus { draft published archived }
-enum ITTaskType { single_choice multiple_choice }
+enum ITTaskType { single_choice multiple_choice programming }
 enum ITTaskDifficulty { easy medium hard }
 enum ITSubmissionVerdict { accepted wrong_answer }
 
 type ITTaskOption { id: ID!, text: String!, position: Int!, isCorrect: Boolean }
-type ITTask { id: ID!, status: ITTaskStatus!, taskVersionId: ID!, versionNumber: Int!, topicId: ID, title: String!, statement: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty!, options: [ITTaskOption!]!, createdAt: String!, updatedAt: String! }
+type ITTaskExample { input: String!, output: String!, explanation: String! }
+type ITTaskSource { sourceId: String!, sourceName: String!, sourceUrl: String!, publishedAt: String }
+type ITTask { id: ID!, status: ITTaskStatus!, taskVersionId: ID!, versionNumber: Int!, topicId: ID, title: String!, statement: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty!, options: [ITTaskOption!]!, tags: [String!]!, examples: [ITTaskExample!]!, constraints: [String!]!, source: ITTaskSource, createdAt: String!, updatedAt: String! }
 type ITTaskSummary { id: ID!, status: ITTaskStatus!, taskVersionId: ID!, versionNumber: Int!, topicId: ID, title: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty!, createdAt: String!, updatedAt: String! }
 type ITTaskList { items: [ITTaskSummary!]!, limit: Int!, offset: Int! }
 type ITSubmission { id: ID!, userId: ID!, taskId: ID!, taskVersionId: ID!, taskVersionNumber: Int!, selectedOptionIds: [ID!]!, correctOptionIds: [ID!]!, correct: Boolean!, verdict: ITSubmissionVerdict!, taskUpdated: Boolean!, latestTaskVersionId: ID!, latestVersionNumber: Int!, createdAt: String! }
@@ -53,8 +55,23 @@ type ITSubmissionList { items: [ITSubmission!]!, limit: Int!, offset: Int! }
 input ITTaskFilter { taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
 input ITAdminTaskFilter { status: ITTaskStatus, taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
 input ITTaskOptionInput { text: String!, isCorrect: Boolean! }
-input ITTaskInput { topicId: ID, title: String!, statement: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty = easy, options: [ITTaskOptionInput!]! }
+input ITTaskExampleInput { input: String!, output: String!, explanation: String = "" }
+input ITTaskInput { topicId: ID, title: String!, statement: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty = easy, options: [ITTaskOptionInput!]!, tags: [String!] = [], examples: [ITTaskExampleInput!] = [], constraints: [String!] = [] }
 input ITSubmissionInput { taskVersionId: ID!, idempotencyKey: ID!, selectedOptionIds: [ID!]! }
+
+enum TaskCandidateStatus { pending approved rejected }
+type TaskCandidate { id: ID!, status: TaskCandidateStatus!, revision: Int!, externalId: String!, sourceId: String!, sourceName: String!, sourceUrl: String!, sourcePublishedAt: String, retrievedAt: String!, collectionJobId: ID!, topicId: ID, title: String!, statement: String!, difficulty: ITTaskDifficulty!, tags: [String!]!, examples: [ITTaskExample!]!, constraints: [String!]!, approvedTaskId: ID, rejectionReason: String!, createdAt: String!, updatedAt: String! }
+type TaskCandidateList { items: [TaskCandidate!]!, limit: Int!, offset: Int! }
+input TaskCandidateFilter { status: TaskCandidateStatus, sourceId: String, difficulty: ITTaskDifficulty }
+input TaskCandidateReviewInput { expectedRevision: Int!, topicId: ID, title: String!, statement: String!, difficulty: ITTaskDifficulty!, tags: [String!]!, examples: [ITTaskExampleInput!]!, constraints: [String!]! }
+
+enum TaskCollectionJobStatus { queued running succeeded partial failed }
+enum TaskCollectionSourceStatus { queued running succeeded failed truncated }
+type TaskCollectionSource { id: ID!, kind: String!, sourceId: String!, url: String!, status: TaskCollectionSourceStatus!, collectedTotal: Int!, importedTotal: Int!, duplicatesTotal: Int!, invalidTotal: Int!, errorMessage: String! }
+type TaskCollectionJob { id: ID!, trigger: String!, requestedBy: ID, idempotencyKey: ID!, publishedFrom: String, publishedTo: String, maxItemsPerSource: Int!, status: TaskCollectionJobStatus!, collectedTotal: Int!, importedTotal: Int!, duplicatesTotal: Int!, invalidTotal: Int!, errorCount: Int!, errorMessage: String!, notificationAcknowledged: Boolean!, startedAt: String, finishedAt: String, createdAt: String!, updatedAt: String!, sources: [TaskCollectionSource!]! }
+type TaskCollectionJobList { items: [TaskCollectionJob!]!, limit: Int!, offset: Int! }
+type TaskCollectionSources { telegramChannels: [String!]!, websiteSources: [String!]! }
+input StartTaskCollectionInput { idempotencyKey: ID!, telegramChannels: [String!] = [], publishedFrom: String, publishedTo: String, websiteUrls: [String!] = [], maxItemsPerSource: Int = 100 }
 
 type AuthPayload {
   user: User!
@@ -107,6 +124,11 @@ type Query {
   adminITTask(id: ID!): ITTask!
   itSubmission(id: ID!): ITSubmission!
   myITSubmissions(taskId: ID, pagination: PaginationInput): ITSubmissionList!
+  taskCollectionSources: TaskCollectionSources!
+  taskCollectionJobs(unreadOnly: Boolean = false, pagination: PaginationInput): TaskCollectionJobList!
+  taskCollectionJob(id: ID!): TaskCollectionJob!
+  taskCandidates(filter: TaskCandidateFilter, pagination: PaginationInput): TaskCandidateList!
+  taskCandidate(id: ID!): TaskCandidate!
 }
 
 type Mutation {
@@ -139,4 +161,9 @@ type Mutation {
   changeITTaskStatus(id: ID!, status: ITTaskStatus!): ITTask!
   deleteITTask(id: ID!): Boolean!
   submitITTaskAnswer(taskId: ID!, input: ITSubmissionInput!): ITSubmission!
+  startTaskCollection(input: StartTaskCollectionInput!): TaskCollectionJob!
+  acknowledgeTaskCollectionJob(id: ID!): Boolean!
+  updateTaskCandidate(id: ID!, input: TaskCandidateReviewInput!): TaskCandidate!
+  approveTaskCandidate(id: ID!, input: TaskCandidateReviewInput!): ITTask!
+  rejectTaskCandidate(id: ID!, expectedRevision: Int!, reason: String = ""): TaskCandidate!
 }

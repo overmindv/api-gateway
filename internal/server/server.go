@@ -10,6 +10,7 @@ import (
 
 	"github.com/overmindv/api-gateway/internal/client/arcee"
 	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasksit"
 	"github.com/overmindv/api-gateway/internal/config"
 	graphqldelivery "github.com/overmindv/api-gateway/internal/graphql"
@@ -26,10 +27,10 @@ type healthChecker interface{ Health(context.Context) error }
 
 // New собирает HTTP server api-gateway со всеми middleware и routes.
 // На вход получает конфигурацию, clients, health checker, authenticator и loggers, на выход возвращает готовый Server.
-func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogService, tasks tasksit.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
+func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogService, tasks tasksit.Service, taskHunter taskhunter.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
 	mux := http.NewServeMux()
 
-	mux.Handle("POST /graphql", graphqldelivery.Handler(users, catalog, tasks, requestLog))
+	mux.Handle("POST /graphql", graphqldelivery.HandlerWithTaskHunter(users, catalog, tasks, taskHunter, requestLog))
 	mux.Handle("GET /playground", graphqldelivery.Playground())
 
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -44,8 +45,13 @@ func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogServi
 			_, _ = w.Write([]byte(`{"status":"unhealthy","tasks_it":"unavailable"}`))
 			return
 		}
+		if err := taskHunter.Health(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"status":"unhealthy","task_hunter":"unavailable"}`))
+			return
+		}
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"ok","users":"ok","tasks_it":"ok"}`))
+		_, _ = w.Write([]byte(`{"status":"ok","users":"ok","tasks_it":"ok","task_hunter":"ok"}`))
 	}
 
 	mux.HandleFunc("GET /health", healthHandler)

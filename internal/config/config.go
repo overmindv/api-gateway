@@ -10,11 +10,12 @@ import (
 )
 
 type Config struct {
-	HTTP     HTTP
-	Arcee    Arcee
-	Ironhide Ironhide
-	TasksIT  TasksIT
-	JWT      JWT
+	HTTP       HTTP
+	Arcee      Arcee
+	Ironhide   Ironhide
+	TasksIT    TasksIT
+	TaskHunter TaskHunter
+	JWT        JWT
 }
 
 type HTTP struct {
@@ -39,6 +40,12 @@ type Ironhide struct {
 
 type TasksIT struct {
 	URL     string
+	Timeout time.Duration
+}
+
+type TaskHunter struct {
+	URL     string
+	Token   string
 	Timeout time.Duration
 }
 
@@ -77,6 +84,11 @@ func Load() (Config, error) {
 			URL:     env("TASKS_IT_URL", "http://localhost:8083"),
 			Timeout: envDuration("TASKS_IT_TIMEOUT", 5*time.Second),
 		},
+		TaskHunter: TaskHunter{
+			URL:     env("TASK_HUNTER_URL", "http://localhost:8084"),
+			Token:   strings.TrimSpace(os.Getenv("TASK_HUNTER_TOKEN")),
+			Timeout: envDuration("TASK_HUNTER_TIMEOUT", 10*time.Second),
+		},
 		JWT: JWT{
 			Secret:       env("JWT_SECRET", "local-development-secret-change-me"),
 			Issuer:       env("JWT_ISSUER", "arcee"),
@@ -113,6 +125,16 @@ func Load() (Config, error) {
 	}
 	if cfg.TasksIT.Timeout <= 0 {
 		return Config{}, fmt.Errorf("TASKS_IT_TIMEOUT must be positive")
+	}
+	parsedTaskHunterURL, err := url.Parse(cfg.TaskHunter.URL)
+	if err != nil || parsedTaskHunterURL.Host == "" || (parsedTaskHunterURL.Scheme != "http" && parsedTaskHunterURL.Scheme != "https") {
+		return Config{}, fmt.Errorf("TASK_HUNTER_URL must be an absolute HTTP(S) URL")
+	}
+	if cfg.TaskHunter.Token == "" {
+		return Config{}, fmt.Errorf("TASK_HUNTER_TOKEN must not be empty")
+	}
+	if cfg.TaskHunter.Timeout <= 0 {
+		return Config{}, fmt.Errorf("TASK_HUNTER_TIMEOUT must be positive")
 	}
 
 	if cfg.JWT.Secret == "" {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/overmindv/api-gateway/internal/client/arcee"
 	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasksit"
 	"github.com/overmindv/api-gateway/internal/config"
 	"github.com/overmindv/api-gateway/internal/middleware"
@@ -36,8 +37,9 @@ func main() {
 	users := arcee.New(cfg.Arcee, requestLog)
 	catalog := ironhide.New(cfg.Ironhide.URL, cfg.Ironhide.Timeout, requestLog)
 	tasks := tasksit.New(cfg.TasksIT.URL, cfg.TasksIT.Timeout, requestLog)
+	taskHunter := taskhunter.New(cfg.TaskHunter.URL, cfg.TaskHunter.Token, cfg.TaskHunter.Timeout, requestLog)
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
-	httpServer := server.New(cfg.HTTP, users, catalog, tasks, users, authenticator, log, requestLog)
+	httpServer := server.New(cfg.HTTP, users, catalog, tasks, taskHunter, users, authenticator, log, requestLog)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

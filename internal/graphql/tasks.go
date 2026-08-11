@@ -91,18 +91,32 @@ func tasksInput(input model.ITTaskInput) tasksit.TaskInput {
 			IsCorrect: option.IsCorrect,
 		})
 	}
+	examples := make([]tasksit.TaskExample, 0, len(input.Examples))
+	for _, example := range input.Examples {
+		if example == nil {
+			continue
+		}
+		examples = append(examples, tasksit.TaskExample{
+			Input:       example.Input,
+			Output:      example.Output,
+			Explanation: stringValue(example.Explanation),
+		})
+	}
 	difficulty := model.ITTaskDifficultyEasy.String()
 	if input.Difficulty != nil {
 		difficulty = input.Difficulty.String()
 	}
 
 	return tasksit.TaskInput{
-		TopicID:    input.TopicID,
-		Title:      input.Title,
-		Statement:  input.Statement,
-		TaskType:   input.TaskType.String(),
-		Difficulty: difficulty,
-		Options:    options,
+		TopicID:     input.TopicID,
+		Title:       input.Title,
+		Statement:   input.Statement,
+		TaskType:    input.TaskType.String(),
+		Difficulty:  difficulty,
+		Options:     options,
+		Tags:        input.Tags,
+		Examples:    examples,
+		Constraints: input.Constraints,
 	}
 }
 
@@ -126,6 +140,23 @@ func taskModel(item tasksit.Task) *model.ITTask {
 			IsCorrect: option.IsCorrect,
 		})
 	}
+	examples := make([]*model.ITTaskExample, 0, len(item.Examples))
+	for _, example := range item.Examples {
+		examples = append(examples, &model.ITTaskExample{
+			Input:       example.Input,
+			Output:      example.Output,
+			Explanation: example.Explanation,
+		})
+	}
+	var source *model.ITTaskSource
+	if item.Source != nil {
+		source = &model.ITTaskSource{
+			SourceID:    item.Source.SourceID,
+			SourceName:  item.Source.SourceName,
+			SourceURL:   item.Source.SourceURL,
+			PublishedAt: item.Source.PublishedAt,
+		}
+	}
 
 	return &model.ITTask{
 		ID:            item.ID,
@@ -138,6 +169,10 @@ func taskModel(item tasksit.Task) *model.ITTask {
 		TaskType:      model.ITTaskType(item.TaskType),
 		Difficulty:    model.ITTaskDifficulty(item.Difficulty),
 		Options:       options,
+		Tags:          item.Tags,
+		Examples:      examples,
+		Constraints:   item.Constraints,
+		Source:        source,
 		CreatedAt:     item.CreatedAt,
 		UpdatedAt:     item.UpdatedAt,
 	}
