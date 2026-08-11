@@ -34,12 +34,14 @@ Gateway передаёт `X-Request-ID`. Для защищённых опера�
 - `changeITTaskStatus(id, status): ITTask!` — publish, archive или restore;
 - `deleteITTask(id): Boolean!` — выполнить soft delete;
 - `submitITTaskAnswer(taskId, input): ITSubmission!` — отправить ответ по выбранной версии.
-- `startTaskCollection`, `acknowledgeTaskCollectionJob` — запустить ручной job и подтвердить terminal-уведомление;
+- `startTaskCollection`, `acknowledgeTaskCollectionJob` — запустить ручной job до 20 website URL одним списком и подтвердить terminal-уведомление;
 - `updateTaskCandidate`, `approveTaskCandidate`, `rejectTaskCandidate` — редактировать и завершать кандидата с optimistic locking.
 
 Admin mutations требуют роль `admin` или `superuser`. Отправка ответа требует аутентификацию.
 
 Gateway передаёт `task-hunter` только actor context из проверенного JWT и отдельный service token. Для опубликованной `programming`-задачи GraphQL возвращает `tags`, `examples`, `constraints` и `source`; отправка choice-ответа для неё запрещена кодом `TASK_TYPE_NOT_SUBMITTABLE`.
+
+`websiteUrls` принимает CodeRun, LeetCode и Codeforces. Канонизацию похожих URL и проверку дублей выполняет `task-hunter`; результат каждого URL доступен в `taskCollectionJob.sources`, поэтому ошибка одного сайта не скрывает успешные задачи остальных.
 
 ## Пример создания
 
