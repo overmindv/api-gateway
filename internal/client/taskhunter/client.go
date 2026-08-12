@@ -119,7 +119,9 @@ func request[T any](c *Client, ctx context.Context, method, path string, input a
 	if err != nil {
 		return zero, fmt.Errorf("call task-hunter: %w", err)
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		upstream := Error{StatusCode: response.StatusCode}
 		if err := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&upstream); err != nil {

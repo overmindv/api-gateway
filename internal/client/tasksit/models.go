@@ -1,5 +1,7 @@
 package tasksit
 
+import "io"
+
 type Actor struct {
 	UserID string
 	Roles  []string
@@ -165,6 +167,63 @@ type SubmissionList struct {
 	Items  []Submission `json:"items"`
 	Limit  int          `json:"limit"`
 	Offset int          `json:"offset"`
+}
+
+type CodeSubmissionInput struct {
+	TaskVersionID  string
+	IdempotencyKey string
+	Language       string
+	FileName       string
+	File           io.Reader
+}
+
+type ExecutionPhaseResult struct {
+	ExitCode    *int   `json:"exit_code,omitempty"`
+	Stdout      string `json:"stdout"`
+	Stderr      string `json:"stderr"`
+	DurationMS  int64  `json:"duration_ms"`
+	MemoryBytes int64  `json:"memory_bytes"`
+}
+
+type ExecutionTestResult struct {
+	TestID      string `json:"test_id"`
+	Verdict     string `json:"verdict"`
+	Stdout      string `json:"stdout"`
+	Stderr      string `json:"stderr"`
+	DurationMS  int64  `json:"duration_ms"`
+	MemoryBytes int64  `json:"memory_bytes"`
+}
+
+type ExecutionFailure struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type CodeSubmission struct {
+	ID                string                `json:"id"`
+	UserID            string                `json:"user_id"`
+	TaskID            string                `json:"task_id"`
+	TaskVersionID     string                `json:"task_version_id"`
+	TaskVersionNumber int                   `json:"task_version_number"`
+	ExecutionID       string                `json:"execution_id"`
+	CorrelationID     string                `json:"correlation_id"`
+	Language          string                `json:"language"`
+	SourceFileName    string                `json:"source_file_name"`
+	Status            string                `json:"status"`
+	Verdict           *string               `json:"verdict,omitempty"`
+	Compilation       *ExecutionPhaseResult `json:"compilation,omitempty"`
+	Execution         *ExecutionPhaseResult `json:"execution,omitempty"`
+	Tests             []ExecutionTestResult `json:"tests"`
+	Failure           *ExecutionFailure     `json:"failure,omitempty"`
+	CreatedAt         string                `json:"created_at"`
+	UpdatedAt         string                `json:"updated_at"`
+	CompletedAt       *string               `json:"completed_at,omitempty"`
+}
+
+type CodeSubmissionList struct {
+	Items  []CodeSubmission `json:"items"`
+	Limit  int              `json:"limit"`
+	Offset int              `json:"offset"`
 }
 
 type Error struct {

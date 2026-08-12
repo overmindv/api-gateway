@@ -1,10 +1,18 @@
 package graphql
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
+	"log/slog"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/overmindv/api-gateway/internal/apperror"
 	"github.com/overmindv/api-gateway/internal/client/tasksit"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
@@ -16,6 +24,7 @@ type tasksServiceStub struct {
 	actor           tasksit.Actor
 	input           tasksit.TaskInput
 	submissionInput tasksit.SubmissionInput
+	codeInput       tasksit.CodeSubmissionInput
 	taskID          string
 	submissionID    string
 	status          string
@@ -118,6 +127,40 @@ func (s *tasksServiceStub) ListMySubmissions(_ context.Context, taskID *string, 
 	s.actor = actor
 
 	return tasksit.SubmissionList{Items: []tasksit.Submission{sampleUpstreamSubmission()}, Limit: limit, Offset: offset}, nil
+}
+
+// SubmitCode сохраняет файл программного решения.
+func (s *tasksServiceStub) SubmitCode(_ context.Context, taskID string, input tasksit.CodeSubmissionInput, actor tasksit.Actor) (tasksit.CodeSubmission, error) {
+	s.taskID = taskID
+	s.codeInput = input
+	s.actor = actor
+
+	return sampleUpstreamCodeSubmission(), nil
+}
+
+// GetCodeSubmission возвращает результат программного решения.
+func (s *tasksServiceStub) GetCodeSubmission(_ context.Context, id string, actor tasksit.Actor) (tasksit.CodeSubmission, error) {
+	s.submissionID = id
+	s.actor = actor
+
+	return sampleUpstreamCodeSubmission(), nil
+}
+
+// ListMyCodeSubmissions возвращает историю программных решений.
+func (s *tasksServiceStub) ListMyCodeSubmissions(_ context.Context, taskID *string, limit, offset int, actor tasksit.Actor) (tasksit.CodeSubmissionList, error) {
+	if taskID != nil {
+		s.taskID = *taskID
+	}
+
+	s.filter.Limit = limit
+	s.filter.Offset = offset
+	s.actor = actor
+
+	return tasksit.CodeSubmissionList{
+		Items:  []tasksit.CodeSubmission{sampleUpstreamCodeSubmission()},
+		Limit:  limit,
+		Offset: offset,
+	}, nil
 }
 
 // Health возвращает успешную готовность stub-сервиса.
@@ -239,6 +282,146 @@ func TestITTaskSubmissionQueries(t *testing.T) {
 	}
 }
 
+// TestITTaskCodeSubmissionQueries проверяет upload, polling-результат и историю кода.
+func TestITTaskCodeSubmissionQueries(t *testing.T) {
+	t.Parallel()
+
+	stub := &tasksServiceStub{}
+	root := &Resolver{Tasks: stub}
+	query := &queryResolver{Resolver: root}
+	mutation := &mutationResolver{Resolver: root}
+	ctx := tasksContext("user-id", []string{"student"})
+	result, err := mutation.SubmitITTaskCode(ctx, "task-id", model.ITCodeSubmissionInput{
+		TaskVersionID:  "version-id",
+		IdempotencyKey: "key-id",
+		Language:       model.ITProgrammingLanguagePython,
+		File: gqlgen.Upload{
+			File:        bytes.NewReader([]byte("print(42)")),
+			Filename:    "solution.py",
+			Size:        9,
+			ContentType: "text/x-python",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	source, err := io.ReadAll(stub.codeInput.File)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != model.ITCodeSubmissionStatusCompleted || result.Verdict == nil || string(source) != "print(42)" {
+		t.Fatalf("unexpected code submission mapping: result=%+v source=%q", result, source)
+	}
+	if stub.codeInput.Language != "python" || stub.codeInput.FileName != "solution.py" || stub.codeInput.IdempotencyKey != "key-id" {
+		t.Fatalf("unexpected code input: %+v", stub.codeInput)
+	}
+
+	loaded, err := query.ItCodeSubmission(ctx, "code-submission-id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Execution == nil || len(loaded.Tests) != 1 || loaded.Tests[0].Verdict != model.ITExecutionVerdictAccepted {
+		t.Fatalf("unexpected execution result: %+v", loaded)
+	}
+
+	limit := 8
+	history, err := query.MyITCodeSubmissions(ctx, &stub.taskID, &model.PaginationInput{Limit: &limit})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(history.Items) != 1 || history.Limit != 8 || stub.actor.UserID != "user-id" {
+		t.Fatalf("unexpected code history mapping: %+v", history)
+	}
+}
+
+// TestITTaskCodeSubmissionMultipart проверяет GraphQL multipart transport целиком.
+func TestITTaskCodeSubmissionMultipart(t *testing.T) {
+	t.Parallel()
+
+	stub := &tasksServiceStub{}
+	handler := Handler(
+		nil,
+		nil,
+		stub,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	operations := map[string]any{
+		"query": `mutation Submit($taskId: ID!, $input: ITCodeSubmissionInput!) {
+  submitITTaskCode(taskId: $taskId, input: $input) { id status sourceFileName }
+}`,
+		"variables": map[string]any{
+			"taskId": "task-id",
+			"input": map[string]any{
+				"taskVersionId":  "version-id",
+				"idempotencyKey": "key-id",
+				"language":       "python",
+				"file":           nil,
+			},
+		},
+	}
+	writeMultipartJSON(t, writer, "operations", operations)
+	writeMultipartJSON(t, writer, "map", map[string][]string{
+		"0": {"variables.input.file"},
+	})
+
+	file, err := writer.CreateFormFile("0", "solution.py")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := file.Write([]byte("print(42)")); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	request := httptest.NewRequest(http.MethodPost, "/graphql", body)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	request = request.WithContext(tasksContext("user-id", []string{"student"}))
+	recorder := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("unexpected GraphQL status: %d body=%s", recorder.Code, recorder.Body.String())
+	}
+
+	var response struct {
+		Data struct {
+			SubmitITTaskCode struct {
+				ID string `json:"id"`
+			} `json:"submitITTaskCode"`
+		} `json:"data"`
+		Errors []json.RawMessage `json:"errors"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+	if len(response.Errors) != 0 || response.Data.SubmitITTaskCode.ID != "code-submission-id" {
+		t.Fatalf("unexpected GraphQL response: %s", recorder.Body.String())
+	}
+	if stub.codeInput.FileName != "solution.py" || stub.codeInput.Language != "python" {
+		t.Fatalf("unexpected multipart input: %+v", stub.codeInput)
+	}
+}
+
+// writeMultipartJSON записывает служебную JSON-часть GraphQL multipart-запроса.
+func writeMultipartJSON(t *testing.T, writer *multipart.Writer, name string, value any) {
+	t.Helper()
+
+	data, err := json.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.WriteField(name, string(data)); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // tasksContext создаёт контекст с проверенным JWT actor.
 func tasksContext(userID string, roles []string) context.Context {
 	return middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{
@@ -312,5 +495,40 @@ func sampleUpstreamSubmission() tasksit.Submission {
 		TaskUpdated:         true,
 		LatestTaskVersionID: "version-id-2",
 		LatestVersionNumber: 2,
+	}
+}
+
+// sampleUpstreamCodeSubmission возвращает завершённый результат sandbox.
+func sampleUpstreamCodeSubmission() tasksit.CodeSubmission {
+	verdict := "accepted"
+
+	return tasksit.CodeSubmission{
+		ID:                "code-submission-id",
+		UserID:            "user-id",
+		TaskID:            "task-id",
+		TaskVersionID:     "version-id",
+		TaskVersionNumber: 1,
+		ExecutionID:       "execution-id",
+		CorrelationID:     "correlation-id",
+		Language:          "python",
+		SourceFileName:    "solution.py",
+		Status:            "completed",
+		Verdict:           &verdict,
+		Execution: &tasksit.ExecutionPhaseResult{
+			Stdout:      "42\n",
+			DurationMS:  12,
+			MemoryBytes: 1024,
+		},
+		Tests: []tasksit.ExecutionTestResult{
+			{
+				TestID:      "open-1",
+				Verdict:     "accepted",
+				Stdout:      "42\n",
+				DurationMS:  12,
+				MemoryBytes: 1024,
+			},
+		},
+		CreatedAt: "2026-08-13T12:00:00Z",
+		UpdatedAt: "2026-08-13T12:00:01Z",
 	}
 }

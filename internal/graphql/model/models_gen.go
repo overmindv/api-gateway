@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 type AuthPayload struct {
@@ -90,6 +92,62 @@ type ITAdminTaskFilter struct {
 	TaskType   *ITTaskType       `json:"taskType,omitempty"`
 	Difficulty *ITTaskDifficulty `json:"difficulty,omitempty"`
 	TopicID    *string           `json:"topicId,omitempty"`
+}
+
+type ITCodeSubmission struct {
+	ID                string                   `json:"id"`
+	UserID            string                   `json:"userId"`
+	TaskID            string                   `json:"taskId"`
+	TaskVersionID     string                   `json:"taskVersionId"`
+	TaskVersionNumber int                      `json:"taskVersionNumber"`
+	ExecutionID       string                   `json:"executionId"`
+	CorrelationID     string                   `json:"correlationId"`
+	Language          ITProgrammingLanguage    `json:"language"`
+	SourceFileName    string                   `json:"sourceFileName"`
+	Status            ITCodeSubmissionStatus   `json:"status"`
+	Verdict           *ITExecutionVerdict      `json:"verdict,omitempty"`
+	Compilation       *ITExecutionPhaseResult  `json:"compilation,omitempty"`
+	Execution         *ITExecutionPhaseResult  `json:"execution,omitempty"`
+	Tests             []*ITExecutionTestResult `json:"tests"`
+	Failure           *ITExecutionFailure      `json:"failure,omitempty"`
+	CreatedAt         string                   `json:"createdAt"`
+	UpdatedAt         string                   `json:"updatedAt"`
+	CompletedAt       *string                  `json:"completedAt,omitempty"`
+}
+
+type ITCodeSubmissionInput struct {
+	TaskVersionID  string                `json:"taskVersionId"`
+	IdempotencyKey string                `json:"idempotencyKey"`
+	Language       ITProgrammingLanguage `json:"language"`
+	File           graphql.Upload        `json:"file"`
+}
+
+type ITCodeSubmissionList struct {
+	Items  []*ITCodeSubmission `json:"items"`
+	Limit  int                 `json:"limit"`
+	Offset int                 `json:"offset"`
+}
+
+type ITExecutionFailure struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type ITExecutionPhaseResult struct {
+	ExitCode    *int   `json:"exitCode,omitempty"`
+	Stdout      string `json:"stdout"`
+	Stderr      string `json:"stderr"`
+	DurationMs  int    `json:"durationMs"`
+	MemoryBytes int    `json:"memoryBytes"`
+}
+
+type ITExecutionTestResult struct {
+	TestID      string             `json:"testId"`
+	Verdict     ITExecutionVerdict `json:"verdict"`
+	Stdout      string             `json:"stdout"`
+	Stderr      string             `json:"stderr"`
+	DurationMs  int                `json:"durationMs"`
+	MemoryBytes int                `json:"memoryBytes"`
 }
 
 type ITSubmission struct {
@@ -572,6 +630,187 @@ func (e *DegreeLevel) UnmarshalJSON(b []byte) error {
 }
 
 func (e DegreeLevel) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type ITCodeSubmissionStatus string
+
+const (
+	ITCodeSubmissionStatusQueued    ITCodeSubmissionStatus = "queued"
+	ITCodeSubmissionStatusCompleted ITCodeSubmissionStatus = "completed"
+)
+
+var AllITCodeSubmissionStatus = []ITCodeSubmissionStatus{
+	ITCodeSubmissionStatusQueued,
+	ITCodeSubmissionStatusCompleted,
+}
+
+func (e ITCodeSubmissionStatus) IsValid() bool {
+	switch e {
+	case ITCodeSubmissionStatusQueued, ITCodeSubmissionStatusCompleted:
+		return true
+	}
+	return false
+}
+
+func (e ITCodeSubmissionStatus) String() string {
+	return string(e)
+}
+
+func (e *ITCodeSubmissionStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ITCodeSubmissionStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ITCodeSubmissionStatus", str)
+	}
+	return nil
+}
+
+func (e ITCodeSubmissionStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *ITCodeSubmissionStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e ITCodeSubmissionStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type ITExecutionVerdict string
+
+const (
+	ITExecutionVerdictAccepted            ITExecutionVerdict = "accepted"
+	ITExecutionVerdictWrongAnswer         ITExecutionVerdict = "wrong_answer"
+	ITExecutionVerdictCompilationError    ITExecutionVerdict = "compilation_error"
+	ITExecutionVerdictRuntimeError        ITExecutionVerdict = "runtime_error"
+	ITExecutionVerdictTimeLimitExceeded   ITExecutionVerdict = "time_limit_exceeded"
+	ITExecutionVerdictMemoryLimitExceeded ITExecutionVerdict = "memory_limit_exceeded"
+	ITExecutionVerdictOutputLimitExceeded ITExecutionVerdict = "output_limit_exceeded"
+	ITExecutionVerdictCheckerError        ITExecutionVerdict = "checker_error"
+	ITExecutionVerdictInfrastructureError ITExecutionVerdict = "infrastructure_error"
+	ITExecutionVerdictCancelled           ITExecutionVerdict = "cancelled"
+)
+
+var AllITExecutionVerdict = []ITExecutionVerdict{
+	ITExecutionVerdictAccepted,
+	ITExecutionVerdictWrongAnswer,
+	ITExecutionVerdictCompilationError,
+	ITExecutionVerdictRuntimeError,
+	ITExecutionVerdictTimeLimitExceeded,
+	ITExecutionVerdictMemoryLimitExceeded,
+	ITExecutionVerdictOutputLimitExceeded,
+	ITExecutionVerdictCheckerError,
+	ITExecutionVerdictInfrastructureError,
+	ITExecutionVerdictCancelled,
+}
+
+func (e ITExecutionVerdict) IsValid() bool {
+	switch e {
+	case ITExecutionVerdictAccepted, ITExecutionVerdictWrongAnswer, ITExecutionVerdictCompilationError, ITExecutionVerdictRuntimeError, ITExecutionVerdictTimeLimitExceeded, ITExecutionVerdictMemoryLimitExceeded, ITExecutionVerdictOutputLimitExceeded, ITExecutionVerdictCheckerError, ITExecutionVerdictInfrastructureError, ITExecutionVerdictCancelled:
+		return true
+	}
+	return false
+}
+
+func (e ITExecutionVerdict) String() string {
+	return string(e)
+}
+
+func (e *ITExecutionVerdict) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ITExecutionVerdict(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ITExecutionVerdict", str)
+	}
+	return nil
+}
+
+func (e ITExecutionVerdict) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *ITExecutionVerdict) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e ITExecutionVerdict) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type ITProgrammingLanguage string
+
+const (
+	ITProgrammingLanguagePython ITProgrammingLanguage = "python"
+	ITProgrammingLanguageGo     ITProgrammingLanguage = "go"
+)
+
+var AllITProgrammingLanguage = []ITProgrammingLanguage{
+	ITProgrammingLanguagePython,
+	ITProgrammingLanguageGo,
+}
+
+func (e ITProgrammingLanguage) IsValid() bool {
+	switch e {
+	case ITProgrammingLanguagePython, ITProgrammingLanguageGo:
+		return true
+	}
+	return false
+}
+
+func (e ITProgrammingLanguage) String() string {
+	return string(e)
+}
+
+func (e *ITProgrammingLanguage) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ITProgrammingLanguage(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ITProgrammingLanguage", str)
+	}
+	return nil
+}
+
+func (e ITProgrammingLanguage) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *ITProgrammingLanguage) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e ITProgrammingLanguage) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

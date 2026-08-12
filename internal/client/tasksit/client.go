@@ -7,14 +7,18 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
+
+const maxCodeSourceSize = 256 << 10
 
 type Service interface {
 	ListPublished(context.Context, TaskFilter) (TaskList, error)
@@ -28,6 +32,9 @@ type Service interface {
 	Submit(context.Context, string, SubmissionInput, Actor) (Submission, error)
 	GetSubmission(context.Context, string, Actor) (Submission, error)
 	ListMySubmissions(context.Context, *string, int, int, Actor) (SubmissionList, error)
+	SubmitCode(context.Context, string, CodeSubmissionInput, Actor) (CodeSubmission, error)
+	GetCodeSubmission(context.Context, string, Actor) (CodeSubmission, error)
+	ListMyCodeSubmissions(context.Context, *string, int, int, Actor) (CodeSubmissionList, error)
 	Health(context.Context) error
 }
 
@@ -163,6 +170,41 @@ func (c *Client) ListMySubmissions(ctx context.Context, taskID *string, limit, o
 	return request[SubmissionList](c, ctx, http.MethodGet, pathWithQuery("/v1/me/submissions", values), nil, actor)
 }
 
+// SubmitCode передаёт исходный файл решения в tasks-it как multipart/form-data.
+func (c *Client) SubmitCode(ctx context.Context, taskID string, input CodeSubmissionInput, actor Actor) (CodeSubmission, error) {
+	body, contentType, err := codeSubmissionBody(input)
+	if err != nil {
+		return CodeSubmission{}, fmt.Errorf("build tasks-it code submission: %w", err)
+	}
+
+	return requestWithBody[CodeSubmission](
+		c,
+		ctx,
+		http.MethodPost,
+		"/v1/tasks/"+url.PathEscape(taskID)+"/code-submissions",
+		body,
+		contentType,
+		actor,
+	)
+}
+
+// GetCodeSubmission получает актуальный результат проверки программного решения.
+func (c *Client) GetCodeSubmission(ctx context.Context, id string, actor Actor) (CodeSubmission, error) {
+	return request[CodeSubmission](c, ctx, http.MethodGet, "/v1/code-submissions/"+url.PathEscape(id), nil, actor)
+}
+
+// ListMyCodeSubmissions получает историю программных решений текущего пользователя.
+func (c *Client) ListMyCodeSubmissions(ctx context.Context, taskID *string, limit, offset int, actor Actor) (CodeSubmissionList, error) {
+	values := url.Values{}
+	values.Set("limit", strconv.Itoa(limit))
+	values.Set("offset", strconv.Itoa(offset))
+	if taskID != nil {
+		values.Set("task_id", *taskID)
+	}
+
+	return request[CodeSubmissionList](c, ctx, http.MethodGet, pathWithQuery("/v1/me/code-submissions", values), nil, actor)
+}
+
 // Health проверяет готовность tasks-it и его PostgreSQL.
 func (c *Client) Health(ctx context.Context) error {
 	_, err := request[map[string]string](c, ctx, http.MethodGet, "/ready", nil, Actor{})
@@ -175,16 +217,30 @@ func (c *Client) Health(ctx context.Context) error {
 
 // request выполняет типизированный запрос к tasks-it.
 func request[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor) (T, error) {
-	var zero T
 	body, err := requestBody(input)
 	if err != nil {
+		var zero T
+
 		return zero, err
 	}
+	contentType := ""
+	if input != nil {
+		contentType = "application/json"
+	}
+
+	return requestWithBody[T](c, ctx, method, path, body, contentType, actor)
+}
+
+// requestWithBody выполняет типизированный запрос с уже подготовленным телом.
+func requestWithBody[T any](c *Client, ctx context.Context, method, path string, body io.Reader, contentType string, actor Actor) (T, error) {
+	var zero T
+
 	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
 	if err != nil {
 		return zero, fmt.Errorf("create tasks-it request: %w", err)
 	}
-	setHeaders(req, input != nil, actor, middleware.RequestID(ctx))
+	setHeaders(req, contentType, actor, middleware.RequestID(ctx))
+
 	started := time.Now()
 	response, err := c.http.Do(req)
 	if err != nil {
@@ -222,11 +278,57 @@ func requestBody(input any) (io.Reader, error) {
 	return bytes.NewReader(data), nil
 }
 
+// codeSubmissionBody формирует ограниченное multipart-тело для tasks-it.
+func codeSubmissionBody(input CodeSubmissionInput) (io.Reader, string, error) {
+	if input.File == nil {
+		return nil, "", fmt.Errorf("source file is required")
+	}
+
+	fileName := filepath.Base(input.FileName)
+	if fileName == "." || fileName == "" {
+		return nil, "", fmt.Errorf("source file name is required")
+	}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	fields := map[string]string{
+		"task_version_id": input.TaskVersionID,
+		"idempotency_key": input.IdempotencyKey,
+		"language":        input.Language,
+	}
+	for name, value := range fields {
+		if err := writer.WriteField(name, value); err != nil {
+			return nil, "", fmt.Errorf("write multipart field %s: %w", name, err)
+		}
+	}
+
+	part, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		return nil, "", fmt.Errorf("create multipart source file: %w", err)
+	}
+	written, err := io.Copy(part, io.LimitReader(input.File, maxCodeSourceSize+1))
+	if err != nil {
+		return nil, "", fmt.Errorf("copy multipart source file: %w", err)
+	}
+	if written > maxCodeSourceSize {
+		return nil, "", &Error{
+			Code:       "INVALID_SOURCE_FILE",
+			Message:    "файл решения превышает 262144 байта",
+			StatusCode: http.StatusBadRequest,
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, "", fmt.Errorf("close multipart writer: %w", err)
+	}
+
+	return body, writer.FormDataContentType(), nil
+}
+
 // setHeaders добавляет служебные и actor headers.
-func setHeaders(req *http.Request, hasBody bool, actor Actor, requestID string) {
+func setHeaders(req *http.Request, contentType string, actor Actor, requestID string) {
 	req.Header.Set("Accept", "application/json")
-	if hasBody {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	if requestID != "" {
 		req.Header.Set(middleware.RequestIDHeader, requestID)

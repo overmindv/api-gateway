@@ -21,7 +21,9 @@ Gateway передаёт `X-Request-ID`. Для защищённых опера�
 - `adminITTasks(filter, pagination): ITTaskList!` — все тесты для администратора;
 - `adminITTask(id): ITTask!` — текущая версия с `isCorrect`;
 - `itSubmission(id): ITSubmission!` — результат владельца или администратора;
-- `myITSubmissions(taskId, pagination): ITSubmissionList!` — история текущего пользователя.
+- `myITSubmissions(taskId, pagination): ITSubmissionList!` — история ответов текущего пользователя;
+- `itCodeSubmission(id): ITCodeSubmission!` — актуальный статус и результат проверки файла;
+- `myITCodeSubmissions(taskId, pagination): ITCodeSubmissionList!` — история программных решений;
 - `taskCollectionSources`, `taskCollectionJobs`, `taskCollectionJob` — allowlist и журнал сбора;
 - `taskCandidates`, `taskCandidate` — очередь модерации с provenance и revision.
 
@@ -33,11 +35,12 @@ Gateway передаёт `X-Request-ID`. Для защищённых опера�
 - `updateITTask(id, input): ITTask!` — полностью заменить содержимое новой версией;
 - `changeITTaskStatus(id, status): ITTask!` — publish, archive или restore;
 - `deleteITTask(id): Boolean!` — выполнить soft delete;
-- `submitITTaskAnswer(taskId, input): ITSubmission!` — отправить ответ по выбранной версии.
+- `submitITTaskAnswer(taskId, input): ITSubmission!` — отправить ответ по выбранной версии;
+- `submitITTaskCode(taskId, input): ITCodeSubmission!` — загрузить Python- или Go-файл программного решения;
 - `startTaskCollection`, `acknowledgeTaskCollectionJob` — запустить ручной job до 20 website URL одним списком и подтвердить terminal-уведомление;
 - `updateTaskCandidate`, `approveTaskCandidate`, `rejectTaskCandidate` — редактировать и завершать кандидата с optimistic locking.
 
-Admin mutations требуют роль `admin` или `superuser`. Отправка ответа требует аутентификацию.
+Admin mutations требуют роль `admin` или `superuser`. Отправка любого решения требует аутентификацию.
 
 Gateway передаёт `task-hunter` только actor context из проверенного JWT и отдельный service token. Для опубликованной `programming`-задачи GraphQL возвращает `tags`, `examples`, `constraints` и `source`; отправка choice-ответа для неё запрещена кодом `TASK_TYPE_NOT_SUBMITTABLE`.
 
@@ -96,6 +99,45 @@ mutation SubmitITTaskAnswer($taskId: ID!, $input: ITSubmissionInput!) {
 ```
 
 `idempotencyKey` — UUID, создаваемый frontend для одной попытки. Повтор с тем же содержимым возвращает сохранённый результат, а повтор с другим содержимым возвращает GraphQL error code `IDEMPOTENCY_KEY_CONFLICT`.
+
+## Пример отправки файла
+
+```graphql
+mutation SubmitITTaskCode($taskId: ID!, $input: ITCodeSubmissionInput!) {
+  submitITTaskCode(taskId: $taskId, input: $input) {
+    id
+    status
+    verdict
+    sourceFileName
+    compilation {
+      exitCode
+      stdout
+      stderr
+      durationMs
+      memoryBytes
+    }
+    execution {
+      exitCode
+      stdout
+      stderr
+      durationMs
+      memoryBytes
+    }
+    tests {
+      testId
+      verdict
+      durationMs
+      memoryBytes
+    }
+    failure {
+      code
+      message
+    }
+  }
+}
+```
+
+Переменная `input.file` передаётся по GraphQL multipart request specification как `Upload`. Поддерживаются `language: python` с расширением `.py` и `language: go` с расширением `.go`; размер исходника ограничен 256 КБ. Первичный ответ обычно имеет статус `queued`. До статуса `completed` клиент повторяет `itCodeSubmission(id)` и затем показывает `verdict`, результаты фаз и открытых тестов. Gateway принимает multipart-запросы размером не более 512 КБ с учётом служебных частей формы.
 
 ## Ошибки
 

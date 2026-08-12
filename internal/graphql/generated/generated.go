@@ -69,6 +69,55 @@ type ComplexityRoot struct {
 		YearNumber  func(childComplexity int) int
 	}
 
+	ITCodeSubmission struct {
+		Compilation       func(childComplexity int) int
+		CompletedAt       func(childComplexity int) int
+		CorrelationID     func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		Execution         func(childComplexity int) int
+		ExecutionID       func(childComplexity int) int
+		Failure           func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Language          func(childComplexity int) int
+		SourceFileName    func(childComplexity int) int
+		Status            func(childComplexity int) int
+		TaskID            func(childComplexity int) int
+		TaskVersionID     func(childComplexity int) int
+		TaskVersionNumber func(childComplexity int) int
+		Tests             func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
+		UserID            func(childComplexity int) int
+		Verdict           func(childComplexity int) int
+	}
+
+	ITCodeSubmissionList struct {
+		Items  func(childComplexity int) int
+		Limit  func(childComplexity int) int
+		Offset func(childComplexity int) int
+	}
+
+	ITExecutionFailure struct {
+		Code    func(childComplexity int) int
+		Message func(childComplexity int) int
+	}
+
+	ITExecutionPhaseResult struct {
+		DurationMs  func(childComplexity int) int
+		ExitCode    func(childComplexity int) int
+		MemoryBytes func(childComplexity int) int
+		Stderr      func(childComplexity int) int
+		Stdout      func(childComplexity int) int
+	}
+
+	ITExecutionTestResult struct {
+		DurationMs  func(childComplexity int) int
+		MemoryBytes func(childComplexity int) int
+		Stderr      func(childComplexity int) int
+		Stdout      func(childComplexity int) int
+		TestID      func(childComplexity int) int
+		Verdict     func(childComplexity int) int
+	}
+
 	ITSubmission struct {
 		Correct             func(childComplexity int) int
 		CorrectOptionIds    func(childComplexity int) int
@@ -177,6 +226,7 @@ type ComplexityRoot struct {
 		SetUserAdminByUsername       func(childComplexity int, username string, admin bool) int
 		StartTaskCollection          func(childComplexity int, input model.StartTaskCollectionInput) int
 		SubmitITTaskAnswer           func(childComplexity int, taskID string, input model.ITSubmissionInput) int
+		SubmitITTaskCode             func(childComplexity int, taskID string, input model.ITCodeSubmissionInput) int
 		UpdateCourse                 func(childComplexity int, id string, input model.UpdateCourseInput) int
 		UpdateITTask                 func(childComplexity int, id string, input model.ITTaskInput) int
 		UpdateProgram                func(childComplexity int, id string, input model.UpdateProgramInput) int
@@ -205,9 +255,11 @@ type ComplexityRoot struct {
 		Course                 func(childComplexity int, id string) int
 		Courses                func(childComplexity int, programID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
 		GetUser                func(childComplexity int, id string) int
+		ItCodeSubmission       func(childComplexity int, id string) int
 		ItSubmission           func(childComplexity int, id string) int
 		ItTask                 func(childComplexity int, id string) int
 		ItTasks                func(childComplexity int, filter *model.ITTaskFilter, pagination *model.PaginationInput) int
+		MyITCodeSubmissions    func(childComplexity int, taskID *string, pagination *model.PaginationInput) int
 		MyITSubmissions        func(childComplexity int, taskID *string, pagination *model.PaginationInput) int
 		Program                func(childComplexity int, id string) int
 		Programs               func(childComplexity int, universityID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
@@ -388,6 +440,7 @@ type MutationResolver interface {
 	ChangeITTaskStatus(ctx context.Context, id string, status model.ITTaskStatus) (*model.ITTask, error)
 	DeleteITTask(ctx context.Context, id string) (bool, error)
 	SubmitITTaskAnswer(ctx context.Context, taskID string, input model.ITSubmissionInput) (*model.ITSubmission, error)
+	SubmitITTaskCode(ctx context.Context, taskID string, input model.ITCodeSubmissionInput) (*model.ITCodeSubmission, error)
 	StartTaskCollection(ctx context.Context, input model.StartTaskCollectionInput) (*model.TaskCollectionJob, error)
 	AcknowledgeTaskCollectionJob(ctx context.Context, id string) (bool, error)
 	UpdateTaskCandidate(ctx context.Context, id string, input model.TaskCandidateReviewInput) (*model.TaskCandidate, error)
@@ -415,6 +468,8 @@ type QueryResolver interface {
 	AdminITTask(ctx context.Context, id string) (*model.ITTask, error)
 	ItSubmission(ctx context.Context, id string) (*model.ITSubmission, error)
 	MyITSubmissions(ctx context.Context, taskID *string, pagination *model.PaginationInput) (*model.ITSubmissionList, error)
+	ItCodeSubmission(ctx context.Context, id string) (*model.ITCodeSubmission, error)
+	MyITCodeSubmissions(ctx context.Context, taskID *string, pagination *model.PaginationInput) (*model.ITCodeSubmissionList, error)
 	TaskCollectionSources(ctx context.Context) (*model.TaskCollectionSources, error)
 	TaskCollectionJobs(ctx context.Context, unreadOnly *bool, pagination *model.PaginationInput) (*model.TaskCollectionJobList, error)
 	TaskCollectionJob(ctx context.Context, id string) (*model.TaskCollectionJob, error)
@@ -527,6 +582,215 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Course.YearNumber(childComplexity), true
+
+	case "ITCodeSubmission.compilation":
+		if e.complexity.ITCodeSubmission.Compilation == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.Compilation(childComplexity), true
+	case "ITCodeSubmission.completedAt":
+		if e.complexity.ITCodeSubmission.CompletedAt == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.CompletedAt(childComplexity), true
+	case "ITCodeSubmission.correlationId":
+		if e.complexity.ITCodeSubmission.CorrelationID == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.CorrelationID(childComplexity), true
+	case "ITCodeSubmission.createdAt":
+		if e.complexity.ITCodeSubmission.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.CreatedAt(childComplexity), true
+	case "ITCodeSubmission.execution":
+		if e.complexity.ITCodeSubmission.Execution == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.Execution(childComplexity), true
+	case "ITCodeSubmission.executionId":
+		if e.complexity.ITCodeSubmission.ExecutionID == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.ExecutionID(childComplexity), true
+	case "ITCodeSubmission.failure":
+		if e.complexity.ITCodeSubmission.Failure == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.Failure(childComplexity), true
+	case "ITCodeSubmission.id":
+		if e.complexity.ITCodeSubmission.ID == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.ID(childComplexity), true
+	case "ITCodeSubmission.language":
+		if e.complexity.ITCodeSubmission.Language == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.Language(childComplexity), true
+	case "ITCodeSubmission.sourceFileName":
+		if e.complexity.ITCodeSubmission.SourceFileName == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.SourceFileName(childComplexity), true
+	case "ITCodeSubmission.status":
+		if e.complexity.ITCodeSubmission.Status == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.Status(childComplexity), true
+	case "ITCodeSubmission.taskId":
+		if e.complexity.ITCodeSubmission.TaskID == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.TaskID(childComplexity), true
+	case "ITCodeSubmission.taskVersionId":
+		if e.complexity.ITCodeSubmission.TaskVersionID == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.TaskVersionID(childComplexity), true
+	case "ITCodeSubmission.taskVersionNumber":
+		if e.complexity.ITCodeSubmission.TaskVersionNumber == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.TaskVersionNumber(childComplexity), true
+	case "ITCodeSubmission.tests":
+		if e.complexity.ITCodeSubmission.Tests == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.Tests(childComplexity), true
+	case "ITCodeSubmission.updatedAt":
+		if e.complexity.ITCodeSubmission.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.UpdatedAt(childComplexity), true
+	case "ITCodeSubmission.userId":
+		if e.complexity.ITCodeSubmission.UserID == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.UserID(childComplexity), true
+	case "ITCodeSubmission.verdict":
+		if e.complexity.ITCodeSubmission.Verdict == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.Verdict(childComplexity), true
+
+	case "ITCodeSubmissionList.items":
+		if e.complexity.ITCodeSubmissionList.Items == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmissionList.Items(childComplexity), true
+	case "ITCodeSubmissionList.limit":
+		if e.complexity.ITCodeSubmissionList.Limit == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmissionList.Limit(childComplexity), true
+	case "ITCodeSubmissionList.offset":
+		if e.complexity.ITCodeSubmissionList.Offset == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmissionList.Offset(childComplexity), true
+
+	case "ITExecutionFailure.code":
+		if e.complexity.ITExecutionFailure.Code == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionFailure.Code(childComplexity), true
+	case "ITExecutionFailure.message":
+		if e.complexity.ITExecutionFailure.Message == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionFailure.Message(childComplexity), true
+
+	case "ITExecutionPhaseResult.durationMs":
+		if e.complexity.ITExecutionPhaseResult.DurationMs == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionPhaseResult.DurationMs(childComplexity), true
+	case "ITExecutionPhaseResult.exitCode":
+		if e.complexity.ITExecutionPhaseResult.ExitCode == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionPhaseResult.ExitCode(childComplexity), true
+	case "ITExecutionPhaseResult.memoryBytes":
+		if e.complexity.ITExecutionPhaseResult.MemoryBytes == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionPhaseResult.MemoryBytes(childComplexity), true
+	case "ITExecutionPhaseResult.stderr":
+		if e.complexity.ITExecutionPhaseResult.Stderr == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionPhaseResult.Stderr(childComplexity), true
+	case "ITExecutionPhaseResult.stdout":
+		if e.complexity.ITExecutionPhaseResult.Stdout == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionPhaseResult.Stdout(childComplexity), true
+
+	case "ITExecutionTestResult.durationMs":
+		if e.complexity.ITExecutionTestResult.DurationMs == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionTestResult.DurationMs(childComplexity), true
+	case "ITExecutionTestResult.memoryBytes":
+		if e.complexity.ITExecutionTestResult.MemoryBytes == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionTestResult.MemoryBytes(childComplexity), true
+	case "ITExecutionTestResult.stderr":
+		if e.complexity.ITExecutionTestResult.Stderr == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionTestResult.Stderr(childComplexity), true
+	case "ITExecutionTestResult.stdout":
+		if e.complexity.ITExecutionTestResult.Stdout == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionTestResult.Stdout(childComplexity), true
+	case "ITExecutionTestResult.testId":
+		if e.complexity.ITExecutionTestResult.TestID == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionTestResult.TestID(childComplexity), true
+	case "ITExecutionTestResult.verdict":
+		if e.complexity.ITExecutionTestResult.Verdict == nil {
+			break
+		}
+
+		return e.complexity.ITExecutionTestResult.Verdict(childComplexity), true
 
 	case "ITSubmission.correct":
 		if e.complexity.ITSubmission.Correct == nil {
@@ -1169,6 +1433,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SubmitITTaskAnswer(childComplexity, args["taskId"].(string), args["input"].(model.ITSubmissionInput)), true
+	case "Mutation.submitITTaskCode":
+		if e.complexity.Mutation.SubmitITTaskCode == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_submitITTaskCode_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SubmitITTaskCode(childComplexity, args["taskId"].(string), args["input"].(model.ITCodeSubmissionInput)), true
 	case "Mutation.updateCourse":
 		if e.complexity.Mutation.UpdateCourse == nil {
 			break
@@ -1363,6 +1638,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.GetUser(childComplexity, args["id"].(string)), true
+	case "Query.itCodeSubmission":
+		if e.complexity.Query.ItCodeSubmission == nil {
+			break
+		}
+
+		args, err := ec.field_Query_itCodeSubmission_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ItCodeSubmission(childComplexity, args["id"].(string)), true
 	case "Query.itSubmission":
 		if e.complexity.Query.ItSubmission == nil {
 			break
@@ -1396,6 +1682,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.ItTasks(childComplexity, args["filter"].(*model.ITTaskFilter), args["pagination"].(*model.PaginationInput)), true
+	case "Query.myITCodeSubmissions":
+		if e.complexity.Query.MyITCodeSubmissions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_myITCodeSubmissions_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MyITCodeSubmissions(childComplexity, args["taskId"].(*string), args["pagination"].(*model.PaginationInput)), true
 	case "Query.myITSubmissions":
 		if e.complexity.Query.MyITSubmissions == nil {
 			break
@@ -2187,6 +2484,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateTopicInput,
 		ec.unmarshalInputCreateUniversityInput,
 		ec.unmarshalInputITAdminTaskFilter,
+		ec.unmarshalInputITCodeSubmissionInput,
 		ec.unmarshalInputITSubmissionInput,
 		ec.unmarshalInputITTaskExampleInput,
 		ec.unmarshalInputITTaskFilter,
@@ -2316,6 +2614,8 @@ var sources = []*ast.Source{
   updatedAt: String!
 }
 
+scalar Upload
+
 enum CatalogStatus { draft active hidden archived }
 enum DegreeLevel { bachelor master specialist phd other }
 enum TopicDifficulty { intro basic medium hard advanced }
@@ -2345,6 +2645,9 @@ enum ITTaskStatus { draft published archived }
 enum ITTaskType { single_choice multiple_choice programming }
 enum ITTaskDifficulty { easy medium hard }
 enum ITSubmissionVerdict { accepted wrong_answer }
+enum ITProgrammingLanguage { python go }
+enum ITCodeSubmissionStatus { queued completed }
+enum ITExecutionVerdict { accepted wrong_answer compilation_error runtime_error time_limit_exceeded memory_limit_exceeded output_limit_exceeded checker_error infrastructure_error cancelled }
 
 type ITTaskOption { id: ID!, text: String!, position: Int!, isCorrect: Boolean }
 type ITTaskExample { input: String!, output: String!, explanation: String! }
@@ -2355,12 +2658,68 @@ type ITTaskList { items: [ITTaskSummary!]!, limit: Int!, offset: Int! }
 type ITSubmission { id: ID!, userId: ID!, taskId: ID!, taskVersionId: ID!, taskVersionNumber: Int!, selectedOptionIds: [ID!]!, correctOptionIds: [ID!]!, correct: Boolean!, verdict: ITSubmissionVerdict!, taskUpdated: Boolean!, latestTaskVersionId: ID!, latestVersionNumber: Int!, createdAt: String! }
 type ITSubmissionList { items: [ITSubmission!]!, limit: Int!, offset: Int! }
 
+type ITExecutionPhaseResult {
+  exitCode: Int
+  stdout: String!
+  stderr: String!
+  durationMs: Int!
+  memoryBytes: Int!
+}
+
+type ITExecutionTestResult {
+  testId: ID!
+  verdict: ITExecutionVerdict!
+  stdout: String!
+  stderr: String!
+  durationMs: Int!
+  memoryBytes: Int!
+}
+
+type ITExecutionFailure {
+  code: String!
+  message: String!
+}
+
+type ITCodeSubmission {
+  id: ID!
+  userId: ID!
+  taskId: ID!
+  taskVersionId: ID!
+  taskVersionNumber: Int!
+  executionId: ID!
+  correlationId: ID!
+  language: ITProgrammingLanguage!
+  sourceFileName: String!
+  status: ITCodeSubmissionStatus!
+  verdict: ITExecutionVerdict
+  compilation: ITExecutionPhaseResult
+  execution: ITExecutionPhaseResult
+  tests: [ITExecutionTestResult!]!
+  failure: ITExecutionFailure
+  createdAt: String!
+  updatedAt: String!
+  completedAt: String
+}
+
+type ITCodeSubmissionList {
+  items: [ITCodeSubmission!]!
+  limit: Int!
+  offset: Int!
+}
+
 input ITTaskFilter { taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
 input ITAdminTaskFilter { status: ITTaskStatus, taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
 input ITTaskOptionInput { text: String!, isCorrect: Boolean! }
 input ITTaskExampleInput { input: String!, output: String!, explanation: String = "" }
 input ITTaskInput { topicId: ID, title: String!, statement: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty = easy, options: [ITTaskOptionInput!]!, tags: [String!] = [], examples: [ITTaskExampleInput!] = [], constraints: [String!] = [] }
 input ITSubmissionInput { taskVersionId: ID!, idempotencyKey: ID!, selectedOptionIds: [ID!]! }
+
+input ITCodeSubmissionInput {
+  taskVersionId: ID!
+  idempotencyKey: ID!
+  language: ITProgrammingLanguage!
+  file: Upload!
+}
 
 enum TaskCandidateStatus { pending approved rejected }
 type TaskCandidate { id: ID!, status: TaskCandidateStatus!, revision: Int!, externalId: String!, sourceId: String!, sourceName: String!, sourceUrl: String!, sourcePublishedAt: String, retrievedAt: String!, collectionJobId: ID!, topicId: ID, title: String!, statement: String!, difficulty: ITTaskDifficulty!, tags: [String!]!, examples: [ITTaskExample!]!, constraints: [String!]!, approvedTaskId: ID, rejectionReason: String!, createdAt: String!, updatedAt: String! }
@@ -2427,6 +2786,8 @@ type Query {
   adminITTask(id: ID!): ITTask!
   itSubmission(id: ID!): ITSubmission!
   myITSubmissions(taskId: ID, pagination: PaginationInput): ITSubmissionList!
+  itCodeSubmission(id: ID!): ITCodeSubmission!
+  myITCodeSubmissions(taskId: ID, pagination: PaginationInput): ITCodeSubmissionList!
   taskCollectionSources: TaskCollectionSources!
   taskCollectionJobs(unreadOnly: Boolean = false, pagination: PaginationInput): TaskCollectionJobList!
   taskCollectionJob(id: ID!): TaskCollectionJob!
@@ -2464,6 +2825,7 @@ type Mutation {
   changeITTaskStatus(id: ID!, status: ITTaskStatus!): ITTask!
   deleteITTask(id: ID!): Boolean!
   submitITTaskAnswer(taskId: ID!, input: ITSubmissionInput!): ITSubmission!
+  submitITTaskCode(taskId: ID!, input: ITCodeSubmissionInput!): ITCodeSubmission!
   startTaskCollection(input: StartTaskCollectionInput!): TaskCollectionJob!
   acknowledgeTaskCollectionJob(id: ID!): Boolean!
   updateTaskCandidate(id: ID!, input: TaskCandidateReviewInput!): TaskCandidate!
@@ -2830,6 +3192,22 @@ func (ec *executionContext) field_Mutation_submitITTaskAnswer_args(ctx context.C
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_submitITTaskCode_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "taskId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["taskId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNITCodeSubmissionInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateCourse_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3023,6 +3401,17 @@ func (ec *executionContext) field_Query_getUser_args(ctx context.Context, rawArg
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_itCodeSubmission_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_itSubmission_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3053,6 +3442,22 @@ func (ec *executionContext) field_Query_itTasks_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["filter"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "pagination", ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPaginationInput)
+	if err != nil {
+		return nil, err
+	}
+	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_myITCodeSubmissions_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "taskId", ec.unmarshalOID2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["taskId"] = arg0
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "pagination", ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPaginationInput)
 	if err != nil {
 		return nil, err
@@ -3766,6 +4171,1074 @@ func (ec *executionContext) fieldContext_Course_updatedAt(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_id(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_userId(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_userId,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_taskId(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_taskId,
+		func(ctx context.Context) (any, error) {
+			return obj.TaskID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_taskId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_taskVersionId(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_taskVersionId,
+		func(ctx context.Context) (any, error) {
+			return obj.TaskVersionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_taskVersionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_taskVersionNumber(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_taskVersionNumber,
+		func(ctx context.Context) (any, error) {
+			return obj.TaskVersionNumber, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_taskVersionNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_executionId(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_executionId,
+		func(ctx context.Context) (any, error) {
+			return obj.ExecutionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_executionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_correlationId(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_correlationId,
+		func(ctx context.Context) (any, error) {
+			return obj.CorrelationID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_correlationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_language(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_language,
+		func(ctx context.Context) (any, error) {
+			return obj.Language, nil
+		},
+		nil,
+		ec.marshalNITProgrammingLanguage2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITProgrammingLanguage,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_language(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ITProgrammingLanguage does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_sourceFileName(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_sourceFileName,
+		func(ctx context.Context) (any, error) {
+			return obj.SourceFileName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_sourceFileName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_status(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNITCodeSubmissionStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ITCodeSubmissionStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_verdict(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_verdict,
+		func(ctx context.Context) (any, error) {
+			return obj.Verdict, nil
+		},
+		nil,
+		ec.marshalOITExecutionVerdict2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionVerdict,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_verdict(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ITExecutionVerdict does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_compilation(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_compilation,
+		func(ctx context.Context) (any, error) {
+			return obj.Compilation, nil
+		},
+		nil,
+		ec.marshalOITExecutionPhaseResult2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionPhaseResult,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_compilation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "exitCode":
+				return ec.fieldContext_ITExecutionPhaseResult_exitCode(ctx, field)
+			case "stdout":
+				return ec.fieldContext_ITExecutionPhaseResult_stdout(ctx, field)
+			case "stderr":
+				return ec.fieldContext_ITExecutionPhaseResult_stderr(ctx, field)
+			case "durationMs":
+				return ec.fieldContext_ITExecutionPhaseResult_durationMs(ctx, field)
+			case "memoryBytes":
+				return ec.fieldContext_ITExecutionPhaseResult_memoryBytes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITExecutionPhaseResult", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_execution(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_execution,
+		func(ctx context.Context) (any, error) {
+			return obj.Execution, nil
+		},
+		nil,
+		ec.marshalOITExecutionPhaseResult2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionPhaseResult,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_execution(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "exitCode":
+				return ec.fieldContext_ITExecutionPhaseResult_exitCode(ctx, field)
+			case "stdout":
+				return ec.fieldContext_ITExecutionPhaseResult_stdout(ctx, field)
+			case "stderr":
+				return ec.fieldContext_ITExecutionPhaseResult_stderr(ctx, field)
+			case "durationMs":
+				return ec.fieldContext_ITExecutionPhaseResult_durationMs(ctx, field)
+			case "memoryBytes":
+				return ec.fieldContext_ITExecutionPhaseResult_memoryBytes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITExecutionPhaseResult", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_tests(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_tests,
+		func(ctx context.Context) (any, error) {
+			return obj.Tests, nil
+		},
+		nil,
+		ec.marshalNITExecutionTestResult2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionTestResultᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_tests(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "testId":
+				return ec.fieldContext_ITExecutionTestResult_testId(ctx, field)
+			case "verdict":
+				return ec.fieldContext_ITExecutionTestResult_verdict(ctx, field)
+			case "stdout":
+				return ec.fieldContext_ITExecutionTestResult_stdout(ctx, field)
+			case "stderr":
+				return ec.fieldContext_ITExecutionTestResult_stderr(ctx, field)
+			case "durationMs":
+				return ec.fieldContext_ITExecutionTestResult_durationMs(ctx, field)
+			case "memoryBytes":
+				return ec.fieldContext_ITExecutionTestResult_memoryBytes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITExecutionTestResult", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_failure(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_failure,
+		func(ctx context.Context) (any, error) {
+			return obj.Failure, nil
+		},
+		nil,
+		ec.marshalOITExecutionFailure2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionFailure,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_failure(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "code":
+				return ec.fieldContext_ITExecutionFailure_code(ctx, field)
+			case "message":
+				return ec.fieldContext_ITExecutionFailure_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITExecutionFailure", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmission_completedAt(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_completedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CompletedAt, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_completedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmissionList_items(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmissionList) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmissionList_items,
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		ec.marshalNITCodeSubmission2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmissionList_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmissionList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ITCodeSubmission_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_ITCodeSubmission_userId(ctx, field)
+			case "taskId":
+				return ec.fieldContext_ITCodeSubmission_taskId(ctx, field)
+			case "taskVersionId":
+				return ec.fieldContext_ITCodeSubmission_taskVersionId(ctx, field)
+			case "taskVersionNumber":
+				return ec.fieldContext_ITCodeSubmission_taskVersionNumber(ctx, field)
+			case "executionId":
+				return ec.fieldContext_ITCodeSubmission_executionId(ctx, field)
+			case "correlationId":
+				return ec.fieldContext_ITCodeSubmission_correlationId(ctx, field)
+			case "language":
+				return ec.fieldContext_ITCodeSubmission_language(ctx, field)
+			case "sourceFileName":
+				return ec.fieldContext_ITCodeSubmission_sourceFileName(ctx, field)
+			case "status":
+				return ec.fieldContext_ITCodeSubmission_status(ctx, field)
+			case "verdict":
+				return ec.fieldContext_ITCodeSubmission_verdict(ctx, field)
+			case "compilation":
+				return ec.fieldContext_ITCodeSubmission_compilation(ctx, field)
+			case "execution":
+				return ec.fieldContext_ITCodeSubmission_execution(ctx, field)
+			case "tests":
+				return ec.fieldContext_ITCodeSubmission_tests(ctx, field)
+			case "failure":
+				return ec.fieldContext_ITCodeSubmission_failure(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ITCodeSubmission_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ITCodeSubmission_updatedAt(ctx, field)
+			case "completedAt":
+				return ec.fieldContext_ITCodeSubmission_completedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITCodeSubmission", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmissionList_limit(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmissionList) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmissionList_limit,
+		func(ctx context.Context) (any, error) {
+			return obj.Limit, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmissionList_limit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmissionList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITCodeSubmissionList_offset(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmissionList) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmissionList_offset,
+		func(ctx context.Context) (any, error) {
+			return obj.Offset, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmissionList_offset(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmissionList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionFailure_code(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionFailure) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionFailure_code,
+		func(ctx context.Context) (any, error) {
+			return obj.Code, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionFailure_code(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionFailure",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionFailure_message(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionFailure) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionFailure_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionFailure_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionFailure",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionPhaseResult_exitCode(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionPhaseResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionPhaseResult_exitCode,
+		func(ctx context.Context) (any, error) {
+			return obj.ExitCode, nil
+		},
+		nil,
+		ec.marshalOInt2ᚖint,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionPhaseResult_exitCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionPhaseResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionPhaseResult_stdout(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionPhaseResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionPhaseResult_stdout,
+		func(ctx context.Context) (any, error) {
+			return obj.Stdout, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionPhaseResult_stdout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionPhaseResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionPhaseResult_stderr(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionPhaseResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionPhaseResult_stderr,
+		func(ctx context.Context) (any, error) {
+			return obj.Stderr, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionPhaseResult_stderr(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionPhaseResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionPhaseResult_durationMs(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionPhaseResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionPhaseResult_durationMs,
+		func(ctx context.Context) (any, error) {
+			return obj.DurationMs, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionPhaseResult_durationMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionPhaseResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionPhaseResult_memoryBytes(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionPhaseResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionPhaseResult_memoryBytes,
+		func(ctx context.Context) (any, error) {
+			return obj.MemoryBytes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionPhaseResult_memoryBytes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionPhaseResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionTestResult_testId(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionTestResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionTestResult_testId,
+		func(ctx context.Context) (any, error) {
+			return obj.TestID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionTestResult_testId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionTestResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionTestResult_verdict(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionTestResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionTestResult_verdict,
+		func(ctx context.Context) (any, error) {
+			return obj.Verdict, nil
+		},
+		nil,
+		ec.marshalNITExecutionVerdict2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionVerdict,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionTestResult_verdict(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionTestResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ITExecutionVerdict does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionTestResult_stdout(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionTestResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionTestResult_stdout,
+		func(ctx context.Context) (any, error) {
+			return obj.Stdout, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionTestResult_stdout(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionTestResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionTestResult_stderr(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionTestResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionTestResult_stderr,
+		func(ctx context.Context) (any, error) {
+			return obj.Stderr, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionTestResult_stderr(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionTestResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionTestResult_durationMs(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionTestResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionTestResult_durationMs,
+		func(ctx context.Context) (any, error) {
+			return obj.DurationMs, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionTestResult_durationMs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionTestResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ITExecutionTestResult_memoryBytes(ctx context.Context, field graphql.CollectedField, obj *model.ITExecutionTestResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITExecutionTestResult_memoryBytes,
+		func(ctx context.Context) (any, error) {
+			return obj.MemoryBytes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITExecutionTestResult_memoryBytes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITExecutionTestResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7164,6 +8637,85 @@ func (ec *executionContext) fieldContext_Mutation_submitITTaskAnswer(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_submitITTaskCode(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_submitITTaskCode,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SubmitITTaskCode(ctx, fc.Args["taskId"].(string), fc.Args["input"].(model.ITCodeSubmissionInput))
+		},
+		nil,
+		ec.marshalNITCodeSubmission2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmission,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_submitITTaskCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ITCodeSubmission_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_ITCodeSubmission_userId(ctx, field)
+			case "taskId":
+				return ec.fieldContext_ITCodeSubmission_taskId(ctx, field)
+			case "taskVersionId":
+				return ec.fieldContext_ITCodeSubmission_taskVersionId(ctx, field)
+			case "taskVersionNumber":
+				return ec.fieldContext_ITCodeSubmission_taskVersionNumber(ctx, field)
+			case "executionId":
+				return ec.fieldContext_ITCodeSubmission_executionId(ctx, field)
+			case "correlationId":
+				return ec.fieldContext_ITCodeSubmission_correlationId(ctx, field)
+			case "language":
+				return ec.fieldContext_ITCodeSubmission_language(ctx, field)
+			case "sourceFileName":
+				return ec.fieldContext_ITCodeSubmission_sourceFileName(ctx, field)
+			case "status":
+				return ec.fieldContext_ITCodeSubmission_status(ctx, field)
+			case "verdict":
+				return ec.fieldContext_ITCodeSubmission_verdict(ctx, field)
+			case "compilation":
+				return ec.fieldContext_ITCodeSubmission_compilation(ctx, field)
+			case "execution":
+				return ec.fieldContext_ITCodeSubmission_execution(ctx, field)
+			case "tests":
+				return ec.fieldContext_ITCodeSubmission_tests(ctx, field)
+			case "failure":
+				return ec.fieldContext_ITCodeSubmission_failure(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ITCodeSubmission_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ITCodeSubmission_updatedAt(ctx, field)
+			case "completedAt":
+				return ec.fieldContext_ITCodeSubmission_completedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITCodeSubmission", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_submitITTaskCode_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_startTaskCollection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -9033,6 +10585,134 @@ func (ec *executionContext) fieldContext_Query_myITSubmissions(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_myITSubmissions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_itCodeSubmission(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_itCodeSubmission,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().ItCodeSubmission(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		ec.marshalNITCodeSubmission2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmission,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_itCodeSubmission(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ITCodeSubmission_id(ctx, field)
+			case "userId":
+				return ec.fieldContext_ITCodeSubmission_userId(ctx, field)
+			case "taskId":
+				return ec.fieldContext_ITCodeSubmission_taskId(ctx, field)
+			case "taskVersionId":
+				return ec.fieldContext_ITCodeSubmission_taskVersionId(ctx, field)
+			case "taskVersionNumber":
+				return ec.fieldContext_ITCodeSubmission_taskVersionNumber(ctx, field)
+			case "executionId":
+				return ec.fieldContext_ITCodeSubmission_executionId(ctx, field)
+			case "correlationId":
+				return ec.fieldContext_ITCodeSubmission_correlationId(ctx, field)
+			case "language":
+				return ec.fieldContext_ITCodeSubmission_language(ctx, field)
+			case "sourceFileName":
+				return ec.fieldContext_ITCodeSubmission_sourceFileName(ctx, field)
+			case "status":
+				return ec.fieldContext_ITCodeSubmission_status(ctx, field)
+			case "verdict":
+				return ec.fieldContext_ITCodeSubmission_verdict(ctx, field)
+			case "compilation":
+				return ec.fieldContext_ITCodeSubmission_compilation(ctx, field)
+			case "execution":
+				return ec.fieldContext_ITCodeSubmission_execution(ctx, field)
+			case "tests":
+				return ec.fieldContext_ITCodeSubmission_tests(ctx, field)
+			case "failure":
+				return ec.fieldContext_ITCodeSubmission_failure(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ITCodeSubmission_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ITCodeSubmission_updatedAt(ctx, field)
+			case "completedAt":
+				return ec.fieldContext_ITCodeSubmission_completedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITCodeSubmission", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_itCodeSubmission_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myITCodeSubmissions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_myITCodeSubmissions,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().MyITCodeSubmissions(ctx, fc.Args["taskId"].(*string), fc.Args["pagination"].(*model.PaginationInput))
+		},
+		nil,
+		ec.marshalNITCodeSubmissionList2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionList,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_myITCodeSubmissions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "items":
+				return ec.fieldContext_ITCodeSubmissionList_items(ctx, field)
+			case "limit":
+				return ec.fieldContext_ITCodeSubmissionList_limit(ctx, field)
+			case "offset":
+				return ec.fieldContext_ITCodeSubmissionList_offset(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITCodeSubmissionList", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_myITCodeSubmissions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -14325,6 +16005,54 @@ func (ec *executionContext) unmarshalInputITAdminTaskFilter(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputITCodeSubmissionInput(ctx context.Context, obj any) (model.ITCodeSubmissionInput, error) {
+	var it model.ITCodeSubmissionInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"taskVersionId", "idempotencyKey", "language", "file"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "taskVersionId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskVersionId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TaskVersionID = data
+		case "idempotencyKey":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idempotencyKey"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdempotencyKey = data
+		case "language":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("language"))
+			data, err := ec.unmarshalNITProgrammingLanguage2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITProgrammingLanguage(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Language = data
+		case "file":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
+			data, err := ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.File = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputITSubmissionInput(ctx context.Context, obj any) (model.ITSubmissionInput, error) {
 	var it model.ITSubmissionInput
 	asMap := map[string]any{}
@@ -15534,6 +17262,328 @@ func (ec *executionContext) _Course(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var iTCodeSubmissionImplementors = []string{"ITCodeSubmission"}
+
+func (ec *executionContext) _ITCodeSubmission(ctx context.Context, sel ast.SelectionSet, obj *model.ITCodeSubmission) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, iTCodeSubmissionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ITCodeSubmission")
+		case "id":
+			out.Values[i] = ec._ITCodeSubmission_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._ITCodeSubmission_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "taskId":
+			out.Values[i] = ec._ITCodeSubmission_taskId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "taskVersionId":
+			out.Values[i] = ec._ITCodeSubmission_taskVersionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "taskVersionNumber":
+			out.Values[i] = ec._ITCodeSubmission_taskVersionNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "executionId":
+			out.Values[i] = ec._ITCodeSubmission_executionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "correlationId":
+			out.Values[i] = ec._ITCodeSubmission_correlationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "language":
+			out.Values[i] = ec._ITCodeSubmission_language(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sourceFileName":
+			out.Values[i] = ec._ITCodeSubmission_sourceFileName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._ITCodeSubmission_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "verdict":
+			out.Values[i] = ec._ITCodeSubmission_verdict(ctx, field, obj)
+		case "compilation":
+			out.Values[i] = ec._ITCodeSubmission_compilation(ctx, field, obj)
+		case "execution":
+			out.Values[i] = ec._ITCodeSubmission_execution(ctx, field, obj)
+		case "tests":
+			out.Values[i] = ec._ITCodeSubmission_tests(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "failure":
+			out.Values[i] = ec._ITCodeSubmission_failure(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._ITCodeSubmission_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._ITCodeSubmission_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "completedAt":
+			out.Values[i] = ec._ITCodeSubmission_completedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var iTCodeSubmissionListImplementors = []string{"ITCodeSubmissionList"}
+
+func (ec *executionContext) _ITCodeSubmissionList(ctx context.Context, sel ast.SelectionSet, obj *model.ITCodeSubmissionList) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, iTCodeSubmissionListImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ITCodeSubmissionList")
+		case "items":
+			out.Values[i] = ec._ITCodeSubmissionList_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "limit":
+			out.Values[i] = ec._ITCodeSubmissionList_limit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "offset":
+			out.Values[i] = ec._ITCodeSubmissionList_offset(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var iTExecutionFailureImplementors = []string{"ITExecutionFailure"}
+
+func (ec *executionContext) _ITExecutionFailure(ctx context.Context, sel ast.SelectionSet, obj *model.ITExecutionFailure) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, iTExecutionFailureImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ITExecutionFailure")
+		case "code":
+			out.Values[i] = ec._ITExecutionFailure_code(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._ITExecutionFailure_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var iTExecutionPhaseResultImplementors = []string{"ITExecutionPhaseResult"}
+
+func (ec *executionContext) _ITExecutionPhaseResult(ctx context.Context, sel ast.SelectionSet, obj *model.ITExecutionPhaseResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, iTExecutionPhaseResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ITExecutionPhaseResult")
+		case "exitCode":
+			out.Values[i] = ec._ITExecutionPhaseResult_exitCode(ctx, field, obj)
+		case "stdout":
+			out.Values[i] = ec._ITExecutionPhaseResult_stdout(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stderr":
+			out.Values[i] = ec._ITExecutionPhaseResult_stderr(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "durationMs":
+			out.Values[i] = ec._ITExecutionPhaseResult_durationMs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "memoryBytes":
+			out.Values[i] = ec._ITExecutionPhaseResult_memoryBytes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var iTExecutionTestResultImplementors = []string{"ITExecutionTestResult"}
+
+func (ec *executionContext) _ITExecutionTestResult(ctx context.Context, sel ast.SelectionSet, obj *model.ITExecutionTestResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, iTExecutionTestResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ITExecutionTestResult")
+		case "testId":
+			out.Values[i] = ec._ITExecutionTestResult_testId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "verdict":
+			out.Values[i] = ec._ITExecutionTestResult_verdict(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stdout":
+			out.Values[i] = ec._ITExecutionTestResult_stdout(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stderr":
+			out.Values[i] = ec._ITExecutionTestResult_stderr(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "durationMs":
+			out.Values[i] = ec._ITExecutionTestResult_durationMs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "memoryBytes":
+			out.Values[i] = ec._ITExecutionTestResult_memoryBytes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var iTSubmissionImplementors = []string{"ITSubmission"}
 
 func (ec *executionContext) _ITSubmission(ctx context.Context, sel ast.SelectionSet, obj *model.ITSubmission) graphql.Marshaler {
@@ -16293,6 +18343,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "submitITTaskCode":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_submitITTaskCode(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "startTaskCollection":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_startTaskCollection(ctx, field)
@@ -16876,6 +18933,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_myITSubmissions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "itCodeSubmission":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_itCodeSubmission(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myITCodeSubmissions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myITCodeSubmissions(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -18377,6 +20478,167 @@ func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast
 	return ret
 }
 
+func (ec *executionContext) marshalNITCodeSubmission2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmission(ctx context.Context, sel ast.SelectionSet, v model.ITCodeSubmission) graphql.Marshaler {
+	return ec._ITCodeSubmission(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNITCodeSubmission2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ITCodeSubmission) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNITCodeSubmission2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmission(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNITCodeSubmission2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmission(ctx context.Context, sel ast.SelectionSet, v *model.ITCodeSubmission) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ITCodeSubmission(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNITCodeSubmissionInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionInput(ctx context.Context, v any) (model.ITCodeSubmissionInput, error) {
+	res, err := ec.unmarshalInputITCodeSubmissionInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNITCodeSubmissionList2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionList(ctx context.Context, sel ast.SelectionSet, v model.ITCodeSubmissionList) graphql.Marshaler {
+	return ec._ITCodeSubmissionList(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNITCodeSubmissionList2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionList(ctx context.Context, sel ast.SelectionSet, v *model.ITCodeSubmissionList) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ITCodeSubmissionList(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNITCodeSubmissionStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionStatus(ctx context.Context, v any) (model.ITCodeSubmissionStatus, error) {
+	var res model.ITCodeSubmissionStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNITCodeSubmissionStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmissionStatus(ctx context.Context, sel ast.SelectionSet, v model.ITCodeSubmissionStatus) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNITExecutionTestResult2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionTestResultᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ITExecutionTestResult) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNITExecutionTestResult2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionTestResult(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNITExecutionTestResult2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionTestResult(ctx context.Context, sel ast.SelectionSet, v *model.ITExecutionTestResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ITExecutionTestResult(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNITExecutionVerdict2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionVerdict(ctx context.Context, v any) (model.ITExecutionVerdict, error) {
+	var res model.ITExecutionVerdict
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNITExecutionVerdict2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionVerdict(ctx context.Context, sel ast.SelectionSet, v model.ITExecutionVerdict) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNITProgrammingLanguage2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITProgrammingLanguage(ctx context.Context, v any) (model.ITProgrammingLanguage, error) {
+	var res model.ITProgrammingLanguage
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNITProgrammingLanguage2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITProgrammingLanguage(ctx context.Context, sel ast.SelectionSet, v model.ITProgrammingLanguage) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNITSubmission2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITSubmission(ctx context.Context, sel ast.SelectionSet, v model.ITSubmission) graphql.Marshaler {
 	return ec._ITSubmission(ctx, sel, &v)
 }
@@ -19379,6 +21641,22 @@ func (ec *executionContext) unmarshalNUpdateUserInput2githubᚗcomᚋovermindv�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v any) (graphql.Upload, error) {
+	res, err := graphql.UnmarshalUpload(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v graphql.Upload) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalUpload(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNUser2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
 }
@@ -19784,6 +22062,36 @@ func (ec *executionContext) unmarshalOITAdminTaskFilter2ᚖgithubᚗcomᚋovermi
 	}
 	res, err := ec.unmarshalInputITAdminTaskFilter(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOITExecutionFailure2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionFailure(ctx context.Context, sel ast.SelectionSet, v *model.ITExecutionFailure) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ITExecutionFailure(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOITExecutionPhaseResult2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionPhaseResult(ctx context.Context, sel ast.SelectionSet, v *model.ITExecutionPhaseResult) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ITExecutionPhaseResult(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOITExecutionVerdict2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionVerdict(ctx context.Context, v any) (*model.ITExecutionVerdict, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.ITExecutionVerdict)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOITExecutionVerdict2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITExecutionVerdict(ctx context.Context, sel ast.SelectionSet, v *model.ITExecutionVerdict) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOITTaskDifficulty2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITTaskDifficulty(ctx context.Context, v any) (*model.ITTaskDifficulty, error) {

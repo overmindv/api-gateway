@@ -129,6 +129,17 @@ func submissionInput(input model.ITSubmissionInput) tasksit.SubmissionInput {
 	}
 }
 
+// codeSubmissionInput преобразует GraphQL upload в поток multipart-клиента tasks-it.
+func codeSubmissionInput(input model.ITCodeSubmissionInput) tasksit.CodeSubmissionInput {
+	return tasksit.CodeSubmissionInput{
+		TaskVersionID:  input.TaskVersionID,
+		IdempotencyKey: input.IdempotencyKey,
+		Language:       input.Language.String(),
+		FileName:       input.File.Filename,
+		File:           input.File.File,
+	}
+}
+
 // taskModel преобразует полную задачу tasks-it в GraphQL-модель.
 func taskModel(item tasksit.Task) *model.ITTask {
 	options := make([]*model.ITTaskOption, 0, len(item.Options))
@@ -240,6 +251,89 @@ func submissionListModel(list tasksit.SubmissionList) *model.ITSubmissionList {
 	}
 
 	return &model.ITSubmissionList{
+		Items:  items,
+		Limit:  list.Limit,
+		Offset: list.Offset,
+	}
+}
+
+// codeSubmissionModel преобразует асинхронный результат sandbox в GraphQL-модель.
+func codeSubmissionModel(item tasksit.CodeSubmission) *model.ITCodeSubmission {
+	tests := make([]*model.ITExecutionTestResult, 0, len(item.Tests))
+	for _, test := range item.Tests {
+		tests = append(tests, &model.ITExecutionTestResult{
+			TestID:      test.TestID,
+			Verdict:     model.ITExecutionVerdict(test.Verdict),
+			Stdout:      test.Stdout,
+			Stderr:      test.Stderr,
+			DurationMs:  int(test.DurationMS),
+			MemoryBytes: int(test.MemoryBytes),
+		})
+	}
+
+	var verdict *model.ITExecutionVerdict
+	if item.Verdict != nil {
+		value := model.ITExecutionVerdict(*item.Verdict)
+		verdict = &value
+	}
+
+	return &model.ITCodeSubmission{
+		ID:                item.ID,
+		UserID:            item.UserID,
+		TaskID:            item.TaskID,
+		TaskVersionID:     item.TaskVersionID,
+		TaskVersionNumber: item.TaskVersionNumber,
+		ExecutionID:       item.ExecutionID,
+		CorrelationID:     item.CorrelationID,
+		Language:          model.ITProgrammingLanguage(item.Language),
+		SourceFileName:    item.SourceFileName,
+		Status:            model.ITCodeSubmissionStatus(item.Status),
+		Verdict:           verdict,
+		Compilation:       executionPhaseModel(item.Compilation),
+		Execution:         executionPhaseModel(item.Execution),
+		Tests:             tests,
+		Failure:           executionFailureModel(item.Failure),
+		CreatedAt:         item.CreatedAt,
+		UpdatedAt:         item.UpdatedAt,
+		CompletedAt:       item.CompletedAt,
+	}
+}
+
+// executionPhaseModel преобразует необязательный результат фазы выполнения.
+func executionPhaseModel(item *tasksit.ExecutionPhaseResult) *model.ITExecutionPhaseResult {
+	if item == nil {
+		return nil
+	}
+
+	return &model.ITExecutionPhaseResult{
+		ExitCode:    item.ExitCode,
+		Stdout:      item.Stdout,
+		Stderr:      item.Stderr,
+		DurationMs:  int(item.DurationMS),
+		MemoryBytes: int(item.MemoryBytes),
+	}
+}
+
+// executionFailureModel преобразует безопасную ошибку sandbox.
+func executionFailureModel(item *tasksit.ExecutionFailure) *model.ITExecutionFailure {
+	if item == nil {
+		return nil
+	}
+
+	return &model.ITExecutionFailure{
+		Code:    item.Code,
+		Message: item.Message,
+	}
+}
+
+// codeSubmissionListModel преобразует историю программных решений.
+func codeSubmissionListModel(list tasksit.CodeSubmissionList) *model.ITCodeSubmissionList {
+	items := make([]*model.ITCodeSubmission, 0, len(list.Items))
+	for _, item := range list.Items {
+		items = append(items, codeSubmissionModel(item))
+	}
+
+	return &model.ITCodeSubmissionList{
 		Items:  items,
 		Limit:  list.Limit,
 		Offset: list.Offset,

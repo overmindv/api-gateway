@@ -454,6 +454,21 @@ func (r *mutationResolver) SubmitITTaskAnswer(ctx context.Context, taskID string
 	return submissionModel(result), nil
 }
 
+// SubmitITTaskCode is the resolver for the submitITTaskCode field.
+func (r *mutationResolver) SubmitITTaskCode(ctx context.Context, taskID string, input model.ITCodeSubmissionInput) (*model.ITCodeSubmission, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.Tasks.SubmitCode(ctx, taskID, codeSubmissionInput(input), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return codeSubmissionModel(result), nil
+}
+
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
 	if _, err := middleware.RequireAuth(ctx); err != nil {
@@ -718,6 +733,42 @@ func (r *queryResolver) MyITSubmissions(ctx context.Context, taskID *string, pag
 	}
 
 	return submissionListModel(result), nil
+}
+
+// ItCodeSubmission is the resolver for the itCodeSubmission field.
+func (r *queryResolver) ItCodeSubmission(ctx context.Context, id string) (*model.ITCodeSubmission, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.Tasks.GetCodeSubmission(ctx, id, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return codeSubmissionModel(result), nil
+}
+
+// MyITCodeSubmissions is the resolver for the myITCodeSubmissions field.
+func (r *queryResolver) MyITCodeSubmissions(ctx context.Context, taskID *string, pagination *model.PaginationInput) (*model.ITCodeSubmissionList, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	limit, offset := 50, 0
+	if pagination != nil {
+		limit = intValue(pagination.Limit, 50)
+		offset = intValue(pagination.Offset, 0)
+	}
+
+	result, err := r.Tasks.ListMyCodeSubmissions(ctx, taskID, limit, offset, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return codeSubmissionListModel(result), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

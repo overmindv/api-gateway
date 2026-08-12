@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -174,6 +175,108 @@ func TestClientMapsSubmissionAndHistory(t *testing.T) {
 	}
 }
 
+// TestClientMapsCodeSubmission проверяет multipart upload и чтение результата.
+func TestClientMapsCodeSubmission(t *testing.T) {
+	t.Parallel()
+
+	requests := 0
+	client := testClient(t, func(request *http.Request) *http.Response {
+		requests++
+
+		switch request.URL.Path {
+		case "/v1/tasks/task-id/code-submissions":
+			if request.Method != http.MethodPost {
+				t.Fatalf("unexpected submit method: %s", request.Method)
+			}
+			if err := request.ParseMultipartForm(512 << 10); err != nil {
+				t.Fatal(err)
+			}
+			if request.FormValue("language") != "python" || request.FormValue("idempotency_key") != "key-id" {
+				t.Fatalf("unexpected multipart fields: %v", request.MultipartForm.Value)
+			}
+
+			file, header, err := request.FormFile("file")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer func() {
+				_ = file.Close()
+			}()
+
+			source, err := io.ReadAll(file)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if header.Filename != "solution.py" || string(source) != "print(42)" {
+				t.Fatalf("unexpected source file: name=%s body=%q", header.Filename, source)
+			}
+
+			return jsonResponse(t, http.StatusAccepted, sampleCodeSubmission())
+		case "/v1/code-submissions/code-submission-id":
+			return jsonResponse(t, http.StatusOK, sampleCodeSubmission())
+		case "/v1/me/code-submissions":
+			if request.URL.Query().Get("task_id") != "task-id" || request.URL.Query().Get("limit") != "5" {
+				t.Fatalf("unexpected code history query: %v", request.URL.Query())
+			}
+
+			return jsonResponse(t, http.StatusOK, CodeSubmissionList{
+				Items: []CodeSubmission{sampleCodeSubmission()},
+				Limit: 5,
+			})
+		default:
+			t.Fatalf("unexpected path: %s", request.URL.Path)
+
+			return nil
+		}
+	})
+
+	actor := Actor{UserID: "user-id", Roles: []string{"student"}}
+	created, err := client.SubmitCode(context.Background(), "task-id", CodeSubmissionInput{
+		TaskVersionID:  "version-id",
+		IdempotencyKey: "key-id",
+		Language:       "python",
+		FileName:       "../solution.py",
+		File:           bytes.NewReader([]byte("print(42)")),
+	}, actor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.Status != "queued" || created.SourceFileName != "solution.py" {
+		t.Fatalf("unexpected created submission: %+v", created)
+	}
+
+	if _, err := client.GetCodeSubmission(context.Background(), "code-submission-id", actor); err != nil {
+		t.Fatal(err)
+	}
+
+	taskID := "task-id"
+	history, err := client.ListMyCodeSubmissions(context.Background(), &taskID, 5, 0, actor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(history.Items) != 1 || requests != 3 {
+		t.Fatalf("unexpected code history: %+v", history)
+	}
+}
+
+// TestCodeSubmissionBodyRejectsLargeFile проверяет лимит до сетевого запроса.
+func TestCodeSubmissionBodyRejectsLargeFile(t *testing.T) {
+	t.Parallel()
+
+	_, _, err := codeSubmissionBody(CodeSubmissionInput{
+		TaskVersionID:  "version-id",
+		IdempotencyKey: "key-id",
+		Language:       "python",
+		FileName:       "solution.py",
+		File:           bytes.NewReader(bytes.Repeat([]byte("x"), maxCodeSourceSize+1)),
+	})
+
+	var upstream *Error
+	if !errors.As(err, &upstream) || upstream.Code != "INVALID_SOURCE_FILE" {
+		t.Fatalf("unexpected oversized file error: %v", err)
+	}
+}
+
 // TestClientMapsUpstreamError проверяет сохранение технического error code.
 func TestClientMapsUpstreamError(t *testing.T) {
 	t.Parallel()
@@ -296,6 +399,23 @@ func jsonResponse(t *testing.T, status int, body any) *http.Response {
 		StatusCode: status,
 		Header:     http.Header{"Content-Type": []string{"application/json"}},
 		Body:       io.NopCloser(bytes.NewReader(data)),
+	}
+}
+
+// sampleCodeSubmission возвращает поставленное в очередь программное решение.
+func sampleCodeSubmission() CodeSubmission {
+	return CodeSubmission{
+		ID:                "code-submission-id",
+		UserID:            "user-id",
+		TaskID:            "task-id",
+		TaskVersionID:     "version-id",
+		TaskVersionNumber: 1,
+		ExecutionID:       "execution-id",
+		CorrelationID:     "correlation-id",
+		Language:          "python",
+		SourceFileName:    "solution.py",
+		Status:            "queued",
+		Tests:             []ExecutionTestResult{},
 	}
 }
 
