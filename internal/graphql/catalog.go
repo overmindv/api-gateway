@@ -3,9 +3,9 @@ package graphql
 import (
 	"context"
 
-	"github.com/overmindv/laserbeak/internal/client/ironhide"
-	"github.com/overmindv/laserbeak/internal/graphql/model"
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/graphql/model"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 func adminActor(ctx context.Context) (ironhide.Actor, error) {

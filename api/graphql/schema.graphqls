@@ -13,6 +13,8 @@ type User {
   updatedAt: String!
 }
 
+scalar Upload
+
 enum CatalogStatus { draft active hidden archived }
 enum DegreeLevel { bachelor master specialist phd other }
 enum TopicDifficulty { intro basic medium hard advanced }
@@ -30,13 +32,107 @@ input PaginationInput { limit: Int = 50, offset: Int = 0 }
 input CreateUniversityInput { name: String!, shortName: String = "", city: String = "", country: String = "", websiteUrl: String = "", logoFileId: ID, status: CatalogStatus = draft }
 input UpdateUniversityInput { name: String!, shortName: String = "", city: String = "", country: String = "", websiteUrl: String = "", logoFileId: ID }
 input CreateProgramInput { universityId: ID, name: String!, shortName: String = "", faculty: String = "", degreeLevel: DegreeLevel = other, startYear: Int, status: CatalogStatus = draft }
-input UpdateProgramInput { name: String!, shortName: String = "", faculty: String = "", degreeLevel: DegreeLevel = other, startYear: Int }
+input UpdateProgramInput { universityId: ID, clearUniversity: Boolean = false, name: String!, shortName: String = "", faculty: String = "", degreeLevel: DegreeLevel = other, startYear: Int }
 input CreateCourseInput { programId: ID, name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int, status: CatalogStatus = draft }
-input UpdateCourseInput { name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int }
+input UpdateCourseInput { programId: ID, clearProgram: Boolean = false, name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int }
 input CreateTopicInput { courseId: ID, parentTopicId: ID, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic, status: CatalogStatus = draft }
-input UpdateTopicInput { parentTopicId: ID, clearParentTopic: Boolean = false, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic }
+input UpdateTopicInput { courseId: ID, clearCourse: Boolean = false, parentTopicId: ID, clearParentTopic: Boolean = false, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic }
 input TopicPrerequisiteInput { topicId: ID!, prerequisiteTopicId: ID! }
 input CatalogBindingInput { universityId: ID, programId: ID, courseId: ID, topicId: ID }
+
+enum ITTaskStatus { draft published archived }
+enum ITTaskType { single_choice multiple_choice programming }
+enum ITTaskDifficulty { easy medium hard }
+enum ITSubmissionVerdict { accepted wrong_answer }
+enum ITProgrammingLanguage { python go }
+enum ITCodeSubmissionStatus { queued completed }
+enum ITExecutionVerdict { accepted wrong_answer compilation_error runtime_error time_limit_exceeded memory_limit_exceeded output_limit_exceeded checker_error infrastructure_error cancelled }
+
+type ITTaskOption { id: ID!, text: String!, position: Int!, isCorrect: Boolean }
+type ITTaskExample { input: String!, output: String!, explanation: String! }
+type ITTaskSource { sourceId: String!, sourceName: String!, sourceUrl: String!, publishedAt: String }
+type ITTask { id: ID!, status: ITTaskStatus!, taskVersionId: ID!, versionNumber: Int!, topicId: ID, title: String!, statement: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty!, options: [ITTaskOption!]!, tags: [String!]!, examples: [ITTaskExample!]!, constraints: [String!]!, source: ITTaskSource, createdAt: String!, updatedAt: String! }
+type ITTaskSummary { id: ID!, status: ITTaskStatus!, taskVersionId: ID!, versionNumber: Int!, topicId: ID, title: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty!, createdAt: String!, updatedAt: String! }
+type ITTaskList { items: [ITTaskSummary!]!, limit: Int!, offset: Int! }
+type ITSubmission { id: ID!, userId: ID!, taskId: ID!, taskVersionId: ID!, taskVersionNumber: Int!, selectedOptionIds: [ID!]!, correctOptionIds: [ID!]!, correct: Boolean!, verdict: ITSubmissionVerdict!, taskUpdated: Boolean!, latestTaskVersionId: ID!, latestVersionNumber: Int!, createdAt: String! }
+type ITSubmissionList { items: [ITSubmission!]!, limit: Int!, offset: Int! }
+
+type ITExecutionPhaseResult {
+  exitCode: Int
+  stdout: String!
+  stderr: String!
+  durationMs: Int!
+  memoryBytes: Int!
+}
+
+type ITExecutionTestResult {
+  testId: ID!
+  verdict: ITExecutionVerdict!
+  stdout: String!
+  stderr: String!
+  durationMs: Int!
+  memoryBytes: Int!
+}
+
+type ITExecutionFailure {
+  code: String!
+  message: String!
+}
+
+type ITCodeSubmission {
+  id: ID!
+  userId: ID!
+  taskId: ID!
+  taskVersionId: ID!
+  taskVersionNumber: Int!
+  executionId: ID!
+  correlationId: ID!
+  language: ITProgrammingLanguage!
+  sourceFileName: String!
+  status: ITCodeSubmissionStatus!
+  verdict: ITExecutionVerdict
+  compilation: ITExecutionPhaseResult
+  execution: ITExecutionPhaseResult
+  tests: [ITExecutionTestResult!]!
+  failure: ITExecutionFailure
+  createdAt: String!
+  updatedAt: String!
+  completedAt: String
+}
+
+type ITCodeSubmissionList {
+  items: [ITCodeSubmission!]!
+  limit: Int!
+  offset: Int!
+}
+
+input ITTaskFilter { taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
+input ITAdminTaskFilter { status: ITTaskStatus, taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
+input ITTaskOptionInput { text: String!, isCorrect: Boolean! }
+input ITTaskExampleInput { input: String!, output: String!, explanation: String = "" }
+input ITTaskInput { topicId: ID, title: String!, statement: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty = easy, options: [ITTaskOptionInput!]!, tags: [String!] = [], examples: [ITTaskExampleInput!] = [], constraints: [String!] = [] }
+input ITSubmissionInput { taskVersionId: ID!, idempotencyKey: ID!, selectedOptionIds: [ID!]! }
+
+input ITCodeSubmissionInput {
+  taskVersionId: ID!
+  idempotencyKey: ID!
+  language: ITProgrammingLanguage!
+  file: Upload!
+}
+
+enum TaskCandidateStatus { pending approved rejected }
+type TaskCandidate { id: ID!, status: TaskCandidateStatus!, revision: Int!, externalId: String!, sourceId: String!, sourceName: String!, sourceUrl: String!, sourcePublishedAt: String, retrievedAt: String!, collectionJobId: ID!, topicId: ID, title: String!, statement: String!, difficulty: ITTaskDifficulty!, tags: [String!]!, examples: [ITTaskExample!]!, constraints: [String!]!, approvedTaskId: ID, rejectionReason: String!, createdAt: String!, updatedAt: String! }
+type TaskCandidateList { items: [TaskCandidate!]!, limit: Int!, offset: Int! }
+input TaskCandidateFilter { status: TaskCandidateStatus, sourceId: String, difficulty: ITTaskDifficulty }
+input TaskCandidateReviewInput { expectedRevision: Int!, topicId: ID, title: String!, statement: String!, difficulty: ITTaskDifficulty!, tags: [String!]!, examples: [ITTaskExampleInput!]!, constraints: [String!]! }
+
+enum TaskCollectionJobStatus { queued running succeeded partial failed }
+enum TaskCollectionSourceStatus { queued running succeeded failed truncated }
+type TaskCollectionSource { id: ID!, kind: String!, sourceId: String!, url: String!, status: TaskCollectionSourceStatus!, collectedTotal: Int!, importedTotal: Int!, duplicatesTotal: Int!, invalidTotal: Int!, errorMessage: String! }
+type TaskCollectionJob { id: ID!, trigger: String!, requestedBy: ID, idempotencyKey: ID!, publishedFrom: String, publishedTo: String, maxItemsPerSource: Int!, status: TaskCollectionJobStatus!, collectedTotal: Int!, importedTotal: Int!, duplicatesTotal: Int!, invalidTotal: Int!, errorCount: Int!, errorMessage: String!, notificationAcknowledged: Boolean!, startedAt: String, finishedAt: String, createdAt: String!, updatedAt: String!, sources: [TaskCollectionSource!]! }
+type TaskCollectionJobList { items: [TaskCollectionJob!]!, limit: Int!, offset: Int! }
+type TaskCollectionSources { telegramChannels: [String!]!, websiteSources: [String!]! }
+input StartTaskCollectionInput { idempotencyKey: ID!, telegramChannels: [String!] = [], publishedFrom: String, publishedTo: String, websiteUrls: [String!] = [], maxItemsPerSource: Int = 100 }
 
 type AuthPayload {
   user: User!
@@ -83,6 +179,19 @@ type Query {
   topicTree(courseId: ID): [TopicTreeNode!]!
   topicPrerequisites(topicId: ID!): [TopicPrerequisite!]!
   validateCatalogBinding(input: CatalogBindingInput!): CatalogValidationResult!
+  itTasks(filter: ITTaskFilter, pagination: PaginationInput): ITTaskList!
+  itTask(id: ID!): ITTask!
+  adminITTasks(filter: ITAdminTaskFilter, pagination: PaginationInput): ITTaskList!
+  adminITTask(id: ID!): ITTask!
+  itSubmission(id: ID!): ITSubmission!
+  myITSubmissions(taskId: ID, pagination: PaginationInput): ITSubmissionList!
+  itCodeSubmission(id: ID!): ITCodeSubmission!
+  myITCodeSubmissions(taskId: ID, pagination: PaginationInput): ITCodeSubmissionList!
+  taskCollectionSources: TaskCollectionSources!
+  taskCollectionJobs(unreadOnly: Boolean = false, pagination: PaginationInput): TaskCollectionJobList!
+  taskCollectionJob(id: ID!): TaskCollectionJob!
+  taskCandidates(filter: TaskCandidateFilter, pagination: PaginationInput): TaskCandidateList!
+  taskCandidate(id: ID!): TaskCandidate!
 }
 
 type Mutation {
@@ -110,4 +219,15 @@ type Mutation {
   changeTopicStatus(id: ID!, status: CatalogStatus!): Topic!
   addTopicPrerequisite(input: TopicPrerequisiteInput!): TopicPrerequisite!
   removeTopicPrerequisite(input: TopicPrerequisiteInput!): Boolean!
+  createITTask(input: ITTaskInput!): ITTask!
+  updateITTask(id: ID!, input: ITTaskInput!): ITTask!
+  changeITTaskStatus(id: ID!, status: ITTaskStatus!): ITTask!
+  deleteITTask(id: ID!): Boolean!
+  submitITTaskAnswer(taskId: ID!, input: ITSubmissionInput!): ITSubmission!
+  submitITTaskCode(taskId: ID!, input: ITCodeSubmissionInput!): ITCodeSubmission!
+  startTaskCollection(input: StartTaskCollectionInput!): TaskCollectionJob!
+  acknowledgeTaskCollectionJob(id: ID!): Boolean!
+  updateTaskCandidate(id: ID!, input: TaskCandidateReviewInput!): TaskCandidate!
+  approveTaskCandidate(id: ID!, input: TaskCandidateReviewInput!): ITTask!
+  rejectTaskCandidate(id: ID!, expectedRevision: Int!, reason: String = ""): TaskCandidate!
 }

@@ -8,11 +8,13 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/overmindv/laserbeak/internal/client/arcee"
-	"github.com/overmindv/laserbeak/internal/client/ironhide"
-	"github.com/overmindv/laserbeak/internal/config"
-	graphqldelivery "github.com/overmindv/laserbeak/internal/graphql"
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/taskhunter"
+	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/config"
+	graphqldelivery "github.com/overmindv/api-gateway/internal/graphql"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type Server struct {
@@ -23,23 +25,33 @@ type Server struct {
 
 type healthChecker interface{ Health(context.Context) error }
 
-// New собирает HTTP server Laserbeak со всеми middleware и routes.
+// New собирает HTTP server api-gateway со всеми middleware и routes.
 // На вход получает конфигурацию, clients, health checker, authenticator и loggers, на выход возвращает готовый Server.
-func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogService, health healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
+func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogService, tasks tasksit.Service, taskHunter taskhunter.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
 	mux := http.NewServeMux()
 
-	mux.Handle("POST /graphql", graphqldelivery.Handler(users, catalog, requestLog))
+	mux.Handle("POST /graphql", graphqldelivery.HandlerWithTaskHunter(users, catalog, tasks, taskHunter, requestLog))
 	mux.Handle("GET /playground", graphqldelivery.Playground())
 
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if err := health.Health(r.Context()); err != nil {
+		if err := usersHealth.Health(r.Context()); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = w.Write([]byte(`{"status":"unhealthy","arcee":"unavailable"}`))
+			_, _ = w.Write([]byte(`{"status":"unhealthy","users":"unavailable"}`))
+			return
+		}
+		if err := tasks.Health(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"status":"unhealthy","tasks_it":"unavailable"}`))
+			return
+		}
+		if err := taskHunter.Health(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"status":"unhealthy","task_hunter":"unavailable"}`))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"ok","arcee":"ok"}`))
+		_, _ = w.Write([]byte(`{"status":"ok","users":"ok","tasks_it":"ok","task_hunter":"ok"}`))
 	}
 
 	mux.HandleFunc("GET /health", healthHandler)
@@ -73,7 +85,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		s.log.Info("laserbeak HTTP server started", "address", s.config.Address)
+		s.log.Info("api-gateway HTTP server started", "address", s.config.Address)
 		if err := s.http.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- fmt.Errorf("serve HTTP: %w", err)
 		}

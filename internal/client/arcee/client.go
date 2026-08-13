@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/overmindv/laserbeak/internal/config"
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/config"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 const userFields = `id email username firstName lastName birthDate phone roles isAdmin isSuperuser createdAt updatedAt`

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type CatalogService interface {

@@ -4,8 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/overmindv/laserbeak/internal/apperror"
-	"github.com/overmindv/laserbeak/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/apperror"
+	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/client/tasksit"
 )
 
 func TestErrorCodeAndMessage(t *testing.T) {
@@ -22,6 +23,11 @@ func TestErrorCodeAndMessage(t *testing.T) {
 			name: "upstream",
 			err:  &arcee.Error{Code: "NOT_FOUND", Message: "missing"},
 			code: "NOT_FOUND"},
+		{
+			name: "tasks-it",
+			err:  &tasksit.Error{Code: "IDEMPOTENCY_KEY_CONFLICT", Message: "conflict"},
+			code: "IDEMPOTENCY_KEY_CONFLICT",
+		},
 		{
 			name: "internal",
 			err:  errors.New("details"),

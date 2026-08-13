@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/overmindv/laserbeak/internal/config"
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/config"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 func TestClientMapsResponseAndForwardsProtectedHeaders(t *testing.T) {
