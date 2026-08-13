@@ -1,8 +1,8 @@
 package graphql
 
 import (
-	"github.com/overmindv/laserbeak/internal/client/arcee"
-	"github.com/overmindv/laserbeak/internal/graphql/model"
+	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/graphql/model"
 )
 
 func toUser(user *arcee.User) *model.User {

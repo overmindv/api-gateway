@@ -11,4 +11,7 @@ resolver:
   dir: internal/graphql
   package: graphql
   filename_template: "{name}.resolvers.go"
+  # Реализации распределены между schema.resolvers.go и collection.resolvers.go.
+  # Генератор обновляет интерфейсы, но не перезаписывает написанные resolver'ы.
+  preserve_resolver: true
 autobind: []

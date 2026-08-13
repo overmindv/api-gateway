@@ -1,28 +1,43 @@
-# Laserbeak
+# api-gateway
 
-Laserbeak - GraphQL API Gateway / BFF для frontend `soundwave`. Frontend обращается только к Laserbeak, а Laserbeak делегирует операции внутренним сервисам.
+`api-gateway` — GraphQL BFF для `frontend`. Внешние клиенты обращаются только к gateway, а он делегирует операции сервисам-владельцам данных.
 
 ## Функционал
 
 - единый GraphQL endpoint для frontend;
-- регистрация, вход и профиль через Arcee;
-- admin-only управление пользователями через Arcee;
-- чтение и управление каталогом через Ironhide;
+- регистрация, вход и профиль через `users`;
+- admin-only управление пользователями через `users`;
+- чтение и управление каталогом через `entities`;
+- тестовые IT-задачи и история решений через `tasks-it`;
+- запуск и журнал сбора через отдельный client `task-hunter`;
+- модерация собранных кандидатов и публикация `programming`-задач;
 - проверка JWT и роли `admin`;
 - отдельный request log для пользовательских HTTP-запросов и upstream-вызовов.
 
 ## Бизнес-логика
 
-Laserbeak не владеет пользовательской или каталоговой бизнес-логикой. Он проверяет внешний контракт, авторизацию и маршрутизирует запросы в сервис-владелец данных. Admin-only mutations разрешаются пользователям с ролью `admin` в JWT, который выпускает Arcee.
+`api-gateway` не владеет пользовательской, каталоговой или task-бизнес-логикой. Он проверяет внешний контракт, авторизацию и маршрутизирует запросы в сервис-владелец данных. Admin-only mutations разрешаются пользователям с ролью `admin` или `superuser` в JWT, который выпускает `users`.
 
-Ошибки для frontend обезличены, а технические детали пишутся в structured logs. Логи пользовательских запросов при запуске через `ratchet` доступны отдельно от Docker stdout.
+Интеграция с `tasks-it`, список GraphQL-операций и примеры описаны в [docs/tasks-it.md](docs/tasks-it.md).
+
+Ошибки для frontend обезличены, а технические детали пишутся в structured logs. Логи пользовательских запросов при запуске через `infra` доступны отдельно от Docker stdout.
 
 ## Запуск
 
-Локально gateway запускается в составе общего окружения из `ratchet`:
+Для связи с `tasks-it` задаются переменные:
+
+```dotenv
+TASKS_IT_URL=http://tasks-it:8080
+TASKS_IT_TIMEOUT=5s
+TASK_HUNTER_URL=http://task-hunter:8080
+TASK_HUNTER_TOKEN=replace-with-a-long-random-gateway-token
+TASK_HUNTER_TIMEOUT=10s
+```
+
+Локально gateway запускается в составе общего окружения из `infra`:
 
 ```bash
-cd ../ratchet
+cd ../infra
 cp .env.example .env
 make up
 make request-logs

@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/overmindv/laserbeak/internal/client/arcee"
-	"github.com/overmindv/laserbeak/internal/client/ironhide"
-	"github.com/overmindv/laserbeak/internal/config"
-	graphqldelivery "github.com/overmindv/laserbeak/internal/graphql"
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/config"
+	graphqldelivery "github.com/overmindv/api-gateway/internal/graphql"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 // fakeIronhideCatalog эмулирует HTTP API Ironhide и проверяет, что gateway передаёт actor и request_id.
@@ -129,7 +129,7 @@ func TestGatewayFullCatalogFlow(t *testing.T) {
 	}, logger)
 	catalog := ironhide.New(ironhideServer.URL, time.Second, logger)
 	authenticator := middleware.NewJWTAuthenticator(arceeUpstream.secret, arceeUpstream.issuer)
-	handler := graphqldelivery.Handler(users, catalog, logger)
+	handler := graphqldelivery.Handler(users, catalog, nil, logger)
 	handler = middleware.JWT(authenticator, handler)
 	handler = middleware.RequestIDMiddleware(handler)
 

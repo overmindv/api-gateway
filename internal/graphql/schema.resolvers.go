@@ -8,11 +8,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/overmindv/laserbeak/internal/client/arcee"
-	"github.com/overmindv/laserbeak/internal/client/ironhide"
-	"github.com/overmindv/laserbeak/internal/graphql/generated"
-	"github.com/overmindv/laserbeak/internal/graphql/model"
-	"github.com/overmindv/laserbeak/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/graphql/generated"
+	"github.com/overmindv/api-gateway/internal/graphql/model"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 // Register is the resolver for the register field.
@@ -181,7 +181,17 @@ func (r *mutationResolver) UpdateProgram(ctx context.Context, id string, input m
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.Catalog.UpdateProgram(ctx, id, ironhide.Program{Name: input.Name, ShortName: stringValue(input.ShortName), Faculty: stringValue(input.Faculty), DegreeLevel: degreeValue(input.DegreeLevel), StartYear: input.StartYear}, actor)
+	universityID := input.UniversityID
+	if boolValue(input.ClearUniversity) {
+		universityID = nil
+	} else if universityID == nil {
+		current, err := r.Catalog.GetProgram(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		universityID = current.UniversityID
+	}
+	result, err := r.Catalog.UpdateProgram(ctx, id, ironhide.Program{UniversityID: universityID, Name: input.Name, ShortName: stringValue(input.ShortName), Faculty: stringValue(input.Faculty), DegreeLevel: degreeValue(input.DegreeLevel), StartYear: input.StartYear}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +244,17 @@ func (r *mutationResolver) UpdateCourse(ctx context.Context, id string, input mo
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.Catalog.UpdateCourse(ctx, id, ironhide.Course{Name: input.Name, Slug: stringValue(input.Slug), Description: stringValue(input.Description), Semester: input.Semester, YearNumber: input.YearNumber}, actor)
+	programID := input.ProgramID
+	if boolValue(input.ClearProgram) {
+		programID = nil
+	} else if programID == nil {
+		current, err := r.Catalog.GetCourse(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		programID = current.ProgramID
+	}
+	result, err := r.Catalog.UpdateCourse(ctx, id, ironhide.Course{ProgramID: programID, Name: input.Name, Slug: stringValue(input.Slug), Description: stringValue(input.Description), Semester: input.Semester, YearNumber: input.YearNumber}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -287,11 +307,27 @@ func (r *mutationResolver) UpdateTopic(ctx context.Context, id string, input mod
 	if err != nil {
 		return nil, err
 	}
+	courseID := input.CourseID
 	parentID := input.ParentTopicID
+	needsCurrent := (!boolValue(input.ClearCourse) && courseID == nil) || (parentID == nil && !boolValue(input.ClearParentTopic))
+	var current ironhide.Topic
+	if needsCurrent {
+		current, err = r.Catalog.GetTopic(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if boolValue(input.ClearCourse) {
+		courseID = nil
+	} else if courseID == nil {
+		courseID = current.CourseID
+	}
 	if boolValue(input.ClearParentTopic) {
 		parentID = nil
+	} else if parentID == nil {
+		parentID = current.ParentTopicID
 	}
-	result, err := r.Catalog.UpdateTopic(ctx, id, ironhide.Topic{ParentTopicID: parentID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty)}, actor)
+	result, err := r.Catalog.UpdateTopic(ctx, id, ironhide.Topic{CourseID: courseID, ParentTopicID: parentID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty)}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -347,6 +383,90 @@ func (r *mutationResolver) RemoveTopicPrerequisite(ctx context.Context, input mo
 	err = r.Catalog.RemovePrerequisite(ctx, input.TopicID, input.PrerequisiteTopicID, actor)
 
 	return err == nil, err
+}
+
+// CreateITTask is the resolver for the createITTask field.
+func (r *mutationResolver) CreateITTask(ctx context.Context, input model.ITTaskInput) (*model.ITTask, error) {
+	actor, err := tasksActor(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Tasks.Create(ctx, tasksInput(input), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return taskModel(result), nil
+}
+
+// UpdateITTask is the resolver for the updateITTask field.
+func (r *mutationResolver) UpdateITTask(ctx context.Context, id string, input model.ITTaskInput) (*model.ITTask, error) {
+	actor, err := tasksActor(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Tasks.Update(ctx, id, tasksInput(input), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return taskModel(result), nil
+}
+
+// ChangeITTaskStatus is the resolver for the changeITTaskStatus field.
+func (r *mutationResolver) ChangeITTaskStatus(ctx context.Context, id string, status model.ITTaskStatus) (*model.ITTask, error) {
+	actor, err := tasksActor(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Tasks.ChangeStatus(ctx, id, status.String(), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return taskModel(result), nil
+}
+
+// DeleteITTask is the resolver for the deleteITTask field.
+func (r *mutationResolver) DeleteITTask(ctx context.Context, id string) (bool, error) {
+	actor, err := tasksActor(ctx, true)
+	if err != nil {
+		return false, err
+	}
+	if err := r.Tasks.Delete(ctx, id, actor); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// SubmitITTaskAnswer is the resolver for the submitITTaskAnswer field.
+func (r *mutationResolver) SubmitITTaskAnswer(ctx context.Context, taskID string, input model.ITSubmissionInput) (*model.ITSubmission, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Tasks.Submit(ctx, taskID, submissionInput(input), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return submissionModel(result), nil
+}
+
+// SubmitITTaskCode is the resolver for the submitITTaskCode field.
+func (r *mutationResolver) SubmitITTaskCode(ctx context.Context, taskID string, input model.ITCodeSubmissionInput) (*model.ITCodeSubmission, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.Tasks.SubmitCode(ctx, taskID, codeSubmissionInput(input), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return codeSubmissionModel(result), nil
 }
 
 // GetUser is the resolver for the getUser field.
@@ -532,6 +652,123 @@ func (r *queryResolver) ValidateCatalogBinding(ctx context.Context, input model.
 	}
 
 	return &model.CatalogValidationResult{Valid: result.Valid}, nil
+}
+
+// ItTasks is the resolver for the itTasks field.
+func (r *queryResolver) ItTasks(ctx context.Context, filter *model.ITTaskFilter, pagination *model.PaginationInput) (*model.ITTaskList, error) {
+	result, err := r.Tasks.ListPublished(ctx, publicTaskFilter(filter, pagination))
+	if err != nil {
+		return nil, err
+	}
+
+	return taskListModel(result), nil
+}
+
+// ItTask is the resolver for the itTask field.
+func (r *queryResolver) ItTask(ctx context.Context, id string) (*model.ITTask, error) {
+	result, err := r.Tasks.GetPublished(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return publicTaskModel(result), nil
+}
+
+// AdminITTasks is the resolver for the adminITTasks field.
+func (r *queryResolver) AdminITTasks(ctx context.Context, filter *model.ITAdminTaskFilter, pagination *model.PaginationInput) (*model.ITTaskList, error) {
+	actor, err := tasksActor(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Tasks.ListAdmin(ctx, adminTaskFilter(filter, pagination), actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return taskListModel(result), nil
+}
+
+// AdminITTask is the resolver for the adminITTask field.
+func (r *queryResolver) AdminITTask(ctx context.Context, id string) (*model.ITTask, error) {
+	actor, err := tasksActor(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Tasks.GetAdmin(ctx, id, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return taskModel(result), nil
+}
+
+// ItSubmission is the resolver for the itSubmission field.
+func (r *queryResolver) ItSubmission(ctx context.Context, id string) (*model.ITSubmission, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+	result, err := r.Tasks.GetSubmission(ctx, id, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return submissionModel(result), nil
+}
+
+// MyITSubmissions is the resolver for the myITSubmissions field.
+func (r *queryResolver) MyITSubmissions(ctx context.Context, taskID *string, pagination *model.PaginationInput) (*model.ITSubmissionList, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+	limit, offset := 50, 0
+	if pagination != nil {
+		limit = intValue(pagination.Limit, 50)
+		offset = intValue(pagination.Offset, 0)
+	}
+	result, err := r.Tasks.ListMySubmissions(ctx, taskID, limit, offset, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return submissionListModel(result), nil
+}
+
+// ItCodeSubmission is the resolver for the itCodeSubmission field.
+func (r *queryResolver) ItCodeSubmission(ctx context.Context, id string) (*model.ITCodeSubmission, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.Tasks.GetCodeSubmission(ctx, id, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return codeSubmissionModel(result), nil
+}
+
+// MyITCodeSubmissions is the resolver for the myITCodeSubmissions field.
+func (r *queryResolver) MyITCodeSubmissions(ctx context.Context, taskID *string, pagination *model.PaginationInput) (*model.ITCodeSubmissionList, error) {
+	actor, err := tasksActor(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	limit, offset := 50, 0
+	if pagination != nil {
+		limit = intValue(pagination.Limit, 50)
+		offset = intValue(pagination.Offset, 0)
+	}
+
+	result, err := r.Tasks.ListMyCodeSubmissions(ctx, taskID, limit, offset, actor)
+	if err != nil {
+		return nil, err
+	}
+
+	return codeSubmissionListModel(result), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
