@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
-	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
@@ -136,13 +136,13 @@ func (r *queryResolver) TaskCollectionJob(ctx context.Context, id string) (*mode
 	return collectionJobModel(job), nil
 }
 
-// TaskCandidates возвращает очередь модерации tasks-it.
+// TaskCandidates возвращает очередь модерации tasks.
 func (r *queryResolver) TaskCandidates(ctx context.Context, filter *model.TaskCandidateFilter, pagination *model.PaginationInput) (*model.TaskCandidateList, error) {
 	actor, err := tasksActor(ctx, true)
 	if err != nil {
 		return nil, err
 	}
-	input := tasksit.CandidateFilter{Limit: 20}
+	input := tasks.CandidateFilter{Limit: 20}
 	if pagination != nil {
 		input.Limit = intValue(pagination.Limit, 20)
 		input.Offset = intValue(pagination.Offset, 0)
@@ -191,23 +191,23 @@ func collectionActor(ctx context.Context) (taskhunter.Actor, error) {
 	return taskhunter.Actor{UserID: auth.UserID, Roles: auth.Roles}, nil
 }
 
-func candidateReviewInput(input model.TaskCandidateReviewInput) tasksit.CandidateReview {
-	examples := make([]tasksit.TaskExample, 0, len(input.Examples))
+func candidateReviewInput(input model.TaskCandidateReviewInput) tasks.CandidateReview {
+	examples := make([]tasks.TaskExample, 0, len(input.Examples))
 	for _, example := range input.Examples {
 		if example == nil {
 			continue
 		}
-		examples = append(examples, tasksit.TaskExample{Input: example.Input, Output: example.Output, Explanation: stringValue(example.Explanation)})
+		examples = append(examples, tasks.TaskExample{Input: example.Input, Output: example.Output, Explanation: stringValue(example.Explanation)})
 	}
 
-	return tasksit.CandidateReview{
+	return tasks.CandidateReview{
 		ExpectedRevision: input.ExpectedRevision, TopicID: input.TopicID, Title: input.Title,
 		Statement: input.Statement, Difficulty: input.Difficulty.String(), Tags: input.Tags,
 		Examples: examples, Constraints: input.Constraints,
 	}
 }
 
-func candidateModel(item tasksit.Candidate) *model.TaskCandidate {
+func candidateModel(item tasks.Candidate) *model.TaskCandidate {
 	examples := make([]*model.ITTaskExample, 0, len(item.Examples))
 	for _, example := range item.Examples {
 		examples = append(examples, &model.ITTaskExample{Input: example.Input, Output: example.Output, Explanation: example.Explanation})

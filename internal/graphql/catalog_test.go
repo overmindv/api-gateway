@@ -6,27 +6,27 @@ import (
 	"testing"
 
 	"github.com/overmindv/api-gateway/internal/apperror"
-	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type catalogStub struct {
-	ironhide.CatalogService
+	entities.CatalogService
 	called  bool
-	program ironhide.Program
-	course  ironhide.Course
-	topic   ironhide.Topic
+	program entities.Program
+	course  entities.Course
+	topic   entities.Topic
 }
 
-func (s *catalogStub) CreateUniversity(_ context.Context, input ironhide.University, _ ironhide.Actor) (ironhide.University, error) {
+func (s *catalogStub) CreateUniversity(_ context.Context, input entities.University, _ entities.Actor) (entities.University, error) {
 	s.called = true
 	input.ID = "university-id"
 
 	return input, nil
 }
 
-func (s *catalogStub) UpdateProgram(_ context.Context, _ string, input ironhide.Program, _ ironhide.Actor) (ironhide.Program, error) {
+func (s *catalogStub) UpdateProgram(_ context.Context, _ string, input entities.Program, _ entities.Actor) (entities.Program, error) {
 	s.program = input
 	input.ID = "program-id"
 	input.Status = "draft"
@@ -34,7 +34,7 @@ func (s *catalogStub) UpdateProgram(_ context.Context, _ string, input ironhide.
 	return input, nil
 }
 
-func (s *catalogStub) UpdateCourse(_ context.Context, _ string, input ironhide.Course, _ ironhide.Actor) (ironhide.Course, error) {
+func (s *catalogStub) UpdateCourse(_ context.Context, _ string, input entities.Course, _ entities.Actor) (entities.Course, error) {
 	s.course = input
 	input.ID = "course-id"
 	input.Status = "draft"
@@ -42,7 +42,7 @@ func (s *catalogStub) UpdateCourse(_ context.Context, _ string, input ironhide.C
 	return input, nil
 }
 
-func (s *catalogStub) UpdateTopic(_ context.Context, _ string, input ironhide.Topic, _ ironhide.Actor) (ironhide.Topic, error) {
+func (s *catalogStub) UpdateTopic(_ context.Context, _ string, input entities.Topic, _ entities.Actor) (entities.Topic, error) {
 	s.topic = input
 	input.ID = "topic-id"
 	input.Status = "draft"
@@ -65,11 +65,11 @@ func TestCreateUniversityRequiresAdmin(t *testing.T) {
 		t.Fatalf("ожидалась ошибка доступа, получено %v", err)
 	}
 	if stub.called {
-		t.Fatal("Ironhide не должен вызываться без роли admin")
+		t.Fatal("Entities не должен вызываться без роли admin")
 	}
 }
 
-func TestCreateUniversityCallsIronhideForAdmin(t *testing.T) {
+func TestCreateUniversityCallsEntitiesForAdmin(t *testing.T) {
 	t.Parallel()
 	stub := &catalogStub{}
 	resolver := &mutationResolver{Resolver: &Resolver{Catalog: stub}}

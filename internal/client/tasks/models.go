@@ -1,4 +1,4 @@
-package tasksit
+package tasks
 
 import "io"
 
@@ -232,7 +232,7 @@ type Error struct {
 	StatusCode int    `json:"-"`
 }
 
-// Error возвращает безопасное описание ошибки tasks-it.
+// Error возвращает безопасное описание ошибки tasks.
 func (e *Error) Error() string {
 	return e.Code + ": " + e.Message
 }

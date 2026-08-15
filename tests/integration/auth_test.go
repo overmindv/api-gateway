@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/config"
 	graphqldelivery "github.com/overmindv/api-gateway/internal/graphql"
 	"github.com/overmindv/api-gateway/internal/middleware"
@@ -34,7 +34,7 @@ type gatewayUser struct {
 	Password    string   `json:"-"`
 }
 
-type fakeArceeGraphQL struct {
+type fakeUsersGraphQL struct {
 	secret string
 	issuer string
 	users  map[string]*gatewayUser
@@ -45,10 +45,10 @@ const (
 	fakeStudentID = "22222222-2222-2222-2222-222222222222"
 )
 
-func newFakeArceeGraphQL() *fakeArceeGraphQL {
-	return &fakeArceeGraphQL{
+func newFakeUsersGraphQL() *fakeUsersGraphQL {
+	return &fakeUsersGraphQL{
 		secret: "gateway-test-secret",
-		issuer: "arcee",
+		issuer: "users",
 		users: map[string]*gatewayUser{
 			"admin@example.com": {
 				ID:          fakeAdminID,
@@ -65,7 +65,7 @@ func newFakeArceeGraphQL() *fakeArceeGraphQL {
 	}
 }
 
-func (f *fakeArceeGraphQL) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (f *fakeUsersGraphQL) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		Query     string         `json:"query"`
 		Variables map[string]any `json:"variables"`
@@ -98,7 +98,7 @@ func (f *fakeArceeGraphQL) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (f *fakeArceeGraphQL) register(w http.ResponseWriter, variables map[string]any) {
+func (f *fakeUsersGraphQL) register(w http.ResponseWriter, variables map[string]any) {
 	input := variables["input"].(map[string]any)
 	email := input["email"].(string)
 	user := &gatewayUser{
@@ -122,7 +122,7 @@ func (f *fakeArceeGraphQL) register(w http.ResponseWriter, variables map[string]
 	})
 }
 
-func (f *fakeArceeGraphQL) login(w http.ResponseWriter, variables map[string]any) {
+func (f *fakeUsersGraphQL) login(w http.ResponseWriter, variables map[string]any) {
 	input := variables["input"].(map[string]any)
 	user := f.users[input["email"].(string)]
 	if user == nil || user.Password != input["password"].(string) {
@@ -138,7 +138,7 @@ func (f *fakeArceeGraphQL) login(w http.ResponseWriter, variables map[string]any
 	})
 }
 
-func (f *fakeArceeGraphQL) updateUser(w http.ResponseWriter, variables map[string]any) {
+func (f *fakeUsersGraphQL) updateUser(w http.ResponseWriter, variables map[string]any) {
 	input := variables["input"].(map[string]any)
 	for _, user := range f.users {
 		if user.ID == variables["id"].(string) {
@@ -151,7 +151,7 @@ func (f *fakeArceeGraphQL) updateUser(w http.ResponseWriter, variables map[strin
 	writeGraphQLError(w, "NOT_FOUND")
 }
 
-func (f *fakeArceeGraphQL) setUserAdminByUsername(w http.ResponseWriter, variables map[string]any) {
+func (f *fakeUsersGraphQL) setUserAdminByUsername(w http.ResponseWriter, variables map[string]any) {
 	username := variables["username"].(string)
 	admin := variables["admin"].(bool)
 	for _, user := range f.users {
@@ -169,7 +169,7 @@ func (f *fakeArceeGraphQL) setUserAdminByUsername(w http.ResponseWriter, variabl
 	writeGraphQLError(w, "NOT_FOUND")
 }
 
-func (f *fakeArceeGraphQL) token(user *gatewayUser) string {
+func (f *fakeUsersGraphQL) token(user *gatewayUser) string {
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":   user.ID,
 		"iss":   f.issuer,
@@ -184,16 +184,16 @@ func (f *fakeArceeGraphQL) token(user *gatewayUser) string {
 	return token
 }
 
-func (f *fakeArceeGraphQL) hasBearer(r *http.Request) bool {
+func (f *fakeUsersGraphQL) hasBearer(r *http.Request) bool {
 	return strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ")
 }
 
-func TestGatewayAuthFlowThroughArceeClient(t *testing.T) {
-	upstream := newFakeArceeGraphQL()
+func TestGatewayAuthFlowThroughUsersClient(t *testing.T) {
+	upstream := newFakeUsersGraphQL()
 	upstreamServer := httptest.NewServer(upstream)
 	defer upstreamServer.Close()
 
-	users := arcee.New(config.Arcee{
+	users := users.New(config.Users{
 		GraphQLURL: upstreamServer.URL,
 		HealthURL:  upstreamServer.URL,
 		Timeout:    time.Second,
@@ -216,7 +216,7 @@ func TestGatewayAuthFlowThroughArceeClient(t *testing.T) {
 
 	updated := gatewayUpdateUser(t, handler, registered.Token, registered.User.ID)
 	if updated.FirstName != "Updated" {
-		t.Fatalf("gateway update did not reach arcee: %+v", updated)
+		t.Fatalf("gateway update did not reach users: %+v", updated)
 	}
 
 	admin := gatewayLogin(t, handler, "admin@example.com", "password")

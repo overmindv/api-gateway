@@ -1,4 +1,4 @@
-package arcee
+package users
 
 import (
 	"bytes"
@@ -25,7 +25,7 @@ type Client struct {
 	log       *slog.Logger
 }
 
-func New(cfg config.Arcee, log *slog.Logger) *Client {
+func New(cfg config.Users, log *slog.Logger) *Client {
 	return &Client{
 		url:       cfg.GraphQLURL,
 		healthURL: cfg.HealthURL,
@@ -48,7 +48,7 @@ func (c *Client) Register(ctx context.Context, input RegisterInput) (*AuthPayloa
 	if data.Register == nil {
 		return nil, &Error{
 			Code:    "BAD_GATEWAY",
-			Message: "arcee returned an empty registration response",
+			Message: "users returned an empty registration response",
 		}
 	}
 
@@ -68,7 +68,7 @@ func (c *Client) Login(ctx context.Context, input LoginInput) (*AuthPayload, err
 	if data.Login == nil {
 		return nil, &Error{
 			Code:    "BAD_GATEWAY",
-			Message: "arcee returned an empty login response",
+			Message: "users returned an empty login response",
 		}
 	}
 
@@ -88,7 +88,7 @@ func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
 	if data.User == nil {
 		return nil, &Error{
 			Code:    "BAD_GATEWAY",
-			Message: "arcee returned an empty user response",
+			Message: "users returned an empty user response",
 		}
 	}
 
@@ -108,7 +108,7 @@ func (c *Client) GetUserByUsername(ctx context.Context, username string) (*User,
 	if data.UserByUsername == nil {
 		return nil, &Error{
 			Code:    "BAD_GATEWAY",
-			Message: "arcee returned an empty user response",
+			Message: "users returned an empty user response",
 		}
 	}
 
@@ -138,7 +138,7 @@ func (c *Client) UpdateUser(ctx context.Context, id string, input UpdateUserInpu
 	if data.UpdateUser == nil {
 		return nil, &Error{
 			Code:    "BAD_GATEWAY",
-			Message: "arcee returned an empty update response",
+			Message: "users returned an empty update response",
 		}
 	}
 
@@ -168,7 +168,7 @@ func (c *Client) SetUserAdmin(ctx context.Context, id string, admin bool) (*User
 	if data.SetUserAdmin == nil {
 		return nil, &Error{
 			Code:    "BAD_GATEWAY",
-			Message: "arcee returned an empty admin response",
+			Message: "users returned an empty admin response",
 		}
 	}
 
@@ -188,7 +188,7 @@ func (c *Client) SetUserAdminByUsername(ctx context.Context, username string, ad
 	if data.SetUserAdminByUsername == nil {
 		return nil, &Error{
 			Code:    "BAD_GATEWAY",
-			Message: "arcee returned an empty admin response",
+			Message: "users returned an empty admin response",
 		}
 	}
 
@@ -212,7 +212,7 @@ func (c *Client) Health(ctx context.Context) error {
 
 	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64<<10))
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("arcee health returned HTTP %d", response.StatusCode)
+		return fmt.Errorf("users health returned HTTP %d", response.StatusCode)
 	}
 
 	return nil
@@ -236,13 +236,13 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	code := "OK"
 
 	defer func() {
-		c.log.InfoContext(ctx, "arcee graphql call", "request_id", middleware.RequestID(ctx), "operation", operation, "status", code, "duration", time.Since(started))
+		c.log.InfoContext(ctx, "users graphql call", "request_id", middleware.RequestID(ctx), "operation", operation, "status", code, "duration", time.Since(started))
 	}()
 
 	body, err := json.Marshal(requestEnvelope{Query: query, Variables: variables})
 	if err != nil {
 		code = "INTERNAL_SERVER_ERROR"
-		return fmt.Errorf("encode arcee request: %w", err)
+		return fmt.Errorf("encode users request: %w", err)
 	}
 
 	callCtx, cancel := context.WithTimeout(ctx, c.timeout)
@@ -251,7 +251,7 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	request, err := http.NewRequestWithContext(callCtx, http.MethodPost, c.url, bytes.NewReader(body))
 	if err != nil {
 		code = "INTERNAL_SERVER_ERROR"
-		return fmt.Errorf("create arcee request: %w", err)
+		return fmt.Errorf("create users request: %w", err)
 	}
 
 	request.Header.Set("Content-Type", "application/json")
@@ -272,29 +272,29 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(callCtx.Err(), context.DeadlineExceeded) {
 			code = "DEADLINE_EXCEEDED"
-			return &Error{Code: code, Message: "arcee request timed out"}
+			return &Error{Code: code, Message: "users request timed out"}
 		}
 
 		code = "SERVICE_UNAVAILABLE"
-		return &Error{Code: code, Message: "arcee is unavailable"}
+		return &Error{Code: code, Message: "users is unavailable"}
 	}
 
 	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(io.LimitReader(response.Body, 2<<20))
 	if err != nil {
 		code = "BAD_GATEWAY"
-		return &Error{Code: code, Message: "cannot read arcee response"}
+		return &Error{Code: code, Message: "cannot read users response"}
 	}
 
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		code = "BAD_GATEWAY"
-		return &Error{Code: code, Message: fmt.Sprintf("arcee returned HTTP %d", response.StatusCode)}
+		return &Error{Code: code, Message: fmt.Sprintf("users returned HTTP %d", response.StatusCode)}
 	}
 
 	var envelope responseEnvelope
 	if err := json.Unmarshal(responseBody, &envelope); err != nil {
 		code = "BAD_GATEWAY"
-		return &Error{Code: code, Message: "arcee returned invalid JSON"}
+		return &Error{Code: code, Message: "users returned invalid JSON"}
 	}
 
 	if len(envelope.Errors) > 0 {
@@ -305,7 +305,7 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 
 	if err := json.Unmarshal(envelope.Data, target); err != nil {
 		code = "BAD_GATEWAY"
-		return &Error{Code: code, Message: "arcee returned invalid data"}
+		return &Error{Code: code, Message: "users returned invalid data"}
 	}
 
 	return nil

@@ -3,13 +3,13 @@ package graphql
 import (
 	"context"
 
-	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 // tasksActor возвращает проверенного пользователя для actor headers.
-func tasksActor(ctx context.Context, admin bool) (tasksit.Actor, error) {
+func tasksActor(ctx context.Context, admin bool) (tasks.Actor, error) {
 	var auth middleware.AuthInfo
 	var err error
 	if admin {
@@ -18,18 +18,18 @@ func tasksActor(ctx context.Context, admin bool) (tasksit.Actor, error) {
 		auth, err = middleware.RequireAuth(ctx)
 	}
 	if err != nil {
-		return tasksit.Actor{}, err
+		return tasks.Actor{}, err
 	}
 
-	return tasksit.Actor{
+	return tasks.Actor{
 		UserID: auth.UserID,
 		Roles:  auth.Roles,
 	}, nil
 }
 
 // publicTaskFilter преобразует публичные фильтры GraphQL в HTTP-параметры.
-func publicTaskFilter(filter *model.ITTaskFilter, pagination *model.PaginationInput) tasksit.TaskFilter {
-	result := tasksit.TaskFilter{
+func publicTaskFilter(filter *model.ITTaskFilter, pagination *model.PaginationInput) tasks.TaskFilter {
+	result := tasks.TaskFilter{
 		Limit:  50,
 		Offset: 0,
 	}
@@ -48,8 +48,8 @@ func publicTaskFilter(filter *model.ITTaskFilter, pagination *model.PaginationIn
 }
 
 // adminTaskFilter преобразует административные фильтры GraphQL в HTTP-параметры.
-func adminTaskFilter(filter *model.ITAdminTaskFilter, pagination *model.PaginationInput) tasksit.TaskFilter {
-	result := tasksit.TaskFilter{
+func adminTaskFilter(filter *model.ITAdminTaskFilter, pagination *model.PaginationInput) tasks.TaskFilter {
+	result := tasks.TaskFilter{
 		Limit:  50,
 		Offset: 0,
 	}
@@ -70,8 +70,8 @@ func adminTaskFilter(filter *model.ITAdminTaskFilter, pagination *model.Paginati
 	return result
 }
 
-// applyTaskPagination применяет общие limit и offset к фильтру tasks-it.
-func applyTaskPagination(filter *tasksit.TaskFilter, pagination *model.PaginationInput) {
+// applyTaskPagination применяет общие limit и offset к фильтру tasks.
+func applyTaskPagination(filter *tasks.TaskFilter, pagination *model.PaginationInput) {
 	if pagination == nil {
 		return
 	}
@@ -79,24 +79,24 @@ func applyTaskPagination(filter *tasksit.TaskFilter, pagination *model.Paginatio
 	filter.Offset = intValue(pagination.Offset, 0)
 }
 
-// tasksInput преобразует GraphQL-ввод теста в DTO tasks-it.
-func tasksInput(input model.ITTaskInput) tasksit.TaskInput {
-	options := make([]tasksit.TaskOptionInput, 0, len(input.Options))
+// tasksInput преобразует GraphQL-ввод теста в DTO tasks.
+func tasksInput(input model.ITTaskInput) tasks.TaskInput {
+	options := make([]tasks.TaskOptionInput, 0, len(input.Options))
 	for _, option := range input.Options {
 		if option == nil {
 			continue
 		}
-		options = append(options, tasksit.TaskOptionInput{
+		options = append(options, tasks.TaskOptionInput{
 			Text:      option.Text,
 			IsCorrect: option.IsCorrect,
 		})
 	}
-	examples := make([]tasksit.TaskExample, 0, len(input.Examples))
+	examples := make([]tasks.TaskExample, 0, len(input.Examples))
 	for _, example := range input.Examples {
 		if example == nil {
 			continue
 		}
-		examples = append(examples, tasksit.TaskExample{
+		examples = append(examples, tasks.TaskExample{
 			Input:       example.Input,
 			Output:      example.Output,
 			Explanation: stringValue(example.Explanation),
@@ -107,7 +107,7 @@ func tasksInput(input model.ITTaskInput) tasksit.TaskInput {
 		difficulty = input.Difficulty.String()
 	}
 
-	return tasksit.TaskInput{
+	return tasks.TaskInput{
 		TopicID:     input.TopicID,
 		Title:       input.Title,
 		Statement:   input.Statement,
@@ -120,18 +120,18 @@ func tasksInput(input model.ITTaskInput) tasksit.TaskInput {
 	}
 }
 
-// submissionInput преобразует GraphQL-ответ пользователя в DTO tasks-it.
-func submissionInput(input model.ITSubmissionInput) tasksit.SubmissionInput {
-	return tasksit.SubmissionInput{
+// submissionInput преобразует GraphQL-ответ пользователя в DTO tasks.
+func submissionInput(input model.ITSubmissionInput) tasks.SubmissionInput {
+	return tasks.SubmissionInput{
 		TaskVersionID:     input.TaskVersionID,
 		IdempotencyKey:    input.IdempotencyKey,
 		SelectedOptionIDs: input.SelectedOptionIds,
 	}
 }
 
-// codeSubmissionInput преобразует GraphQL upload в поток multipart-клиента tasks-it.
-func codeSubmissionInput(input model.ITCodeSubmissionInput) tasksit.CodeSubmissionInput {
-	return tasksit.CodeSubmissionInput{
+// codeSubmissionInput преобразует GraphQL upload в поток multipart-клиента tasks.
+func codeSubmissionInput(input model.ITCodeSubmissionInput) tasks.CodeSubmissionInput {
+	return tasks.CodeSubmissionInput{
 		TaskVersionID:  input.TaskVersionID,
 		IdempotencyKey: input.IdempotencyKey,
 		Language:       input.Language.String(),
@@ -140,8 +140,8 @@ func codeSubmissionInput(input model.ITCodeSubmissionInput) tasksit.CodeSubmissi
 	}
 }
 
-// taskModel преобразует полную задачу tasks-it в GraphQL-модель.
-func taskModel(item tasksit.Task) *model.ITTask {
+// taskModel преобразует полную задачу tasks в GraphQL-модель.
+func taskModel(item tasks.Task) *model.ITTask {
 	options := make([]*model.ITTaskOption, 0, len(item.Options))
 	for _, option := range item.Options {
 		options = append(options, &model.ITTaskOption{
@@ -190,7 +190,7 @@ func taskModel(item tasksit.Task) *model.ITTask {
 }
 
 // publicTaskModel принудительно скрывает признаки правильных вариантов.
-func publicTaskModel(item tasksit.Task) *model.ITTask {
+func publicTaskModel(item tasks.Task) *model.ITTask {
 	result := taskModel(item)
 	for _, option := range result.Options {
 		option.IsCorrect = nil
@@ -200,7 +200,7 @@ func publicTaskModel(item tasksit.Task) *model.ITTask {
 }
 
 // taskListModel преобразует список задач с pagination metadata.
-func taskListModel(list tasksit.TaskList) *model.ITTaskList {
+func taskListModel(list tasks.TaskList) *model.ITTaskList {
 	items := make([]*model.ITTaskSummary, 0, len(list.Items))
 	for _, item := range list.Items {
 		items = append(items, &model.ITTaskSummary{
@@ -225,7 +225,7 @@ func taskListModel(list tasksit.TaskList) *model.ITTaskList {
 }
 
 // submissionModel преобразует сохранённый результат в GraphQL-модель.
-func submissionModel(item tasksit.Submission) *model.ITSubmission {
+func submissionModel(item tasks.Submission) *model.ITSubmission {
 	return &model.ITSubmission{
 		ID:                  item.ID,
 		UserID:              item.UserID,
@@ -244,7 +244,7 @@ func submissionModel(item tasksit.Submission) *model.ITSubmission {
 }
 
 // submissionListModel преобразует историю решений с pagination metadata.
-func submissionListModel(list tasksit.SubmissionList) *model.ITSubmissionList {
+func submissionListModel(list tasks.SubmissionList) *model.ITSubmissionList {
 	items := make([]*model.ITSubmission, 0, len(list.Items))
 	for _, item := range list.Items {
 		items = append(items, submissionModel(item))
@@ -258,7 +258,7 @@ func submissionListModel(list tasksit.SubmissionList) *model.ITSubmissionList {
 }
 
 // codeSubmissionModel преобразует асинхронный результат sandbox в GraphQL-модель.
-func codeSubmissionModel(item tasksit.CodeSubmission) *model.ITCodeSubmission {
+func codeSubmissionModel(item tasks.CodeSubmission) *model.ITCodeSubmission {
 	tests := make([]*model.ITExecutionTestResult, 0, len(item.Tests))
 	for _, test := range item.Tests {
 		tests = append(tests, &model.ITExecutionTestResult{
@@ -300,7 +300,7 @@ func codeSubmissionModel(item tasksit.CodeSubmission) *model.ITCodeSubmission {
 }
 
 // executionPhaseModel преобразует необязательный результат фазы выполнения.
-func executionPhaseModel(item *tasksit.ExecutionPhaseResult) *model.ITExecutionPhaseResult {
+func executionPhaseModel(item *tasks.ExecutionPhaseResult) *model.ITExecutionPhaseResult {
 	if item == nil {
 		return nil
 	}
@@ -315,7 +315,7 @@ func executionPhaseModel(item *tasksit.ExecutionPhaseResult) *model.ITExecutionP
 }
 
 // executionFailureModel преобразует безопасную ошибку sandbox.
-func executionFailureModel(item *tasksit.ExecutionFailure) *model.ITExecutionFailure {
+func executionFailureModel(item *tasks.ExecutionFailure) *model.ITExecutionFailure {
 	if item == nil {
 		return nil
 	}
@@ -327,7 +327,7 @@ func executionFailureModel(item *tasksit.ExecutionFailure) *model.ITExecutionFai
 }
 
 // codeSubmissionListModel преобразует историю программных решений.
-func codeSubmissionListModel(list tasksit.CodeSubmissionList) *model.ITCodeSubmissionList {
+func codeSubmissionListModel(list tasks.CodeSubmissionList) *model.ITCodeSubmissionList {
 	items := make([]*model.ITCodeSubmission, 0, len(list.Items))
 	for _, item := range list.Items {
 		items = append(items, codeSubmissionModel(item))

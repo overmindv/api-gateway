@@ -11,9 +11,9 @@ import (
 
 type Config struct {
 	HTTP       HTTP
-	Arcee      Arcee
-	Ironhide   Ironhide
-	TasksIT    TasksIT
+	Users      Users
+	Entities   Entities
+	Tasks      Tasks
 	TaskHunter TaskHunter
 	JWT        JWT
 }
@@ -28,17 +28,17 @@ type HTTP struct {
 	RequestLogPath  string
 }
 
-type Arcee struct {
+type Users struct {
 	GraphQLURL string
 	HealthURL  string
 	Timeout    time.Duration
 }
-type Ironhide struct {
+type Entities struct {
 	URL     string
 	Timeout time.Duration
 }
 
-type TasksIT struct {
+type Tasks struct {
 	URL     string
 	Timeout time.Duration
 }
@@ -59,7 +59,7 @@ type JWT struct {
 // На вход не получает параметров, на выход возвращает нормализованный Config или ошибку валидации.
 func Load() (Config, error) {
 	port := strings.TrimPrefix(env("PORT", "8081"), ":")
-	graphqlURL := env("ARCEE_GRAPHQL_URL", "http://localhost:8080/query")
+	graphqlURL := env("USERS_GRAPHQL_URL", "http://localhost:8080/query")
 
 	cfg := Config{
 		HTTP: HTTP{
@@ -71,18 +71,18 @@ func Load() (Config, error) {
 			CORSOrigins:     envCSV("CORS_ORIGINS", []string{"http://localhost:5173"}),
 			RequestLogPath:  env("REQUEST_LOG_PATH", ""),
 		},
-		Arcee: Arcee{
+		Users: Users{
 			GraphQLURL: graphqlURL,
-			HealthURL:  env("ARCEE_HEALTH_URL", deriveHealthURL(graphqlURL)),
-			Timeout:    envDuration("ARCEE_TIMEOUT", 5*time.Second),
+			HealthURL:  env("USERS_HEALTH_URL", deriveHealthURL(graphqlURL)),
+			Timeout:    envDuration("USERS_TIMEOUT", 5*time.Second),
 		},
-		Ironhide: Ironhide{
-			URL:     env("IRONHIDE_URL", "http://localhost:8082"),
-			Timeout: envDuration("IRONHIDE_TIMEOUT", 5*time.Second),
+		Entities: Entities{
+			URL:     env("ENTITIES_URL", "http://localhost:8082"),
+			Timeout: envDuration("ENTITIES_TIMEOUT", 5*time.Second),
 		},
-		TasksIT: TasksIT{
-			URL:     env("TASKS_IT_URL", "http://localhost:8083"),
-			Timeout: envDuration("TASKS_IT_TIMEOUT", 5*time.Second),
+		Tasks: Tasks{
+			URL:     env("TASKS_URL", "http://localhost:8083"),
+			Timeout: envDuration("TASKS_TIMEOUT", 5*time.Second),
 		},
 		TaskHunter: TaskHunter{
 			URL:     env("TASK_HUNTER_URL", "http://localhost:8084"),
@@ -91,7 +91,7 @@ func Load() (Config, error) {
 		},
 		JWT: JWT{
 			Secret:       env("JWT_SECRET", "local-development-secret-change-me"),
-			Issuer:       env("JWT_ISSUER", "arcee"),
+			Issuer:       env("JWT_ISSUER", "users"),
 			AdminUserIDs: envCSV("ADMIN_USER_IDS", nil),
 		},
 	}
@@ -100,31 +100,31 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("PORT must be a valid TCP port: %w", err)
 	}
 
-	parsedGraphQLURL, err := url.Parse(cfg.Arcee.GraphQLURL)
+	parsedGraphQLURL, err := url.Parse(cfg.Users.GraphQLURL)
 	if err != nil {
-		return Config{}, fmt.Errorf("ARCEE_GRAPHQL_URL: %w", err)
+		return Config{}, fmt.Errorf("USERS_GRAPHQL_URL: %w", err)
 	}
 
 	if parsedGraphQLURL.Host == "" || (parsedGraphQLURL.Scheme != "http" && parsedGraphQLURL.Scheme != "https") {
-		return Config{}, fmt.Errorf("ARCEE_GRAPHQL_URL must be an absolute HTTP(S) URL")
+		return Config{}, fmt.Errorf("USERS_GRAPHQL_URL must be an absolute HTTP(S) URL")
 	}
 
-	if cfg.Arcee.Timeout <= 0 {
-		return Config{}, fmt.Errorf("ARCEE_TIMEOUT must be positive")
+	if cfg.Users.Timeout <= 0 {
+		return Config{}, fmt.Errorf("USERS_TIMEOUT must be positive")
 	}
-	parsedIronhideURL, err := url.Parse(cfg.Ironhide.URL)
-	if err != nil || parsedIronhideURL.Host == "" || (parsedIronhideURL.Scheme != "http" && parsedIronhideURL.Scheme != "https") {
-		return Config{}, fmt.Errorf("IRONHIDE_URL must be an absolute HTTP(S) URL")
+	parsedEntitiesURL, err := url.Parse(cfg.Entities.URL)
+	if err != nil || parsedEntitiesURL.Host == "" || (parsedEntitiesURL.Scheme != "http" && parsedEntitiesURL.Scheme != "https") {
+		return Config{}, fmt.Errorf("ENTITIES_URL must be an absolute HTTP(S) URL")
 	}
-	if cfg.Ironhide.Timeout <= 0 {
-		return Config{}, fmt.Errorf("IRONHIDE_TIMEOUT must be positive")
+	if cfg.Entities.Timeout <= 0 {
+		return Config{}, fmt.Errorf("ENTITIES_TIMEOUT must be positive")
 	}
-	parsedTasksITURL, err := url.Parse(cfg.TasksIT.URL)
-	if err != nil || parsedTasksITURL.Host == "" || (parsedTasksITURL.Scheme != "http" && parsedTasksITURL.Scheme != "https") {
-		return Config{}, fmt.Errorf("TASKS_IT_URL must be an absolute HTTP(S) URL")
+	parsedTasksURL, err := url.Parse(cfg.Tasks.URL)
+	if err != nil || parsedTasksURL.Host == "" || (parsedTasksURL.Scheme != "http" && parsedTasksURL.Scheme != "https") {
+		return Config{}, fmt.Errorf("TASKS_URL must be an absolute HTTP(S) URL")
 	}
-	if cfg.TasksIT.Timeout <= 0 {
-		return Config{}, fmt.Errorf("TASKS_IT_TIMEOUT must be positive")
+	if cfg.Tasks.Timeout <= 0 {
+		return Config{}, fmt.Errorf("TASKS_TIMEOUT must be positive")
 	}
 	parsedTaskHunterURL, err := url.Parse(cfg.TaskHunter.URL)
 	if err != nil || parsedTaskHunterURL.Host == "" || (parsedTaskHunterURL.Scheme != "http" && parsedTaskHunterURL.Scheme != "https") {
@@ -144,7 +144,7 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-// deriveHealthURL строит health endpoint из GraphQL URL Arcee.
+// deriveHealthURL строит health endpoint из GraphQL URL Users.
 // На вход получает GraphQL URL, на выход возвращает URL healthcheck endpoint.
 func deriveHealthURL(graphqlURL string) string {
 	parsed, err := url.Parse(graphqlURL)

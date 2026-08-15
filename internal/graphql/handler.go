@@ -12,10 +12,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/overmindv/api-gateway/internal/client/arcee"
-	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
-	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/client/tasks"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/graphql/generated"
 	"github.com/overmindv/api-gateway/internal/middleware"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -24,20 +24,20 @@ import (
 const graphqlMultipartLimit = 512 << 10
 
 // Handler создаёт GraphQL handler со всеми внутренними сервисами.
-func Handler(users arcee.UserService, catalog ironhide.CatalogService, tasks tasksit.Service, log *slog.Logger) http.Handler {
+func Handler(users users.UserService, catalog entities.CatalogService, tasks tasks.Service, log *slog.Logger) http.Handler {
 	return HandlerWithTaskHunter(users, catalog, tasks, nil, log)
 }
 
 // HandlerWithTaskHunter создаёт GraphQL handler с клиентом очереди сбора.
-func HandlerWithTaskHunter(users arcee.UserService, catalog ironhide.CatalogService, tasks tasksit.Service, taskHunter taskhunter.Service, log *slog.Logger) http.Handler {
-	var candidates tasksit.CandidateService
-	if service, ok := tasks.(tasksit.CandidateService); ok {
+func HandlerWithTaskHunter(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, log *slog.Logger) http.Handler {
+	var candidates tasks.CandidateService
+	if service, ok := tasksSvc.(tasks.CandidateService); ok {
 		candidates = service
 	}
 	server := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{
 		Users:      users,
 		Catalog:    catalog,
-		Tasks:      tasks,
+		Tasks:      tasksSvc,
 		Candidates: candidates,
 		TaskHunter: taskHunter,
 	}}))

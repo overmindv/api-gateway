@@ -1,4 +1,4 @@
-package ironhide
+package entities
 
 import (
 	"bytes"
@@ -129,7 +129,7 @@ func TestCreateRequestsOmitResponseOnlyFields(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := New("http://ironhide.local", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
+			client := New("http://entities.local", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
 			client.http.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 				if r.Method != http.MethodPost || r.URL.Path != test.path {
 					t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)

@@ -1,4 +1,4 @@
-package ironhide
+package entities
 
 type University struct {
 	ID         string  `json:"id,omitempty"`

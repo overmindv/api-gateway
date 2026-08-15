@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/overmindv/api-gateway/internal/apperror"
-	"github.com/overmindv/api-gateway/internal/client/arcee"
-	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/client/tasks"
+	"github.com/overmindv/api-gateway/internal/client/users"
 )
 
 func TestErrorCodeAndMessage(t *testing.T) {
@@ -21,11 +21,11 @@ func TestErrorCodeAndMessage(t *testing.T) {
 			code: "UNAUTHENTICATED"},
 		{
 			name: "upstream",
-			err:  &arcee.Error{Code: "NOT_FOUND", Message: "missing"},
+			err:  &users.Error{Code: "NOT_FOUND", Message: "missing"},
 			code: "NOT_FOUND"},
 		{
-			name: "tasks-it",
-			err:  &tasksit.Error{Code: "IDEMPOTENCY_KEY_CONFLICT", Message: "conflict"},
+			name: "tasks",
+			err:  &tasks.Error{Code: "IDEMPOTENCY_KEY_CONFLICT", Message: "conflict"},
 			code: "IDEMPOTENCY_KEY_CONFLICT",
 		},
 		{

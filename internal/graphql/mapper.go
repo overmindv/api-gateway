@@ -1,11 +1,11 @@
 package graphql
 
 import (
-	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 )
 
-func toUser(user *arcee.User) *model.User {
+func toUser(user *users.User) *model.User {
 	return &model.User{
 		ID:          user.ID,
 		Email:       user.Email,
@@ -22,7 +22,7 @@ func toUser(user *arcee.User) *model.User {
 	}
 }
 
-func toAuthPayload(response *arcee.AuthPayload) *model.AuthPayload {
+func toAuthPayload(response *users.AuthPayload) *model.AuthPayload {
 	return &model.AuthPayload{
 		User:      toUser(response.User),
 		Token:     response.Token,

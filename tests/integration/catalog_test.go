@@ -10,21 +10,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/overmindv/api-gateway/internal/client/arcee"
-	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/entities"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/config"
 	graphqldelivery "github.com/overmindv/api-gateway/internal/graphql"
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
-// fakeIronhideCatalog эмулирует HTTP API Ironhide и проверяет, что gateway передаёт actor и request_id.
-type fakeIronhideCatalog struct {
+// fakeEntitiesCatalog эмулирует HTTP API Entities и проверяет, что gateway передаёт actor и request_id.
+type fakeEntitiesCatalog struct {
 	t        *testing.T
-	requests []fakeIronhideRequest
+	requests []fakeEntitiesRequest
 }
 
-// fakeIronhideRequest хранит важные поля внутреннего запроса для проверок интеграционного сценария.
-type fakeIronhideRequest struct {
+// fakeEntitiesRequest хранит важные поля внутреннего запроса для проверок интеграционного сценария.
+type fakeEntitiesRequest struct {
 	Method    string
 	Path      string
 	RequestID string
@@ -33,8 +33,8 @@ type fakeIronhideRequest struct {
 }
 
 // ServeHTTP обрабатывает минимальный набор endpoints каталога для полного GraphQL flow.
-func (f *fakeIronhideCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	f.requests = append(f.requests, fakeIronhideRequest{
+func (f *fakeEntitiesCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	f.requests = append(f.requests, fakeEntitiesRequest{
 		Method:    r.Method,
 		Path:      r.URL.Path,
 		RequestID: r.Header.Get(middleware.RequestIDHeader),
@@ -42,39 +42,39 @@ func (f *fakeIronhideCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		Roles:     r.Header.Get("X-User-Roles"),
 	})
 	if !strings.Contains(r.Header.Get("X-User-Roles"), "admin") || r.Header.Get("X-User-ID") == "" {
-		writeIronhideJSON(w, http.StatusForbidden, map[string]string{"code": "PERMISSION_DENIED", "message": "операция доступна только администратору"})
+		writeEntitiesJSON(w, http.StatusForbidden, map[string]string{"code": "PERMISSION_DENIED", "message": "операция доступна только администратору"})
 		return
 	}
 
 	switch {
 	case r.Method == http.MethodPost && r.URL.Path == "/v1/universities":
-		var input ironhide.University
+		var input entities.University
 		f.decode(r, &input)
 		input.ID = "33333333-3333-3333-3333-333333333333"
 		input.Status = "draft"
 		input.CreatedAt = "2026-07-18T10:10:00Z"
 		input.UpdatedAt = input.CreatedAt
-		writeIronhideJSON(w, http.StatusCreated, input)
+		writeEntitiesJSON(w, http.StatusCreated, input)
 	case r.Method == http.MethodPost && r.URL.Path == "/v1/programs":
-		var input ironhide.Program
+		var input entities.Program
 		f.decode(r, &input)
 		input.ID = "44444444-4444-4444-4444-444444444444"
 		input.DegreeLevel = "other"
 		input.Status = "draft"
 		input.CreatedAt = "2026-07-18T10:11:00Z"
 		input.UpdatedAt = input.CreatedAt
-		writeIronhideJSON(w, http.StatusCreated, input)
+		writeEntitiesJSON(w, http.StatusCreated, input)
 	case r.Method == http.MethodPost && r.URL.Path == "/v1/courses":
-		var input ironhide.Course
+		var input entities.Course
 		f.decode(r, &input)
 		input.ID = "55555555-5555-5555-5555-555555555555"
 		input.Slug = "algorithms"
 		input.Status = "draft"
 		input.CreatedAt = "2026-07-18T10:12:00Z"
 		input.UpdatedAt = input.CreatedAt
-		writeIronhideJSON(w, http.StatusCreated, input)
+		writeEntitiesJSON(w, http.StatusCreated, input)
 	case r.Method == http.MethodPost && r.URL.Path == "/v1/topics":
-		var input ironhide.Topic
+		var input entities.Topic
 		f.decode(r, &input)
 		if input.Title == "Intro" {
 			input.ID = "66666666-6666-6666-6666-666666666666"
@@ -86,49 +86,49 @@ func (f *fakeIronhideCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		input.Status = "draft"
 		input.CreatedAt = "2026-07-18T10:13:00Z"
 		input.UpdatedAt = input.CreatedAt
-		writeIronhideJSON(w, http.StatusCreated, input)
+		writeEntitiesJSON(w, http.StatusCreated, input)
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/prerequisites"):
 		var input struct {
 			PrerequisiteTopicID string `json:"prerequisite_topic_id"`
 		}
 		f.decode(r, &input)
 		topicID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/v1/topics/"), "/prerequisites")
-		writeIronhideJSON(w, http.StatusCreated, ironhide.TopicPrerequisite{
+		writeEntitiesJSON(w, http.StatusCreated, entities.TopicPrerequisite{
 			TopicID:             topicID,
 			PrerequisiteTopicID: input.PrerequisiteTopicID,
 			CreatedAt:           "2026-07-18T10:14:00Z",
 		})
 	default:
-		writeIronhideJSON(w, http.StatusNotFound, map[string]string{"code": "NOT_FOUND", "message": "endpoint не найден"})
+		writeEntitiesJSON(w, http.StatusNotFound, map[string]string{"code": "NOT_FOUND", "message": "endpoint не найден"})
 	}
 }
 
-// decode читает JSON body fake Ironhide и падает тестом при невалидном payload.
-func (f *fakeIronhideCatalog) decode(r *http.Request, target any) {
+// decode читает JSON body fake Entities и падает тестом при невалидном payload.
+func (f *fakeEntitiesCatalog) decode(r *http.Request, target any) {
 	f.t.Helper()
 	if err := json.NewDecoder(r.Body).Decode(target); err != nil {
-		f.t.Fatalf("decode ironhide request: %v", err)
+		f.t.Fatalf("decode entities request: %v", err)
 	}
 }
 
 // TestGatewayFullCatalogFlow повторяет пользовательскую цепочку: регистрация, назначение админом и создание каталога.
 func TestGatewayFullCatalogFlow(t *testing.T) {
-	arceeUpstream := newFakeArceeGraphQL()
-	arceeServer := httptest.NewServer(arceeUpstream)
-	defer arceeServer.Close()
+	usersUpstream := newFakeUsersGraphQL()
+	usersServer := httptest.NewServer(usersUpstream)
+	defer usersServer.Close()
 
-	ironhideUpstream := &fakeIronhideCatalog{t: t}
-	ironhideServer := httptest.NewServer(ironhideUpstream)
-	defer ironhideServer.Close()
+	entitiesUpstream := &fakeEntitiesCatalog{t: t}
+	entitiesServer := httptest.NewServer(entitiesUpstream)
+	defer entitiesServer.Close()
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	users := arcee.New(config.Arcee{
-		GraphQLURL: arceeServer.URL,
-		HealthURL:  arceeServer.URL,
+	users := users.New(config.Users{
+		GraphQLURL: usersServer.URL,
+		HealthURL:  usersServer.URL,
 		Timeout:    time.Second,
 	}, logger)
-	catalog := ironhide.New(ironhideServer.URL, time.Second, logger)
-	authenticator := middleware.NewJWTAuthenticator(arceeUpstream.secret, arceeUpstream.issuer)
+	catalog := entities.New(entitiesServer.URL, time.Second, logger)
+	authenticator := middleware.NewJWTAuthenticator(usersUpstream.secret, usersUpstream.issuer)
 	handler := graphqldelivery.Handler(users, catalog, nil, logger)
 	handler = middleware.JWT(authenticator, handler)
 	handler = middleware.RequestIDMiddleware(handler)
@@ -157,9 +157,9 @@ func TestGatewayFullCatalogFlow(t *testing.T) {
 	if prerequisite.TopicID != next.ID || prerequisite.PrerequisiteTopicID != intro.ID {
 		t.Fatalf("prerequisite is not attached correctly: %+v", prerequisite)
 	}
-	for _, request := range ironhideUpstream.requests {
+	for _, request := range entitiesUpstream.requests {
 		if request.RequestID == "" || request.UserID != fakeStudentID || !strings.Contains(request.Roles, "admin") {
-			t.Fatalf("gateway did not pass actor/request metadata to ironhide: %+v", request)
+			t.Fatalf("gateway did not pass actor/request metadata to entities: %+v", request)
 		}
 	}
 }
@@ -282,8 +282,8 @@ func gatewayAddPrerequisite(t *testing.T, handler http.Handler, token, topicID, 
 	return data.AddTopicPrerequisite
 }
 
-// writeIronhideJSON пишет JSON response из fake Ironhide.
-func writeIronhideJSON(w http.ResponseWriter, status int, payload any) {
+// writeEntitiesJSON пишет JSON response из fake Entities.
+func writeEntitiesJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)

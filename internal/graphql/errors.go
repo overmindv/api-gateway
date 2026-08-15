@@ -7,10 +7,10 @@ import (
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/overmindv/api-gateway/internal/apperror"
-	"github.com/overmindv/api-gateway/internal/client/arcee"
-	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
-	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/client/tasks"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/middleware"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
@@ -56,15 +56,15 @@ func errorCodeAndMessage(err error) (string, string) {
 		return "GRAPHQL_ERROR", "Не удалось выполнить действие."
 	}
 
-	var upstreamError *arcee.Error
+	var upstreamError *users.Error
 	if errors.As(err, &upstreamError) {
 		return upstreamError.Code, "Не удалось выполнить действие."
 	}
-	var catalogError *ironhide.Error
+	var catalogError *entities.Error
 	if errors.As(err, &catalogError) {
 		return catalogError.Code, "Не удалось выполнить действие."
 	}
-	var tasksError *tasksit.Error
+	var tasksError *tasks.Error
 	if errors.As(err, &tasksError) {
 		return tasksError.Code, "Не удалось выполнить действие."
 	}

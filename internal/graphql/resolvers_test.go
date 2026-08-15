@@ -6,25 +6,25 @@ import (
 	"testing"
 
 	"github.com/overmindv/api-gateway/internal/apperror"
-	"github.com/overmindv/api-gateway/internal/client/arcee"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type userServiceStub struct {
-	register              arcee.RegisterInput
-	login                 arcee.LoginInput
+	register              users.RegisterInput
+	login                 users.LoginInput
 	getID                 string
 	getUsername           string
 	listSearch            string
 	listLimit, listOffset int
 	updateID              string
-	update                arcee.UpdateUserInput
+	update                users.UpdateUserInput
 	deleteID              string
 }
 
-func upstreamUser() *arcee.User {
-	return &arcee.User{
+func upstreamUser() *users.User {
+	return &users.User{
 		ID:        "user-id",
 		Email:     "user@example.com",
 		Username:  "user",
@@ -32,45 +32,45 @@ func upstreamUser() *arcee.User {
 	}
 }
 
-func (s *userServiceStub) Register(_ context.Context, input arcee.RegisterInput) (*arcee.AuthPayload, error) {
+func (s *userServiceStub) Register(_ context.Context, input users.RegisterInput) (*users.AuthPayload, error) {
 	s.register = input
 
-	return &arcee.AuthPayload{
+	return &users.AuthPayload{
 		User:      upstreamUser(),
 		Token:     "token",
 		ExpiresAt: "tomorrow",
 	}, nil
 }
 
-func (s *userServiceStub) Login(_ context.Context, input arcee.LoginInput) (*arcee.AuthPayload, error) {
+func (s *userServiceStub) Login(_ context.Context, input users.LoginInput) (*users.AuthPayload, error) {
 	s.login = input
 
-	return &arcee.AuthPayload{
+	return &users.AuthPayload{
 		User:      upstreamUser(),
 		Token:     "token",
 		ExpiresAt: "tomorrow",
 	}, nil
 }
 
-func (s *userServiceStub) GetUser(_ context.Context, id string) (*arcee.User, error) {
+func (s *userServiceStub) GetUser(_ context.Context, id string) (*users.User, error) {
 	s.getID = id
 
 	return upstreamUser(), nil
 }
 
-func (s *userServiceStub) GetUserByUsername(_ context.Context, username string) (*arcee.User, error) {
+func (s *userServiceStub) GetUserByUsername(_ context.Context, username string) (*users.User, error) {
 	s.getUsername = username
 
 	return upstreamUser(), nil
 }
 
-func (s *userServiceStub) ListUsers(_ context.Context, search string, limit, offset int) ([]*arcee.User, error) {
+func (s *userServiceStub) ListUsers(_ context.Context, search string, limit, offset int) ([]*users.User, error) {
 	s.listSearch, s.listLimit, s.listOffset = search, limit, offset
 
-	return []*arcee.User{upstreamUser()}, nil
+	return []*users.User{upstreamUser()}, nil
 }
 
-func (s *userServiceStub) UpdateUser(_ context.Context, id string, input arcee.UpdateUserInput) (*arcee.User, error) {
+func (s *userServiceStub) UpdateUser(_ context.Context, id string, input users.UpdateUserInput) (*users.User, error) {
 	s.updateID, s.update = id, input
 
 	return upstreamUser(), nil
@@ -82,7 +82,7 @@ func (s *userServiceStub) DeleteUser(_ context.Context, id string) (bool, error)
 	return true, nil
 }
 
-func (s *userServiceStub) SetUserAdmin(_ context.Context, id string, admin bool) (*arcee.User, error) {
+func (s *userServiceStub) SetUserAdmin(_ context.Context, id string, admin bool) (*users.User, error) {
 	user := upstreamUser()
 	user.ID = id
 	user.IsAdmin = admin
@@ -90,7 +90,7 @@ func (s *userServiceStub) SetUserAdmin(_ context.Context, id string, admin bool)
 	return user, nil
 }
 
-func (s *userServiceStub) SetUserAdminByUsername(_ context.Context, username string, admin bool) (*arcee.User, error) {
+func (s *userServiceStub) SetUserAdminByUsername(_ context.Context, username string, admin bool) (*users.User, error) {
 	user := upstreamUser()
 	user.Username = username
 	user.IsAdmin = admin

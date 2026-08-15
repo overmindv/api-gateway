@@ -6,7 +6,7 @@ GOLANGCI_LINT := $(LOCAL_BIN)/golangci-lint
 
 # Запуск
 run:
-	go run ./cmd/laserbeak
+	go run ./cmd/api-gateway
 
 # Сборка
 build:
@@ -15,7 +15,7 @@ build:
 # Запуск тестов
 test:
 	go test -race ./...
-	go test -coverprofile=coverage.out ./internal/client/arcee ./internal/client/tasksit ./internal/graphql ./internal/middleware ./internal/config ./internal/server
+	go test -coverprofile=coverage.out ./internal/client/users ./internal/client/tasks ./internal/graphql ./internal/middleware ./internal/config ./internal/server
 	go tool cover -func=coverage.out | tail -1
 
 # Запуск интеграционных тестов gateway
