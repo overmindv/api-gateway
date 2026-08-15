@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/overmindv/api-gateway/internal/client/arcee"
-	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
-	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/client/tasks"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/config"
 	"github.com/overmindv/api-gateway/internal/middleware"
 	"github.com/overmindv/api-gateway/internal/server"
@@ -34,12 +34,12 @@ func main() {
 	}
 	defer closeRequestLog()
 
-	users := arcee.New(cfg.Arcee, requestLog)
-	catalog := ironhide.New(cfg.Ironhide.URL, cfg.Ironhide.Timeout, requestLog)
-	tasks := tasksit.New(cfg.TasksIT.URL, cfg.TasksIT.Timeout, requestLog)
-	taskHunter := taskhunter.New(cfg.TaskHunter.URL, cfg.TaskHunter.Token, cfg.TaskHunter.Timeout, requestLog)
+	usersService := users.New(cfg.Users, requestLog)
+	entitiesService := entities.New(cfg.Entities.URL, cfg.Entities.Timeout, requestLog)
+	tasksService := tasks.New(cfg.Tasks.URL, cfg.Tasks.Timeout, requestLog)
+	taskHunterService := taskhunter.New(cfg.TaskHunter.URL, cfg.TaskHunter.Token, cfg.TaskHunter.Timeout, requestLog)
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
-	httpServer := server.New(cfg.HTTP, users, catalog, tasks, taskHunter, users, authenticator, log, requestLog)
+	httpServer := server.New(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, usersService, authenticator, log, requestLog)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

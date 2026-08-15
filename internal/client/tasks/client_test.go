@@ -1,4 +1,4 @@
-package tasksit
+package tasks
 
 import (
 	"bytes"
@@ -378,7 +378,7 @@ func (fn roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error)
 func testClient(t *testing.T, handler func(*http.Request) *http.Response) *Client {
 	t.Helper()
 
-	client := New("http://tasks-it.local", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	client := New("http://tasks.local", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	client.http.Transport = roundTripFunc(func(request *http.Request) (*http.Response, error) {
 		return handler(request), nil
 	})

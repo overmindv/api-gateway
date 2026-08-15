@@ -1,4 +1,4 @@
-package arcee
+package users
 
 import "context"
 

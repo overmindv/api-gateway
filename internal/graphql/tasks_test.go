@@ -14,17 +14,17 @@ import (
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/overmindv/api-gateway/internal/apperror"
-	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type tasksServiceStub struct {
-	filter          tasksit.TaskFilter
-	actor           tasksit.Actor
-	input           tasksit.TaskInput
-	submissionInput tasksit.SubmissionInput
-	codeInput       tasksit.CodeSubmissionInput
+	filter          tasks.TaskFilter
+	actor           tasks.Actor
+	input           tasks.TaskInput
+	submissionInput tasks.SubmissionInput
+	codeInput       tasks.CodeSubmissionInput
 	taskID          string
 	submissionID    string
 	status          string
@@ -32,29 +32,29 @@ type tasksServiceStub struct {
 }
 
 // ListPublished сохраняет публичный фильтр и возвращает список.
-func (s *tasksServiceStub) ListPublished(_ context.Context, filter tasksit.TaskFilter) (tasksit.TaskList, error) {
+func (s *tasksServiceStub) ListPublished(_ context.Context, filter tasks.TaskFilter) (tasks.TaskList, error) {
 	s.filter = filter
 
-	return tasksit.TaskList{Items: []tasksit.TaskSummary{sampleTaskSummary()}, Limit: filter.Limit, Offset: filter.Offset}, nil
+	return tasks.TaskList{Items: []tasks.TaskSummary{sampleTaskSummary()}, Limit: filter.Limit, Offset: filter.Offset}, nil
 }
 
 // GetPublished возвращает публичную задачу без правильных ответов.
-func (s *tasksServiceStub) GetPublished(_ context.Context, id string) (tasksit.Task, error) {
+func (s *tasksServiceStub) GetPublished(_ context.Context, id string) (tasks.Task, error) {
 	s.taskID = id
 
 	return sampleUpstreamTask(), nil
 }
 
 // ListAdmin сохраняет административный фильтр и actor.
-func (s *tasksServiceStub) ListAdmin(_ context.Context, filter tasksit.TaskFilter, actor tasksit.Actor) (tasksit.TaskList, error) {
+func (s *tasksServiceStub) ListAdmin(_ context.Context, filter tasks.TaskFilter, actor tasks.Actor) (tasks.TaskList, error) {
 	s.filter = filter
 	s.actor = actor
 
-	return tasksit.TaskList{Items: []tasksit.TaskSummary{sampleTaskSummary()}, Limit: filter.Limit, Offset: filter.Offset}, nil
+	return tasks.TaskList{Items: []tasks.TaskSummary{sampleTaskSummary()}, Limit: filter.Limit, Offset: filter.Offset}, nil
 }
 
 // GetAdmin возвращает полную административную задачу.
-func (s *tasksServiceStub) GetAdmin(_ context.Context, id string, actor tasksit.Actor) (tasksit.Task, error) {
+func (s *tasksServiceStub) GetAdmin(_ context.Context, id string, actor tasks.Actor) (tasks.Task, error) {
 	s.taskID = id
 	s.actor = actor
 
@@ -62,7 +62,7 @@ func (s *tasksServiceStub) GetAdmin(_ context.Context, id string, actor tasksit.
 }
 
 // Create сохраняет вход создания теста.
-func (s *tasksServiceStub) Create(_ context.Context, input tasksit.TaskInput, actor tasksit.Actor) (tasksit.Task, error) {
+func (s *tasksServiceStub) Create(_ context.Context, input tasks.TaskInput, actor tasks.Actor) (tasks.Task, error) {
 	s.input = input
 	s.actor = actor
 
@@ -70,7 +70,7 @@ func (s *tasksServiceStub) Create(_ context.Context, input tasksit.TaskInput, ac
 }
 
 // Update сохраняет вход новой версии теста.
-func (s *tasksServiceStub) Update(_ context.Context, id string, input tasksit.TaskInput, actor tasksit.Actor) (tasksit.Task, error) {
+func (s *tasksServiceStub) Update(_ context.Context, id string, input tasks.TaskInput, actor tasks.Actor) (tasks.Task, error) {
 	s.taskID = id
 	s.input = input
 	s.actor = actor
@@ -81,7 +81,7 @@ func (s *tasksServiceStub) Update(_ context.Context, id string, input tasksit.Ta
 }
 
 // ChangeStatus сохраняет lifecycle-переход.
-func (s *tasksServiceStub) ChangeStatus(_ context.Context, id, status string, actor tasksit.Actor) (tasksit.Task, error) {
+func (s *tasksServiceStub) ChangeStatus(_ context.Context, id, status string, actor tasks.Actor) (tasks.Task, error) {
 	s.taskID = id
 	s.status = status
 	s.actor = actor
@@ -92,7 +92,7 @@ func (s *tasksServiceStub) ChangeStatus(_ context.Context, id, status string, ac
 }
 
 // Delete сохраняет факт удаления теста.
-func (s *tasksServiceStub) Delete(_ context.Context, id string, actor tasksit.Actor) error {
+func (s *tasksServiceStub) Delete(_ context.Context, id string, actor tasks.Actor) error {
 	s.taskID = id
 	s.actor = actor
 	s.deleted = true
@@ -101,7 +101,7 @@ func (s *tasksServiceStub) Delete(_ context.Context, id string, actor tasksit.Ac
 }
 
 // Submit сохраняет ответ пользователя.
-func (s *tasksServiceStub) Submit(_ context.Context, taskID string, input tasksit.SubmissionInput, actor tasksit.Actor) (tasksit.Submission, error) {
+func (s *tasksServiceStub) Submit(_ context.Context, taskID string, input tasks.SubmissionInput, actor tasks.Actor) (tasks.Submission, error) {
 	s.taskID = taskID
 	s.submissionInput = input
 	s.actor = actor
@@ -110,7 +110,7 @@ func (s *tasksServiceStub) Submit(_ context.Context, taskID string, input tasksi
 }
 
 // GetSubmission возвращает сохранённый результат.
-func (s *tasksServiceStub) GetSubmission(_ context.Context, id string, actor tasksit.Actor) (tasksit.Submission, error) {
+func (s *tasksServiceStub) GetSubmission(_ context.Context, id string, actor tasks.Actor) (tasks.Submission, error) {
 	s.submissionID = id
 	s.actor = actor
 
@@ -118,7 +118,7 @@ func (s *tasksServiceStub) GetSubmission(_ context.Context, id string, actor tas
 }
 
 // ListMySubmissions возвращает историю текущего пользователя.
-func (s *tasksServiceStub) ListMySubmissions(_ context.Context, taskID *string, limit, offset int, actor tasksit.Actor) (tasksit.SubmissionList, error) {
+func (s *tasksServiceStub) ListMySubmissions(_ context.Context, taskID *string, limit, offset int, actor tasks.Actor) (tasks.SubmissionList, error) {
 	if taskID != nil {
 		s.taskID = *taskID
 	}
@@ -126,11 +126,11 @@ func (s *tasksServiceStub) ListMySubmissions(_ context.Context, taskID *string, 
 	s.filter.Offset = offset
 	s.actor = actor
 
-	return tasksit.SubmissionList{Items: []tasksit.Submission{sampleUpstreamSubmission()}, Limit: limit, Offset: offset}, nil
+	return tasks.SubmissionList{Items: []tasks.Submission{sampleUpstreamSubmission()}, Limit: limit, Offset: offset}, nil
 }
 
 // SubmitCode сохраняет файл программного решения.
-func (s *tasksServiceStub) SubmitCode(_ context.Context, taskID string, input tasksit.CodeSubmissionInput, actor tasksit.Actor) (tasksit.CodeSubmission, error) {
+func (s *tasksServiceStub) SubmitCode(_ context.Context, taskID string, input tasks.CodeSubmissionInput, actor tasks.Actor) (tasks.CodeSubmission, error) {
 	s.taskID = taskID
 	s.codeInput = input
 	s.actor = actor
@@ -139,7 +139,7 @@ func (s *tasksServiceStub) SubmitCode(_ context.Context, taskID string, input ta
 }
 
 // GetCodeSubmission возвращает результат программного решения.
-func (s *tasksServiceStub) GetCodeSubmission(_ context.Context, id string, actor tasksit.Actor) (tasksit.CodeSubmission, error) {
+func (s *tasksServiceStub) GetCodeSubmission(_ context.Context, id string, actor tasks.Actor) (tasks.CodeSubmission, error) {
 	s.submissionID = id
 	s.actor = actor
 
@@ -147,7 +147,7 @@ func (s *tasksServiceStub) GetCodeSubmission(_ context.Context, id string, actor
 }
 
 // ListMyCodeSubmissions возвращает историю программных решений.
-func (s *tasksServiceStub) ListMyCodeSubmissions(_ context.Context, taskID *string, limit, offset int, actor tasksit.Actor) (tasksit.CodeSubmissionList, error) {
+func (s *tasksServiceStub) ListMyCodeSubmissions(_ context.Context, taskID *string, limit, offset int, actor tasks.Actor) (tasks.CodeSubmissionList, error) {
 	if taskID != nil {
 		s.taskID = *taskID
 	}
@@ -156,8 +156,8 @@ func (s *tasksServiceStub) ListMyCodeSubmissions(_ context.Context, taskID *stri
 	s.filter.Offset = offset
 	s.actor = actor
 
-	return tasksit.CodeSubmissionList{
-		Items:  []tasksit.CodeSubmission{sampleUpstreamCodeSubmission()},
+	return tasks.CodeSubmissionList{
+		Items:  []tasks.CodeSubmission{sampleUpstreamCodeSubmission()},
 		Limit:  limit,
 		Offset: offset,
 	}, nil
@@ -445,11 +445,11 @@ func sampleGraphQLTaskInput() model.ITTaskInput {
 	}
 }
 
-// sampleUpstreamTask возвращает задачу tasks-it для mapper-тестов.
-func sampleUpstreamTask() tasksit.Task {
+// sampleUpstreamTask возвращает задачу tasks для mapper-тестов.
+func sampleUpstreamTask() tasks.Task {
 	correct := true
 
-	return tasksit.Task{
+	return tasks.Task{
 		ID:            "task-id",
 		Status:        "draft",
 		TaskVersionID: "version-id",
@@ -458,7 +458,7 @@ func sampleUpstreamTask() tasksit.Task {
 		Statement:     "Choose one",
 		TaskType:      "single_choice",
 		Difficulty:    "easy",
-		Options: []tasksit.TaskOption{{
+		Options: []tasks.TaskOption{{
 			ID:        "option-id",
 			Text:      "A",
 			Position:  0,
@@ -467,9 +467,9 @@ func sampleUpstreamTask() tasksit.Task {
 	}
 }
 
-// sampleTaskSummary возвращает краткую задачу tasks-it.
-func sampleTaskSummary() tasksit.TaskSummary {
-	return tasksit.TaskSummary{
+// sampleTaskSummary возвращает краткую задачу tasks.
+func sampleTaskSummary() tasks.TaskSummary {
+	return tasks.TaskSummary{
 		ID:            "task-id",
 		Status:        "published",
 		TaskVersionID: "version-id",
@@ -480,9 +480,9 @@ func sampleTaskSummary() tasksit.TaskSummary {
 	}
 }
 
-// sampleUpstreamSubmission возвращает исторический результат tasks-it.
-func sampleUpstreamSubmission() tasksit.Submission {
-	return tasksit.Submission{
+// sampleUpstreamSubmission возвращает исторический результат tasks.
+func sampleUpstreamSubmission() tasks.Submission {
+	return tasks.Submission{
 		ID:                  "submission-id",
 		UserID:              "user-id",
 		TaskID:              "task-id",
@@ -499,10 +499,10 @@ func sampleUpstreamSubmission() tasksit.Submission {
 }
 
 // sampleUpstreamCodeSubmission возвращает завершённый результат sandbox.
-func sampleUpstreamCodeSubmission() tasksit.CodeSubmission {
+func sampleUpstreamCodeSubmission() tasks.CodeSubmission {
 	verdict := "accepted"
 
-	return tasksit.CodeSubmission{
+	return tasks.CodeSubmission{
 		ID:                "code-submission-id",
 		UserID:            "user-id",
 		TaskID:            "task-id",
@@ -514,12 +514,12 @@ func sampleUpstreamCodeSubmission() tasksit.CodeSubmission {
 		SourceFileName:    "solution.py",
 		Status:            "completed",
 		Verdict:           &verdict,
-		Execution: &tasksit.ExecutionPhaseResult{
+		Execution: &tasks.ExecutionPhaseResult{
 			Stdout:      "42\n",
 			DurationMS:  12,
 			MemoryBytes: 1024,
 		},
-		Tests: []tasksit.ExecutionTestResult{
+		Tests: []tasks.ExecutionTestResult{
 			{
 				TestID:      "open-1",
 				Verdict:     "accepted",

@@ -8,10 +8,10 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/overmindv/api-gateway/internal/client/arcee"
-	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
-	"github.com/overmindv/api-gateway/internal/client/tasksit"
+	"github.com/overmindv/api-gateway/internal/client/tasks"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/config"
 	graphqldelivery "github.com/overmindv/api-gateway/internal/graphql"
 	"github.com/overmindv/api-gateway/internal/middleware"
@@ -27,7 +27,7 @@ type healthChecker interface{ Health(context.Context) error }
 
 // New собирает HTTP server api-gateway со всеми middleware и routes.
 // На вход получает конфигурацию, clients, health checker, authenticator и loggers, на выход возвращает готовый Server.
-func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogService, tasks tasksit.Service, taskHunter taskhunter.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
+func New(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
 	mux := http.NewServeMux()
 
 	mux.Handle("POST /graphql", graphqldelivery.HandlerWithTaskHunter(users, catalog, tasks, taskHunter, requestLog))
@@ -42,7 +42,7 @@ func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogServi
 		}
 		if err := tasks.Health(r.Context()); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = w.Write([]byte(`{"status":"unhealthy","tasks_it":"unavailable"}`))
+			_, _ = w.Write([]byte(`{"status":"unhealthy","tasks":"unavailable"}`))
 			return
 		}
 		if err := taskHunter.Health(r.Context()); err != nil {
@@ -51,7 +51,7 @@ func New(cfg config.HTTP, users arcee.UserService, catalog ironhide.CatalogServi
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"ok","users":"ok","tasks_it":"ok","task_hunter":"ok"}`))
+		_, _ = w.Write([]byte(`{"status":"ok","users":"ok","tasks":"ok","task_hunter":"ok"}`))
 	}
 
 	mux.HandleFunc("GET /health", healthHandler)

@@ -13,12 +13,12 @@ import (
 
 func TestJWTAuthenticator(t *testing.T) {
 	now := time.Date(2026, 6, 27, 12, 0, 0, 0, time.UTC)
-	authenticator := NewJWTAuthenticator("secret", "arcee")
+	authenticator := NewJWTAuthenticator("secret", "users")
 	authenticator.now = func() time.Time { return now }
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Subject:   "user-id",
-		Issuer:    "arcee",
+		Issuer:    "users",
 		IssuedAt:  jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour)),
 	})
@@ -69,7 +69,7 @@ func TestRequireAdminAllowsAdminAndSuperuser(t *testing.T) {
 }
 
 func TestJWTMiddlewareStoresAuthenticationError(t *testing.T) {
-	authenticator := NewJWTAuthenticator("secret", "arcee")
+	authenticator := NewJWTAuthenticator("secret", "users")
 
 	handler := JWT(authenticator, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, err := RequireAuth(r.Context()); !errors.Is(err, apperror.ErrUnauthenticated) {

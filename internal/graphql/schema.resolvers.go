@@ -8,8 +8,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/overmindv/api-gateway/internal/client/arcee"
-	"github.com/overmindv/api-gateway/internal/client/ironhide"
+	"github.com/overmindv/api-gateway/internal/client/entities"
+	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/graphql/generated"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 	"github.com/overmindv/api-gateway/internal/middleware"
@@ -17,7 +17,7 @@ import (
 
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (*model.AuthPayload, error) {
-	response, err := r.Users.Register(ctx, arcee.RegisterInput{
+	response, err := r.Users.Register(ctx, users.RegisterInput{
 		Email: input.Email, Password: input.Password, Username: input.Username,
 		FirstName: stringValue(input.FirstName), LastName: stringValue(input.LastName), BirthDate: input.BirthDate, Phone: stringValue(input.Phone),
 	})
@@ -25,7 +25,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		return nil, err
 	}
 	if response == nil || response.User == nil {
-		return nil, errors.New("arcee returned an empty registration response")
+		return nil, errors.New("users returned an empty registration response")
 	}
 
 	return toAuthPayload(response), nil
@@ -33,12 +33,12 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error) {
-	response, err := r.Users.Login(ctx, arcee.LoginInput{Email: input.Email, Password: input.Password})
+	response, err := r.Users.Login(ctx, users.LoginInput{Email: input.Email, Password: input.Password})
 	if err != nil {
 		return nil, err
 	}
 	if response == nil || response.User == nil {
-		return nil, errors.New("arcee returned an empty login response")
+		return nil, errors.New("users returned an empty login response")
 	}
 
 	return toAuthPayload(response), nil
@@ -49,7 +49,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 	if _, err := middleware.RequireAuth(ctx); err != nil {
 		return nil, err
 	}
-	response, err := r.Users.UpdateUser(ctx, id, arcee.UpdateUserInput{
+	response, err := r.Users.UpdateUser(ctx, id, users.UpdateUserInput{
 		Username: input.Username, FirstName: input.FirstName, LastName: input.LastName,
 		BirthDate: input.BirthDate, ClearBirthDate: boolValue(input.ClearBirthDate), Phone: input.Phone,
 	})
@@ -57,7 +57,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 		return nil, err
 	}
 	if response == nil {
-		return nil, errors.New("arcee returned an empty update response")
+		return nil, errors.New("users returned an empty update response")
 	}
 
 	return toUser(response), nil
@@ -86,7 +86,7 @@ func (r *mutationResolver) SetUserAdmin(ctx context.Context, id string, admin bo
 		return nil, err
 	}
 	if response == nil {
-		return nil, errors.New("arcee returned an empty admin response")
+		return nil, errors.New("users returned an empty admin response")
 	}
 
 	return toUser(response), nil
@@ -102,7 +102,7 @@ func (r *mutationResolver) SetUserAdminByUsername(ctx context.Context, username 
 		return nil, err
 	}
 	if response == nil {
-		return nil, errors.New("arcee returned an empty admin response")
+		return nil, errors.New("users returned an empty admin response")
 	}
 
 	return toUser(response), nil
@@ -114,7 +114,7 @@ func (r *mutationResolver) CreateUniversity(ctx context.Context, input model.Cre
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.Catalog.CreateUniversity(ctx, ironhide.University{Name: input.Name, ShortName: stringValue(input.ShortName), City: stringValue(input.City), Country: stringValue(input.Country), WebsiteURL: stringValue(input.WebsiteURL), LogoFileID: input.LogoFileID, Status: statusValue(input.Status)}, actor)
+	result, err := r.Catalog.CreateUniversity(ctx, entities.University{Name: input.Name, ShortName: stringValue(input.ShortName), City: stringValue(input.City), Country: stringValue(input.Country), WebsiteURL: stringValue(input.WebsiteURL), LogoFileID: input.LogoFileID, Status: statusValue(input.Status)}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (r *mutationResolver) UpdateUniversity(ctx context.Context, id string, inpu
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.Catalog.UpdateUniversity(ctx, id, ironhide.University{Name: input.Name, ShortName: stringValue(input.ShortName), City: stringValue(input.City), Country: stringValue(input.Country), WebsiteURL: stringValue(input.WebsiteURL), LogoFileID: input.LogoFileID}, actor)
+	result, err := r.Catalog.UpdateUniversity(ctx, id, entities.University{Name: input.Name, ShortName: stringValue(input.ShortName), City: stringValue(input.City), Country: stringValue(input.Country), WebsiteURL: stringValue(input.WebsiteURL), LogoFileID: input.LogoFileID}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (r *mutationResolver) CreateProgram(ctx context.Context, input model.Create
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.Catalog.CreateProgram(ctx, ironhide.Program{UniversityID: input.UniversityID, Name: input.Name, ShortName: stringValue(input.ShortName), Faculty: stringValue(input.Faculty), DegreeLevel: degreeValue(input.DegreeLevel), StartYear: input.StartYear, Status: statusValue(input.Status)}, actor)
+	result, err := r.Catalog.CreateProgram(ctx, entities.Program{UniversityID: input.UniversityID, Name: input.Name, ShortName: stringValue(input.ShortName), Faculty: stringValue(input.Faculty), DegreeLevel: degreeValue(input.DegreeLevel), StartYear: input.StartYear, Status: statusValue(input.Status)}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (r *mutationResolver) UpdateProgram(ctx context.Context, id string, input m
 		}
 		universityID = current.UniversityID
 	}
-	result, err := r.Catalog.UpdateProgram(ctx, id, ironhide.Program{UniversityID: universityID, Name: input.Name, ShortName: stringValue(input.ShortName), Faculty: stringValue(input.Faculty), DegreeLevel: degreeValue(input.DegreeLevel), StartYear: input.StartYear}, actor)
+	result, err := r.Catalog.UpdateProgram(ctx, id, entities.Program{UniversityID: universityID, Name: input.Name, ShortName: stringValue(input.ShortName), Faculty: stringValue(input.Faculty), DegreeLevel: degreeValue(input.DegreeLevel), StartYear: input.StartYear}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +230,7 @@ func (r *mutationResolver) CreateCourse(ctx context.Context, input model.CreateC
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.Catalog.CreateCourse(ctx, ironhide.Course{ProgramID: input.ProgramID, Name: input.Name, Slug: stringValue(input.Slug), Description: stringValue(input.Description), Semester: input.Semester, YearNumber: input.YearNumber, Status: statusValue(input.Status)}, actor)
+	result, err := r.Catalog.CreateCourse(ctx, entities.Course{ProgramID: input.ProgramID, Name: input.Name, Slug: stringValue(input.Slug), Description: stringValue(input.Description), Semester: input.Semester, YearNumber: input.YearNumber, Status: statusValue(input.Status)}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (r *mutationResolver) UpdateCourse(ctx context.Context, id string, input mo
 		}
 		programID = current.ProgramID
 	}
-	result, err := r.Catalog.UpdateCourse(ctx, id, ironhide.Course{ProgramID: programID, Name: input.Name, Slug: stringValue(input.Slug), Description: stringValue(input.Description), Semester: input.Semester, YearNumber: input.YearNumber}, actor)
+	result, err := r.Catalog.UpdateCourse(ctx, id, entities.Course{ProgramID: programID, Name: input.Name, Slug: stringValue(input.Slug), Description: stringValue(input.Description), Semester: input.Semester, YearNumber: input.YearNumber}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func (r *mutationResolver) CreateTopic(ctx context.Context, input model.CreateTo
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.Catalog.CreateTopic(ctx, ironhide.Topic{CourseID: input.CourseID, ParentTopicID: input.ParentTopicID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty), Status: statusValue(input.Status)}, actor)
+	result, err := r.Catalog.CreateTopic(ctx, entities.Topic{CourseID: input.CourseID, ParentTopicID: input.ParentTopicID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty), Status: statusValue(input.Status)}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ func (r *mutationResolver) UpdateTopic(ctx context.Context, id string, input mod
 	courseID := input.CourseID
 	parentID := input.ParentTopicID
 	needsCurrent := (!boolValue(input.ClearCourse) && courseID == nil) || (parentID == nil && !boolValue(input.ClearParentTopic))
-	var current ironhide.Topic
+	var current entities.Topic
 	if needsCurrent {
 		current, err = r.Catalog.GetTopic(ctx, id)
 		if err != nil {
@@ -327,7 +327,7 @@ func (r *mutationResolver) UpdateTopic(ctx context.Context, id string, input mod
 	} else if parentID == nil {
 		parentID = current.ParentTopicID
 	}
-	result, err := r.Catalog.UpdateTopic(ctx, id, ironhide.Topic{CourseID: courseID, ParentTopicID: parentID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty)}, actor)
+	result, err := r.Catalog.UpdateTopic(ctx, id, entities.Topic{CourseID: courseID, ParentTopicID: parentID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty)}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +479,7 @@ func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, er
 		return nil, err
 	}
 	if response == nil {
-		return nil, errors.New("arcee returned an empty get response")
+		return nil, errors.New("users returned an empty get response")
 	}
 
 	return toUser(response), nil
@@ -495,7 +495,7 @@ func (r *queryResolver) UserByUsername(ctx context.Context, username string) (*m
 		return nil, err
 	}
 	if response == nil {
-		return nil, errors.New("arcee returned an empty get response")
+		return nil, errors.New("users returned an empty get response")
 	}
 
 	return toUser(response), nil
@@ -646,7 +646,7 @@ func (r *queryResolver) TopicPrerequisites(ctx context.Context, topicID string) 
 
 // ValidateCatalogBinding is the resolver for the validateCatalogBinding field.
 func (r *queryResolver) ValidateCatalogBinding(ctx context.Context, input model.CatalogBindingInput) (*model.CatalogValidationResult, error) {
-	result, err := r.Catalog.ValidateBinding(ctx, ironhide.Binding{UniversityID: input.UniversityID, ProgramID: input.ProgramID, CourseID: input.CourseID, TopicID: input.TopicID})
+	result, err := r.Catalog.ValidateBinding(ctx, entities.Binding{UniversityID: input.UniversityID, ProgramID: input.ProgramID, CourseID: input.CourseID, TopicID: input.TopicID})
 	if err != nil {
 		return nil, err
 	}

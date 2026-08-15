@@ -1,12 +1,12 @@
-# Интеграция с tasks-it
+# Интеграция с tasks
 
-`api-gateway` обращается к внутреннему HTTP API `tasks-it` через отдельный клиент. Бизнес-правила, версии тестов, проверка ответов и история решений остаются в `tasks-it`.
+`api-gateway` обращается к внутреннему HTTP API `tasks` через отдельный клиент. Бизнес-правила, версии тестов, проверка ответов и история решений остаются в `tasks`.
 
 ## Конфигурация
 
 ```dotenv
-TASKS_IT_URL=http://tasks-it:8080
-TASKS_IT_TIMEOUT=5s
+TASKS_URL=http://tasks:8080
+TASKS_TIMEOUT=5s
 TASK_HUNTER_URL=http://task-hunter:8080
 TASK_HUNTER_TOKEN=replace-with-a-long-random-gateway-token
 TASK_HUNTER_TIMEOUT=10s
@@ -27,7 +27,7 @@ Gateway передаёт `X-Request-ID`. Для защищённых опера�
 - `taskCollectionSources`, `taskCollectionJobs`, `taskCollectionJob` — allowlist и журнал сбора;
 - `taskCandidates`, `taskCandidate` — очередь модерации с provenance и revision.
 
-Публичные query не требуют JWT. Admin query требуют роль `admin` или `superuser`. Query результатов требуют аутентификацию; доступ владельца дополнительно проверяет `tasks-it`.
+Публичные query не требуют JWT. Admin query требуют роль `admin` или `superuser`. Query результатов требуют аутентификацию; доступ владельца дополнительно проверяет `tasks`.
 
 ## Mutations
 
@@ -141,4 +141,4 @@ mutation SubmitITTaskCode($taskId: ID!, $input: ITCodeSubmissionInput!) {
 
 ## Ошибки
 
-Коды `{code, message}` от `tasks-it` сохраняются в `extensions.code` GraphQL-ошибки. Пользователю возвращается безопасное сообщение, технические детали остаются в структурированных логах gateway.
+Коды `{code, message}` от `tasks` сохраняются в `extensions.code` GraphQL-ошибки. Пользователю возвращается безопасное сообщение, технические детали остаются в структурированных логах gateway.

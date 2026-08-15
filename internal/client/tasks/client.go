@@ -1,4 +1,4 @@
-package tasksit
+package tasks
 
 import (
 	"bytes"
@@ -92,7 +92,7 @@ type Client struct {
 	log     *slog.Logger
 }
 
-// New создаёт HTTP-клиент внутреннего API tasks-it.
+// New создаёт HTTP-клиент внутреннего API tasks.
 func New(baseURL string, timeout time.Duration, log *slog.Logger) *Client {
 	return &Client{
 		baseURL: strings.TrimRight(baseURL, "/"),
@@ -142,7 +142,7 @@ func (c *Client) ChangeStatus(ctx context.Context, id, status string, actor Acto
 func (c *Client) Delete(ctx context.Context, id string, actor Actor) error {
 	_, err := request[struct{}](c, ctx, http.MethodDelete, "/v1/admin/tasks/"+url.PathEscape(id), nil, actor)
 	if err != nil {
-		return fmt.Errorf("delete tasks-it task: %w", err)
+		return fmt.Errorf("delete tasks task: %w", err)
 	}
 
 	return nil
@@ -170,11 +170,11 @@ func (c *Client) ListMySubmissions(ctx context.Context, taskID *string, limit, o
 	return request[SubmissionList](c, ctx, http.MethodGet, pathWithQuery("/v1/me/submissions", values), nil, actor)
 }
 
-// SubmitCode передаёт исходный файл решения в tasks-it как multipart/form-data.
+// SubmitCode передаёт исходный файл решения в tasks как multipart/form-data.
 func (c *Client) SubmitCode(ctx context.Context, taskID string, input CodeSubmissionInput, actor Actor) (CodeSubmission, error) {
 	body, contentType, err := codeSubmissionBody(input)
 	if err != nil {
-		return CodeSubmission{}, fmt.Errorf("build tasks-it code submission: %w", err)
+		return CodeSubmission{}, fmt.Errorf("build tasks code submission: %w", err)
 	}
 
 	return requestWithBody[CodeSubmission](
@@ -205,17 +205,17 @@ func (c *Client) ListMyCodeSubmissions(ctx context.Context, taskID *string, limi
 	return request[CodeSubmissionList](c, ctx, http.MethodGet, pathWithQuery("/v1/me/code-submissions", values), nil, actor)
 }
 
-// Health проверяет готовность tasks-it и его PostgreSQL.
+// Health проверяет готовность tasks и его PostgreSQL.
 func (c *Client) Health(ctx context.Context) error {
 	_, err := request[map[string]string](c, ctx, http.MethodGet, "/ready", nil, Actor{})
 	if err != nil {
-		return fmt.Errorf("check tasks-it readiness: %w", err)
+		return fmt.Errorf("check tasks readiness: %w", err)
 	}
 
 	return nil
 }
 
-// request выполняет типизированный запрос к tasks-it.
+// request выполняет типизированный запрос к tasks.
 func request[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor) (T, error) {
 	body, err := requestBody(input)
 	if err != nil {
@@ -237,16 +237,16 @@ func requestWithBody[T any](c *Client, ctx context.Context, method, path string,
 
 	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
 	if err != nil {
-		return zero, fmt.Errorf("create tasks-it request: %w", err)
+		return zero, fmt.Errorf("create tasks request: %w", err)
 	}
 	setHeaders(req, contentType, actor, middleware.RequestID(ctx))
 
 	started := time.Now()
 	response, err := c.http.Do(req)
 	if err != nil {
-		c.log.WarnContext(ctx, "tasks-it http call failed", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "error", err, "duration", time.Since(started))
+		c.log.WarnContext(ctx, "tasks http call failed", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "error", err, "duration", time.Since(started))
 
-		return zero, fmt.Errorf("call tasks-it: %w", err)
+		return zero, fmt.Errorf("call tasks: %w", err)
 	}
 	defer func() {
 		_ = response.Body.Close()
@@ -258,9 +258,9 @@ func requestWithBody[T any](c *Client, ctx context.Context, method, path string,
 		return zero, nil
 	}
 	if err := json.NewDecoder(io.LimitReader(response.Body, 8<<20)).Decode(&zero); err != nil {
-		return zero, fmt.Errorf("decode tasks-it response: %w", err)
+		return zero, fmt.Errorf("decode tasks response: %w", err)
 	}
-	c.log.InfoContext(ctx, "tasks-it http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
+	c.log.InfoContext(ctx, "tasks http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
 
 	return zero, nil
 }
@@ -272,13 +272,13 @@ func requestBody(input any) (io.Reader, error) {
 	}
 	data, err := json.Marshal(input)
 	if err != nil {
-		return nil, fmt.Errorf("marshal tasks-it request: %w", err)
+		return nil, fmt.Errorf("marshal tasks request: %w", err)
 	}
 
 	return bytes.NewReader(data), nil
 }
 
-// codeSubmissionBody формирует ограниченное multipart-тело для tasks-it.
+// codeSubmissionBody формирует ограниченное multipart-тело для tasks.
 func codeSubmissionBody(input CodeSubmissionInput) (io.Reader, string, error) {
 	if input.File == nil {
 		return nil, "", fmt.Errorf("source file is required")
@@ -343,11 +343,11 @@ func setHeaders(req *http.Request, contentType string, actor Actor, requestID st
 func (c *Client) decodeError(ctx context.Context, response *http.Response, method, path string, started time.Time) error {
 	upstream := Error{StatusCode: response.StatusCode}
 	if err := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&upstream); err != nil {
-		c.log.WarnContext(ctx, "tasks-it http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", err, "duration", time.Since(started))
+		c.log.WarnContext(ctx, "tasks http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", err, "duration", time.Since(started))
 
-		return fmt.Errorf("tasks-it returned HTTP %d: %w", response.StatusCode, err)
+		return fmt.Errorf("tasks returned HTTP %d: %w", response.StatusCode, err)
 	}
-	c.log.WarnContext(ctx, "tasks-it http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "code", upstream.Code, "duration", time.Since(started))
+	c.log.WarnContext(ctx, "tasks http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "code", upstream.Code, "duration", time.Since(started))
 
 	return &upstream
 }

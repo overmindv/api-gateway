@@ -4,12 +4,12 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/laserbeak ./cmd/laserbeak
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/api-gateway ./cmd/api-gateway
 
 FROM alpine:3.22
-RUN addgroup -S laserbeak && adduser -S -G laserbeak laserbeak && \
-    mkdir -p /var/log/laserbeak && chown -R laserbeak:laserbeak /var/log/laserbeak
-USER laserbeak
-COPY --from=build /out/laserbeak /usr/local/bin/laserbeak
+RUN addgroup -S api-gateway && adduser -S -G api-gateway api-gateway && \
+    mkdir -p /var/log/api-gateway && chown -R api-gateway:api-gateway /var/log/api-gateway
+USER api-gateway
+COPY --from=build /out/api-gateway /usr/local/bin/api-gateway
 EXPOSE 8081
-ENTRYPOINT ["laserbeak"]
+ENTRYPOINT ["api-gateway"]

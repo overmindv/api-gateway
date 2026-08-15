@@ -1,4 +1,4 @@
-package ironhide
+package entities
 
 import (
 	"bytes"
@@ -201,7 +201,7 @@ func (c *Client) Health(ctx context.Context) error {
 	return err
 }
 
-// request выполняет typed HTTP-запрос в Ironhide.
+// request выполняет typed HTTP-запрос в Entities.
 // На вход получает client, context, HTTP method/path, optional body и actor, на выход возвращает decoded response или upstream error.
 func request[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor) (T, error) {
 	var zero T
@@ -210,13 +210,13 @@ func request[T any](c *Client, ctx context.Context, method, path string, input a
 	if input != nil {
 		data, err := json.Marshal(input)
 		if err != nil {
-			return zero, fmt.Errorf("marshal ironhide request: %w", err)
+			return zero, fmt.Errorf("marshal entities request: %w", err)
 		}
 		body = bytes.NewReader(data)
 	}
 	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
 	if err != nil {
-		return zero, fmt.Errorf("create ironhide request: %w", err)
+		return zero, fmt.Errorf("create entities request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	if input != nil {
@@ -231,9 +231,9 @@ func request[T any](c *Client, ctx context.Context, method, path string, input a
 	}
 	response, err := c.http.Do(req)
 	if err != nil {
-		c.log.WarnContext(ctx, "ironhide http call failed", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "error", err, "duration", time.Since(started))
+		c.log.WarnContext(ctx, "entities http call failed", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "error", err, "duration", time.Since(started))
 
-		return zero, fmt.Errorf("call ironhide: %w", err)
+		return zero, fmt.Errorf("call entities: %w", err)
 	}
 	defer func() {
 		_ = response.Body.Close()
@@ -241,20 +241,20 @@ func request[T any](c *Client, ctx context.Context, method, path string, input a
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		var upstream Error
 		if decodeErr := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&upstream); decodeErr != nil {
-			c.log.WarnContext(ctx, "ironhide http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", decodeErr, "duration", time.Since(started))
+			c.log.WarnContext(ctx, "entities http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", decodeErr, "duration", time.Since(started))
 
-			return zero, fmt.Errorf("ironhide returned HTTP %d", response.StatusCode)
+			return zero, fmt.Errorf("entities returned HTTP %d", response.StatusCode)
 		}
-		c.log.WarnContext(ctx, "ironhide http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "code", upstream.Code, "message", upstream.Message, "duration", time.Since(started))
+		c.log.WarnContext(ctx, "entities http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "code", upstream.Code, "message", upstream.Message, "duration", time.Since(started))
 
 		return zero, &upstream
 	}
 	if err := json.NewDecoder(io.LimitReader(response.Body, 8<<20)).Decode(&zero); err != nil {
-		c.log.WarnContext(ctx, "ironhide http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", err, "duration", time.Since(started))
+		c.log.WarnContext(ctx, "entities http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", err, "duration", time.Since(started))
 
-		return zero, fmt.Errorf("decode ironhide response: %w", err)
+		return zero, fmt.Errorf("decode entities response: %w", err)
 	}
-	c.log.InfoContext(ctx, "ironhide http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
+	c.log.InfoContext(ctx, "entities http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
 
 	return zero, nil
 }

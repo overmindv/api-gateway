@@ -1,4 +1,4 @@
-package arcee
+package users
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func TestClientMapsResponseAndForwardsProtectedHeaders(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := New(config.Arcee{GraphQLURL: server.URL, HealthURL: server.URL, Timeout: time.Second}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	client := New(config.Users{GraphQLURL: server.URL, HealthURL: server.URL, Timeout: time.Second}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	ctx := middleware.WithRequestID(context.Background(), "request-id")
 	ctx = middleware.ContextWithAuth(ctx, middleware.AuthInfo{UserID: "user-id", Token: "jwt"})
 
@@ -49,7 +49,7 @@ func TestClientMapsGraphQLError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := New(config.Arcee{
+	client := New(config.Users{
 		GraphQLURL: server.URL,
 		HealthURL:  server.URL,
 		Timeout:    time.Second,
@@ -66,7 +66,7 @@ func TestClientHealth(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) }))
 	defer server.Close()
 
-	client := New(config.Arcee{GraphQLURL: server.URL, HealthURL: server.URL, Timeout: time.Second}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	client := New(config.Users{GraphQLURL: server.URL, HealthURL: server.URL, Timeout: time.Second}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err := client.Health(context.Background()); err != nil {
 		t.Fatal(err)
 	}
