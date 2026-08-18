@@ -3,13 +3,61 @@ package graphql
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/overmindv/api-gateway/internal/apperror"
+	mediaclient "github.com/overmindv/api-gateway/internal/client/media"
 	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
+
+type mediaServiceStub struct {
+	mediaclient.Service
+	calls int
+	ids   []string
+	err   error
+}
+
+// ResolvePublicFiles фиксирует batch-вызов и возвращает CDN-варианты для всех IDs.
+func (s *mediaServiceStub) ResolvePublicFiles(_ context.Context, ids, _ []string) ([]mediaclient.PublicFile, error) {
+	s.calls++
+	s.ids = append([]string(nil), ids...)
+	if s.err != nil {
+		return nil, s.err
+	}
+	files := make([]mediaclient.PublicFile, 0, len(ids))
+	for _, id := range ids {
+		files = append(files, mediaclient.PublicFile{
+			FileID: id,
+			URLs: map[string]string{
+				"w128": "https://cdn.example/" + id + "/w128.webp",
+				"w768": "https://cdn.example/" + id + "/w768.webp",
+			},
+		})
+	}
+
+	return files, nil
+}
+
+// TestHydratePublicUsersFailsSoft проверяет fallback и метрику при недоступном Media.
+func TestHydratePublicUsersFailsSoft(t *testing.T) {
+	fileID := "file-id"
+	metrics := &Metrics{}
+	resolver := &Resolver{
+		Media:   &mediaServiceStub{err: errors.New("media unavailable")},
+		Metrics: metrics,
+	}
+	result := resolver.hydratePublicUsers(context.Background(), []*users.PublicUser{{
+		ID:           "user-id",
+		Username:     "user",
+		AvatarFileID: &fileID,
+	}})
+	if len(result) != 1 || result[0].Avatar != nil || metrics.avatarResolutionFailures.Load() != 1 {
+		t.Fatalf("ожидался fail-soft fallback с метрикой: %+v metric=%d", result, metrics.avatarResolutionFailures.Load())
+	}
+}
 
 type userServiceStub struct {
 	register              users.RegisterInput
@@ -98,6 +146,18 @@ func (s *userServiceStub) SetUserAdminByUsername(_ context.Context, username str
 	return user, nil
 }
 
+func (s *userServiceStub) SetMyAvatar(context.Context, *string) (*users.User, error) {
+	return upstreamUser(), nil
+}
+
+func (s *userServiceStub) GetPublicUser(context.Context, string) (*users.PublicUser, error) {
+	return &users.PublicUser{ID: "user-id", Username: "user"}, nil
+}
+
+func (s *userServiceStub) ListPublicUsers(context.Context, string, int, int) ([]*users.PublicUser, error) {
+	return []*users.PublicUser{{ID: "user-id", Username: "user"}}, nil
+}
+
 func TestPublicResolversMapRequests(t *testing.T) {
 	stub := &userServiceStub{}
 	resolver := &mutationResolver{Resolver: &Resolver{Users: stub}}
@@ -126,6 +186,28 @@ func TestPublicResolversMapRequests(t *testing.T) {
 
 	if stub.login.Password != "password" {
 		t.Fatalf("login mapping failed: %+v", stub.login)
+	}
+}
+
+// TestHydratePublicUsersUsesSingleMediaBatch проверяет отсутствие N+1 при выдаче пользователей.
+func TestHydratePublicUsersUsesSingleMediaBatch(t *testing.T) {
+	media := &mediaServiceStub{}
+	resolver := &Resolver{Media: media}
+	items := make([]*users.PublicUser, 0, 50)
+	for index := 0; index < 50; index++ {
+		fileID := "file-" + strconv.Itoa(index)
+		items = append(items, &users.PublicUser{
+			ID:           "user-" + fileID,
+			Username:     "user",
+			AvatarFileID: &fileID,
+		})
+	}
+	result := resolver.hydratePublicUsers(context.Background(), items)
+	if media.calls != 1 || len(media.ids) != 50 {
+		t.Fatalf("ожидался один batch-вызов на 50 IDs: calls=%d ids=%d", media.calls, len(media.ids))
+	}
+	if len(result) != 50 || result[0].Avatar == nil {
+		t.Fatalf("аватары не гидратированы: %+v", result)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/overmindv/api-gateway/internal/client/entities"
+	"github.com/overmindv/api-gateway/internal/client/media"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
@@ -28,10 +29,17 @@ type healthChecker interface{ Health(context.Context) error }
 // New собирает HTTP server api-gateway со всеми middleware и routes.
 // На вход получает конфигурацию, clients, health checker, authenticator и loggers, на выход возвращает готовый Server.
 func New(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
-	mux := http.NewServeMux()
+	return NewWithMedia(cfg, users, catalog, tasks, taskHunter, nil, usersHealth, authenticator, log, requestLog)
+}
 
-	mux.Handle("POST /graphql", graphqldelivery.HandlerWithTaskHunter(users, catalog, tasks, taskHunter, requestLog))
+// NewWithMedia собирает gateway server с Media client и сохраняет совместимость старого New для тестов.
+func NewWithMedia(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
+	mux := http.NewServeMux()
+	metrics := &graphqldelivery.Metrics{}
+
+	mux.Handle("POST /graphql", graphqldelivery.HandlerWithMediaAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, requestLog, metrics))
 	mux.Handle("GET /playground", graphqldelivery.Playground())
+	mux.HandleFunc("GET /metrics", metrics.Handler)
 
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -50,6 +58,13 @@ func New(cfg config.HTTP, users users.UserService, catalog entities.CatalogServi
 			_, _ = w.Write([]byte(`{"status":"unhealthy","task_hunter":"unavailable"}`))
 			return
 		}
+		if mediaSvc != nil {
+			if err := mediaSvc.Health(r.Context()); err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, _ = w.Write([]byte(`{"status":"unhealthy","media":"unavailable"}`))
+				return
+			}
+		}
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"ok","users":"ok","tasks":"ok","task_hunter":"ok"}`))
 	}
@@ -60,7 +75,7 @@ func New(cfg config.HTTP, users users.UserService, catalog entities.CatalogServi
 	var handler http.Handler = mux
 	handler = middleware.JWT(authenticator, handler)
 	handler = middleware.CORS(cfg.CORSOrigins, handler)
-	handler = middleware.Logging(requestLog, handler, "/health", "/healthz")
+	handler = middleware.Logging(requestLog, handler, "/health", "/healthz", "/metrics")
 	handler = middleware.RequestIDMiddleware(handler)
 
 	return &Server{
