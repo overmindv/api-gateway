@@ -6,6 +6,7 @@ type User {
   lastName: String!
   birthDate: String
   phone: String
+  avatar: UserAvatar
   roles: [String!]!
   isAdmin: Boolean!
   isSuperuser: Boolean!
@@ -13,7 +14,77 @@ type User {
   updatedAt: String!
 }
 
+type UserAvatar {
+  fileId: ID!
+  smallUrl: String!
+  mediumUrl: String!
+}
+
+type PublicUser {
+  id: ID!
+  username: String!
+  firstName: String!
+  lastName: String!
+  avatar: UserAvatar
+  isAdmin: Boolean!
+  createdAt: String!
+}
+
+type PublicUserConnection {
+  items: [PublicUser!]!
+  limit: Int!
+  offset: Int!
+}
+
 scalar Upload
+
+enum MediaPurpose { avatar catalog_logo content_image attachment archive }
+enum MediaVisibility { public private }
+enum MediaStatus { pending_upload quarantined processing ready rejected deleted }
+enum MediaUploadMode { single multipart }
+
+type MediaFormField { name: String!, value: String! }
+type MediaUpload {
+  fileId: ID!
+  mode: MediaUploadMode!
+  url: String!
+  fields: [MediaFormField!]!
+  headers: [MediaFormField!]!
+  multipartUploadId: String!
+  partSize: Int!
+  expiresAt: String!
+}
+type MediaUploadPart { partNumber: Int!, url: String!, expiresAt: String! }
+type MediaFile {
+  id: ID!
+  ownerUserId: ID!
+  purpose: MediaPurpose!
+  visibility: MediaVisibility!
+  originalName: String!
+  declaredContentType: String!
+  detectedContentType: String!
+  sizeBytes: Int!
+  status: MediaStatus!
+  failureCode: String!
+  publicUrl: String!
+  createdAt: String!
+  updatedAt: String!
+  deletedAt: String
+}
+type MediaFileConnection { items: [MediaFile!]!, limit: Int!, offset: Int! }
+type MediaDownload { url: String!, expiresAt: String! }
+
+input CreateMediaUploadInput {
+  originalName: String!
+  contentType: String!
+  sizeBytes: Int!
+  checksumSha256: String!
+  purpose: MediaPurpose!
+  visibility: MediaVisibility!
+}
+input CompleteMediaPartInput { partNumber: Int!, etag: String! }
+input CompleteMediaUploadInput { fileId: ID!, parts: [CompleteMediaPartInput!] = [] }
+input MediaFileFilter { status: MediaStatus }
 
 enum CatalogStatus { draft active hidden archived }
 enum DegreeLevel { bachelor master specialist phd other }
@@ -168,6 +239,8 @@ type Query {
   getUser(id: ID!): User!
   userByUsername(username: String!): User!
   users(search: String = "", limit: Int = 20, offset: Int = 0): [User!]!
+  userProfile(id: ID!): PublicUser!
+  searchUsers(search: String!, pagination: PaginationInput): PublicUserConnection!
   universities(filter: CatalogFilter, pagination: PaginationInput): [University!]!
   university(id: ID!): University!
   programs(universityId: ID, filter: CatalogFilter, pagination: PaginationInput): [Program!]!
@@ -192,12 +265,16 @@ type Query {
   taskCollectionJob(id: ID!): TaskCollectionJob!
   taskCandidates(filter: TaskCandidateFilter, pagination: PaginationInput): TaskCandidateList!
   taskCandidate(id: ID!): TaskCandidate!
+  mediaFile(id: ID!): MediaFile!
+  myMediaFiles(filter: MediaFileFilter, pagination: PaginationInput): MediaFileConnection!
+  mediaDownloadUrl(fileId: ID!, variant: String = "original"): MediaDownload!
 }
 
 type Mutation {
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   updateUser(id: ID!, input: UpdateUserInput!): User!
+  setMyAvatar(fileId: ID): User!
   deleteUser(id: ID!): Boolean!
   setUserAdmin(id: ID!, admin: Boolean!): User!
   setUserAdminByUsername(username: String!, admin: Boolean!): User!
@@ -230,4 +307,8 @@ type Mutation {
   updateTaskCandidate(id: ID!, input: TaskCandidateReviewInput!): TaskCandidate!
   approveTaskCandidate(id: ID!, input: TaskCandidateReviewInput!): ITTask!
   rejectTaskCandidate(id: ID!, expectedRevision: Int!, reason: String = ""): TaskCandidate!
+  createMediaUpload(input: CreateMediaUploadInput!): MediaUpload!
+  createMediaUploadParts(fileId: ID!, partNumbers: [Int!]!): [MediaUploadPart!]!
+  completeMediaUpload(input: CompleteMediaUploadInput!): MediaFile!
+  deleteMediaFile(id: ID!): Boolean!
 }

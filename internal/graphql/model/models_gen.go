@@ -33,6 +33,16 @@ type CatalogValidationResult struct {
 	Valid bool `json:"valid"`
 }
 
+type CompleteMediaPartInput struct {
+	PartNumber int    `json:"partNumber"`
+	Etag       string `json:"etag"`
+}
+
+type CompleteMediaUploadInput struct {
+	FileID string                    `json:"fileId"`
+	Parts  []*CompleteMediaPartInput `json:"parts,omitempty"`
+}
+
 type Course struct {
 	ID          string        `json:"id"`
 	ProgramID   *string       `json:"programId,omitempty"`
@@ -54,6 +64,15 @@ type CreateCourseInput struct {
 	Semester    *int           `json:"semester,omitempty"`
 	YearNumber  *int           `json:"yearNumber,omitempty"`
 	Status      *CatalogStatus `json:"status,omitempty"`
+}
+
+type CreateMediaUploadInput struct {
+	OriginalName   string          `json:"originalName"`
+	ContentType    string          `json:"contentType"`
+	SizeBytes      int             `json:"sizeBytes"`
+	ChecksumSha256 string          `json:"checksumSha256"`
+	Purpose        MediaPurpose    `json:"purpose"`
+	Visibility     MediaVisibility `json:"visibility"`
 }
 
 type CreateProgramInput struct {
@@ -270,6 +289,60 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
+type MediaDownload struct {
+	URL       string `json:"url"`
+	ExpiresAt string `json:"expiresAt"`
+}
+
+type MediaFile struct {
+	ID                  string          `json:"id"`
+	OwnerUserID         string          `json:"ownerUserId"`
+	Purpose             MediaPurpose    `json:"purpose"`
+	Visibility          MediaVisibility `json:"visibility"`
+	OriginalName        string          `json:"originalName"`
+	DeclaredContentType string          `json:"declaredContentType"`
+	DetectedContentType string          `json:"detectedContentType"`
+	SizeBytes           int             `json:"sizeBytes"`
+	Status              MediaStatus     `json:"status"`
+	FailureCode         string          `json:"failureCode"`
+	PublicURL           string          `json:"publicUrl"`
+	CreatedAt           string          `json:"createdAt"`
+	UpdatedAt           string          `json:"updatedAt"`
+	DeletedAt           *string         `json:"deletedAt,omitempty"`
+}
+
+type MediaFileConnection struct {
+	Items  []*MediaFile `json:"items"`
+	Limit  int          `json:"limit"`
+	Offset int          `json:"offset"`
+}
+
+type MediaFileFilter struct {
+	Status *MediaStatus `json:"status,omitempty"`
+}
+
+type MediaFormField struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type MediaUpload struct {
+	FileID            string            `json:"fileId"`
+	Mode              MediaUploadMode   `json:"mode"`
+	URL               string            `json:"url"`
+	Fields            []*MediaFormField `json:"fields"`
+	Headers           []*MediaFormField `json:"headers"`
+	MultipartUploadID string            `json:"multipartUploadId"`
+	PartSize          int               `json:"partSize"`
+	ExpiresAt         string            `json:"expiresAt"`
+}
+
+type MediaUploadPart struct {
+	PartNumber int    `json:"partNumber"`
+	URL        string `json:"url"`
+	ExpiresAt  string `json:"expiresAt"`
+}
+
 type Mutation struct {
 }
 
@@ -289,6 +362,22 @@ type Program struct {
 	Status       CatalogStatus `json:"status"`
 	CreatedAt    string        `json:"createdAt"`
 	UpdatedAt    string        `json:"updatedAt"`
+}
+
+type PublicUser struct {
+	ID        string      `json:"id"`
+	Username  string      `json:"username"`
+	FirstName string      `json:"firstName"`
+	LastName  string      `json:"lastName"`
+	Avatar    *UserAvatar `json:"avatar,omitempty"`
+	IsAdmin   bool        `json:"isAdmin"`
+	CreatedAt string      `json:"createdAt"`
+}
+
+type PublicUserConnection struct {
+	Items  []*PublicUser `json:"items"`
+	Limit  int           `json:"limit"`
+	Offset int           `json:"offset"`
 }
 
 type Query struct {
@@ -501,18 +590,25 @@ type UpdateUserInput struct {
 }
 
 type User struct {
-	ID          string   `json:"id"`
-	Email       string   `json:"email"`
-	Username    string   `json:"username"`
-	FirstName   string   `json:"firstName"`
-	LastName    string   `json:"lastName"`
-	BirthDate   *string  `json:"birthDate,omitempty"`
-	Phone       *string  `json:"phone,omitempty"`
-	Roles       []string `json:"roles"`
-	IsAdmin     bool     `json:"isAdmin"`
-	IsSuperuser bool     `json:"isSuperuser"`
-	CreatedAt   string   `json:"createdAt"`
-	UpdatedAt   string   `json:"updatedAt"`
+	ID          string      `json:"id"`
+	Email       string      `json:"email"`
+	Username    string      `json:"username"`
+	FirstName   string      `json:"firstName"`
+	LastName    string      `json:"lastName"`
+	BirthDate   *string     `json:"birthDate,omitempty"`
+	Phone       *string     `json:"phone,omitempty"`
+	Avatar      *UserAvatar `json:"avatar,omitempty"`
+	Roles       []string    `json:"roles"`
+	IsAdmin     bool        `json:"isAdmin"`
+	IsSuperuser bool        `json:"isSuperuser"`
+	CreatedAt   string      `json:"createdAt"`
+	UpdatedAt   string      `json:"updatedAt"`
+}
+
+type UserAvatar struct {
+	FileID    string `json:"fileId"`
+	SmallURL  string `json:"smallUrl"`
+	MediumURL string `json:"mediumUrl"`
 }
 
 type CatalogStatus string
@@ -1037,6 +1133,240 @@ func (e *ITTaskType) UnmarshalJSON(b []byte) error {
 }
 
 func (e ITTaskType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MediaPurpose string
+
+const (
+	MediaPurposeAvatar       MediaPurpose = "avatar"
+	MediaPurposeCatalogLogo  MediaPurpose = "catalog_logo"
+	MediaPurposeContentImage MediaPurpose = "content_image"
+	MediaPurposeAttachment   MediaPurpose = "attachment"
+	MediaPurposeArchive      MediaPurpose = "archive"
+)
+
+var AllMediaPurpose = []MediaPurpose{
+	MediaPurposeAvatar,
+	MediaPurposeCatalogLogo,
+	MediaPurposeContentImage,
+	MediaPurposeAttachment,
+	MediaPurposeArchive,
+}
+
+func (e MediaPurpose) IsValid() bool {
+	switch e {
+	case MediaPurposeAvatar, MediaPurposeCatalogLogo, MediaPurposeContentImage, MediaPurposeAttachment, MediaPurposeArchive:
+		return true
+	}
+	return false
+}
+
+func (e MediaPurpose) String() string {
+	return string(e)
+}
+
+func (e *MediaPurpose) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MediaPurpose(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MediaPurpose", str)
+	}
+	return nil
+}
+
+func (e MediaPurpose) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MediaPurpose) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MediaPurpose) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MediaStatus string
+
+const (
+	MediaStatusPendingUpload MediaStatus = "pending_upload"
+	MediaStatusQuarantined   MediaStatus = "quarantined"
+	MediaStatusProcessing    MediaStatus = "processing"
+	MediaStatusReady         MediaStatus = "ready"
+	MediaStatusRejected      MediaStatus = "rejected"
+	MediaStatusDeleted       MediaStatus = "deleted"
+)
+
+var AllMediaStatus = []MediaStatus{
+	MediaStatusPendingUpload,
+	MediaStatusQuarantined,
+	MediaStatusProcessing,
+	MediaStatusReady,
+	MediaStatusRejected,
+	MediaStatusDeleted,
+}
+
+func (e MediaStatus) IsValid() bool {
+	switch e {
+	case MediaStatusPendingUpload, MediaStatusQuarantined, MediaStatusProcessing, MediaStatusReady, MediaStatusRejected, MediaStatusDeleted:
+		return true
+	}
+	return false
+}
+
+func (e MediaStatus) String() string {
+	return string(e)
+}
+
+func (e *MediaStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MediaStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MediaStatus", str)
+	}
+	return nil
+}
+
+func (e MediaStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MediaStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MediaStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MediaUploadMode string
+
+const (
+	MediaUploadModeSingle    MediaUploadMode = "single"
+	MediaUploadModeMultipart MediaUploadMode = "multipart"
+)
+
+var AllMediaUploadMode = []MediaUploadMode{
+	MediaUploadModeSingle,
+	MediaUploadModeMultipart,
+}
+
+func (e MediaUploadMode) IsValid() bool {
+	switch e {
+	case MediaUploadModeSingle, MediaUploadModeMultipart:
+		return true
+	}
+	return false
+}
+
+func (e MediaUploadMode) String() string {
+	return string(e)
+}
+
+func (e *MediaUploadMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MediaUploadMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MediaUploadMode", str)
+	}
+	return nil
+}
+
+func (e MediaUploadMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MediaUploadMode) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MediaUploadMode) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MediaVisibility string
+
+const (
+	MediaVisibilityPublic  MediaVisibility = "public"
+	MediaVisibilityPrivate MediaVisibility = "private"
+)
+
+var AllMediaVisibility = []MediaVisibility{
+	MediaVisibilityPublic,
+	MediaVisibilityPrivate,
+}
+
+func (e MediaVisibility) IsValid() bool {
+	switch e {
+	case MediaVisibilityPublic, MediaVisibilityPrivate:
+		return true
+	}
+	return false
+}
+
+func (e MediaVisibility) String() string {
+	return string(e)
+}
+
+func (e *MediaVisibility) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MediaVisibility(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MediaVisibility", str)
+	}
+	return nil
+}
+
+func (e MediaVisibility) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MediaVisibility) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MediaVisibility) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

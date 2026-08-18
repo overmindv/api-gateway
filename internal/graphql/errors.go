@@ -8,6 +8,7 @@ import (
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/overmindv/api-gateway/internal/apperror"
 	"github.com/overmindv/api-gateway/internal/client/entities"
+	mediaclient "github.com/overmindv/api-gateway/internal/client/media"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
@@ -71,6 +72,10 @@ func errorCodeAndMessage(err error) (string, string) {
 	var collectionError *taskhunter.Error
 	if errors.As(err, &collectionError) {
 		return collectionError.Code, "Не удалось выполнить действие."
+	}
+	var mediaError *mediaclient.Error
+	if errors.As(err, &mediaError) {
+		return mediaError.Code, "Не удалось выполнить действие."
 	}
 
 	return "INTERNAL_SERVER_ERROR", "Не удалось выполнить действие."

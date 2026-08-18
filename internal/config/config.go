@@ -15,6 +15,7 @@ type Config struct {
 	Entities   Entities
 	Tasks      Tasks
 	TaskHunter TaskHunter
+	Media      Media
 	JWT        JWT
 }
 
@@ -44,6 +45,12 @@ type Tasks struct {
 }
 
 type TaskHunter struct {
+	URL     string
+	Token   string
+	Timeout time.Duration
+}
+
+type Media struct {
 	URL     string
 	Token   string
 	Timeout time.Duration
@@ -88,6 +95,11 @@ func Load() (Config, error) {
 			URL:     env("TASK_HUNTER_URL", "http://localhost:8084"),
 			Token:   strings.TrimSpace(os.Getenv("TASK_HUNTER_TOKEN")),
 			Timeout: envDuration("TASK_HUNTER_TIMEOUT", 10*time.Second),
+		},
+		Media: Media{
+			URL:     env("MEDIA_URL", "http://localhost:8085"),
+			Token:   strings.TrimSpace(os.Getenv("MEDIA_TOKEN")),
+			Timeout: envDuration("MEDIA_TIMEOUT", 10*time.Second),
 		},
 		JWT: JWT{
 			Secret:       env("JWT_SECRET", "local-development-secret-change-me"),
@@ -135,6 +147,16 @@ func Load() (Config, error) {
 	}
 	if cfg.TaskHunter.Timeout <= 0 {
 		return Config{}, fmt.Errorf("TASK_HUNTER_TIMEOUT must be positive")
+	}
+	parsedMediaURL, err := url.Parse(cfg.Media.URL)
+	if err != nil || parsedMediaURL.Host == "" || (parsedMediaURL.Scheme != "http" && parsedMediaURL.Scheme != "https") {
+		return Config{}, fmt.Errorf("MEDIA_URL must be an absolute HTTP(S) URL")
+	}
+	if cfg.Media.Token == "" {
+		return Config{}, fmt.Errorf("MEDIA_TOKEN must not be empty")
+	}
+	if cfg.Media.Timeout <= 0 {
+		return Config{}, fmt.Errorf("MEDIA_TIMEOUT must be positive")
 	}
 
 	if cfg.JWT.Secret == "" {

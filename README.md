@@ -5,6 +5,7 @@
 ## Функционал
 
 - единый GraphQL endpoint для frontend;
+- direct upload и выдача media URL через внутренний сервис `media`;
 - регистрация, вход и профиль через `users`;
 - admin-only управление пользователями через `users`;
 - чтение и управление каталогом через `entities`;
@@ -53,3 +54,5 @@ make build
 ```
 
 GraphQL endpoint при локальном запуске стека: `http://localhost:8081/graphql`.
+
+Media-файлы не передаются через GraphQL request body. Мутации `createMediaUpload`, `createMediaUploadParts` и `completeMediaUpload` управляют presigned upload, а `mediaDownloadUrl` выдаёт public либо короткий private URL.

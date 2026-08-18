@@ -28,7 +28,10 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		return nil, errors.New("users returned an empty registration response")
 	}
 
-	return toAuthPayload(response), nil
+	result := toAuthPayload(response)
+	result.User = r.hydrateUsers(ctx, []*users.User{response.User})[0]
+
+	return result, nil
 }
 
 // Login is the resolver for the login field.
@@ -41,7 +44,10 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		return nil, errors.New("users returned an empty login response")
 	}
 
-	return toAuthPayload(response), nil
+	result := toAuthPayload(response)
+	result.User = r.hydrateUsers(ctx, []*users.User{response.User})[0]
+
+	return result, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
@@ -60,7 +66,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 		return nil, errors.New("users returned an empty update response")
 	}
 
-	return toUser(response), nil
+	return r.hydrateUsers(ctx, []*users.User{response})[0], nil
 }
 
 // DeleteUser is the resolver for the deleteUser field.
@@ -89,7 +95,7 @@ func (r *mutationResolver) SetUserAdmin(ctx context.Context, id string, admin bo
 		return nil, errors.New("users returned an empty admin response")
 	}
 
-	return toUser(response), nil
+	return r.hydrateUsers(ctx, []*users.User{response})[0], nil
 }
 
 // SetUserAdminByUsername is the resolver for the setUserAdminByUsername field.
@@ -105,7 +111,7 @@ func (r *mutationResolver) SetUserAdminByUsername(ctx context.Context, username 
 		return nil, errors.New("users returned an empty admin response")
 	}
 
-	return toUser(response), nil
+	return r.hydrateUsers(ctx, []*users.User{response})[0], nil
 }
 
 // CreateUniversity is the resolver for the createUniversity field.
@@ -471,10 +477,16 @@ func (r *mutationResolver) SubmitITTaskCode(ctx context.Context, taskID string, 
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
-	if _, err := middleware.RequireAuth(ctx); err != nil {
+	actor, err := middleware.RequireAuth(ctx)
+	if err != nil {
 		return nil, err
 	}
-	response, err := r.Resolver.Users.GetUser(ctx, id)
+	if actor.UserID != id {
+		if _, err := middleware.RequireAdmin(ctx); err != nil {
+			return nil, err
+		}
+	}
+	response, err := r.Resolver.Users.GetUser(ctx, id) //nolint:staticcheck // Поле Users конфликтует с GraphQL resolver Users.
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +494,7 @@ func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, er
 		return nil, errors.New("users returned an empty get response")
 	}
 
-	return toUser(response), nil
+	return r.hydrateUsers(ctx, []*users.User{response})[0], nil
 }
 
 // UserByUsername is the resolver for the userByUsername field.
@@ -490,7 +502,7 @@ func (r *queryResolver) UserByUsername(ctx context.Context, username string) (*m
 	if _, err := middleware.RequireAdmin(ctx); err != nil {
 		return nil, err
 	}
-	response, err := r.Resolver.Users.GetUserByUsername(ctx, username)
+	response, err := r.Resolver.Users.GetUserByUsername(ctx, username) //nolint:staticcheck // Поле Users конфликтует с GraphQL resolver Users.
 	if err != nil {
 		return nil, err
 	}
@@ -498,7 +510,7 @@ func (r *queryResolver) UserByUsername(ctx context.Context, username string) (*m
 		return nil, errors.New("users returned an empty get response")
 	}
 
-	return toUser(response), nil
+	return r.hydrateUsers(ctx, []*users.User{response})[0], nil
 }
 
 // Users is the resolver for the users field.
@@ -506,18 +518,11 @@ func (r *queryResolver) Users(ctx context.Context, search *string, limit *int, o
 	if _, err := middleware.RequireAdmin(ctx); err != nil {
 		return nil, err
 	}
-	response, err := r.Resolver.Users.ListUsers(ctx, stringValue(search), intValue(limit, 20), intValue(offset, 0))
+	response, err := r.Resolver.Users.ListUsers(ctx, stringValue(search), intValue(limit, 20), intValue(offset, 0)) //nolint:staticcheck // Поле Users конфликтует с GraphQL resolver Users.
 	if err != nil {
 		return nil, err
 	}
-	users := make([]*model.User, 0, len(response))
-	for _, user := range response {
-		if user != nil {
-			users = append(users, toUser(user))
-		}
-	}
-
-	return users, nil
+	return r.hydrateUsers(ctx, response), nil
 }
 
 // Universities is the resolver for the universities field.

@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/overmindv/api-gateway/internal/client/entities"
+	mediaclient "github.com/overmindv/api-gateway/internal/client/media"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
@@ -38,8 +39,9 @@ func main() {
 	entitiesService := entities.New(cfg.Entities.URL, cfg.Entities.Timeout, requestLog)
 	tasksService := tasks.New(cfg.Tasks.URL, cfg.Tasks.Timeout, requestLog)
 	taskHunterService := taskhunter.New(cfg.TaskHunter.URL, cfg.TaskHunter.Token, cfg.TaskHunter.Timeout, requestLog)
+	mediaService := mediaclient.New(cfg.Media.URL, cfg.Media.Token, cfg.Media.Timeout, requestLog)
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
-	httpServer := server.New(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, usersService, authenticator, log, requestLog)
+	httpServer := server.NewWithMedia(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, mediaService, usersService, authenticator, log, requestLog)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

@@ -13,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/overmindv/api-gateway/internal/client/entities"
+	"github.com/overmindv/api-gateway/internal/client/media"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
@@ -30,6 +31,16 @@ func Handler(users users.UserService, catalog entities.CatalogService, tasks tas
 
 // HandlerWithTaskHunter создаёт GraphQL handler с клиентом очереди сбора.
 func HandlerWithTaskHunter(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, log *slog.Logger) http.Handler {
+	return HandlerWithMedia(users, catalog, tasksSvc, taskHunter, nil, log)
+}
+
+// HandlerWithMedia создаёт GraphQL handler со всеми текущими сервисами платформы.
+func HandlerWithMedia(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, log *slog.Logger) http.Handler {
+	return HandlerWithMediaAndMetrics(users, catalog, tasksSvc, taskHunter, mediaSvc, log, nil)
+}
+
+// HandlerWithMediaAndMetrics создаёт GraphQL handler и связывает orchestration metrics.
+func HandlerWithMediaAndMetrics(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, log *slog.Logger, metrics *Metrics) http.Handler {
 	var candidates tasks.CandidateService
 	if service, ok := tasksSvc.(tasks.CandidateService); ok {
 		candidates = service
@@ -40,6 +51,9 @@ func HandlerWithTaskHunter(users users.UserService, catalog entities.CatalogServ
 		Tasks:      tasksSvc,
 		Candidates: candidates,
 		TaskHunter: taskHunter,
+		Media:      mediaSvc,
+		Log:        log,
+		Metrics:    metrics,
 	}}))
 	server.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
