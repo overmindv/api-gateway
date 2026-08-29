@@ -205,12 +205,30 @@ func (c *Client) ListMyCodeSubmissions(ctx context.Context, taskID *string, limi
 	return request[CodeSubmissionList](c, ctx, http.MethodGet, pathWithQuery("/v1/me/code-submissions", values), nil, actor)
 }
 
-// Health проверяет готовность tasks и его PostgreSQL.
+// Health проверяет готовность tasks по HTTP-статусу /ready.
+// Тело не декодируется: parker отдаёт на /ready простой текст, а не JSON.
 func (c *Client) Health(ctx context.Context) error {
-	_, err := request[map[string]string](c, ctx, http.MethodGet, "/ready", nil, Actor{})
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/ready", nil)
 	if err != nil {
-		return fmt.Errorf("check tasks readiness: %w", err)
+		return fmt.Errorf("create tasks health request: %w", err)
 	}
+	setHeaders(req, "", Actor{}, middleware.RequestID(ctx))
+	started := time.Now()
+	response, err := c.http.Do(req)
+	if err != nil {
+		c.log.WarnContext(ctx, "tasks health call failed", "request_id", middleware.RequestID(ctx), "error", err, "duration", time.Since(started))
+
+		return fmt.Errorf("call tasks health: %w", err)
+	}
+	defer func() {
+		_ = response.Body.Close()
+	}()
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		_, _ = io.Copy(io.Discard, response.Body)
+
+		return fmt.Errorf("tasks readiness status %d", response.StatusCode)
+	}
+	c.log.InfoContext(ctx, "tasks health ok", "request_id", middleware.RequestID(ctx), "status", response.StatusCode, "duration", time.Since(started))
 
 	return nil
 }
