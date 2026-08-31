@@ -196,9 +196,32 @@ func (c *Client) ValidateBinding(ctx context.Context, input Binding) (Validation
 }
 
 func (c *Client) Health(ctx context.Context) error {
-	_, err := request[map[string]string](c, ctx, http.MethodGet, "/ready", nil, Actor{})
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/ready", nil)
+	if err != nil {
+		return fmt.Errorf("create entities health request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+	if requestID := middleware.RequestID(ctx); requestID != "" {
+		req.Header.Set(middleware.RequestIDHeader, requestID)
+	}
+	started := time.Now()
+	response, err := c.http.Do(req)
+	if err != nil {
+		c.log.WarnContext(ctx, "entities health call failed", "request_id", middleware.RequestID(ctx), "error", err, "duration", time.Since(started))
 
-	return err
+		return fmt.Errorf("call entities health: %w", err)
+	}
+	defer func() {
+		_ = response.Body.Close()
+	}()
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		_, _ = io.Copy(io.Discard, response.Body)
+
+		return fmt.Errorf("entities readiness status %d", response.StatusCode)
+	}
+	c.log.InfoContext(ctx, "entities health ok", "request_id", middleware.RequestID(ctx), "status", response.StatusCode, "duration", time.Since(started))
+
+	return nil
 }
 
 // request выполняет typed HTTP-запрос в Entities.
