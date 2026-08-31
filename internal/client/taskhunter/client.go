@@ -77,12 +77,33 @@ func (c *Client) Acknowledge(ctx context.Context, id string, actor Actor) error 
 	return nil
 }
 
-// Health проверяет readiness внутреннего task-hunter.
+// Health проверяет готовность task-hunter по HTTP-статусу /ready.
+// Тело не декодируется: parker отдаёт на /ready простой текст, а не JSON.
 func (c *Client) Health(ctx context.Context) error {
-	_, err := request[map[string]string](c, ctx, http.MethodGet, "/ready", nil, Actor{})
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/ready", nil)
 	if err != nil {
-		return fmt.Errorf("check task-hunter readiness: %w", err)
+		return fmt.Errorf("create task-hunter health request: %w", err)
 	}
+	req.Header.Set("Accept", "application/json")
+	if requestID := middleware.RequestID(ctx); requestID != "" {
+		req.Header.Set(middleware.RequestIDHeader, requestID)
+	}
+	started := time.Now()
+	response, err := c.http.Do(req)
+	if err != nil {
+		c.log.WarnContext(ctx, "task-hunter health call failed", "request_id", middleware.RequestID(ctx), "error", err, "duration", time.Since(started))
+
+		return fmt.Errorf("call task-hunter health: %w", err)
+	}
+	defer func() {
+		_ = response.Body.Close()
+	}()
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
+		_, _ = io.Copy(io.Discard, response.Body)
+
+		return fmt.Errorf("task-hunter readiness status %d", response.StatusCode)
+	}
+	c.log.InfoContext(ctx, "task-hunter health ok", "request_id", middleware.RequestID(ctx), "status", response.StatusCode, "duration", time.Since(started))
 
 	return nil
 }
