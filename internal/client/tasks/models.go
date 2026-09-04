@@ -209,6 +209,7 @@ type CodeSubmission struct {
 	CorrelationID     string                `json:"correlation_id"`
 	Language          string                `json:"language"`
 	SourceFileName    string                `json:"source_file_name"`
+	SourceCode        string                `json:"source_code"`
 	Status            string                `json:"status"`
 	Verdict           *string               `json:"verdict,omitempty"`
 	Compilation       *ExecutionPhaseResult `json:"compilation,omitempty"`

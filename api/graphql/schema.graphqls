@@ -89,6 +89,7 @@ type ITCodeSubmission {
   correlationId: ID!
   language: ITProgrammingLanguage!
   sourceFileName: String!
+  sourceCode: String!
   status: ITCodeSubmissionStatus!
   verdict: ITExecutionVerdict
   compilation: ITExecutionPhaseResult

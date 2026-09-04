@@ -104,6 +104,7 @@ type ITCodeSubmission struct {
 	CorrelationID     string                   `json:"correlationId"`
 	Language          ITProgrammingLanguage    `json:"language"`
 	SourceFileName    string                   `json:"sourceFileName"`
+	SourceCode        string                   `json:"sourceCode"`
 	Status            ITCodeSubmissionStatus   `json:"status"`
 	Verdict           *ITExecutionVerdict      `json:"verdict,omitempty"`
 	Compilation       *ITExecutionPhaseResult  `json:"compilation,omitempty"`
