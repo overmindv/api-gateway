@@ -287,6 +287,7 @@ func codeSubmissionModel(item tasks.CodeSubmission) *model.ITCodeSubmission {
 		CorrelationID:     item.CorrelationID,
 		Language:          model.ITProgrammingLanguage(item.Language),
 		SourceFileName:    item.SourceFileName,
+		SourceCode:        item.SourceCode,
 		Status:            model.ITCodeSubmissionStatus(item.Status),
 		Verdict:           verdict,
 		Compilation:       executionPhaseModel(item.Compilation),
