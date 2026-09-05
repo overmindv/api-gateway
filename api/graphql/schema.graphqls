@@ -118,7 +118,8 @@ input ITCodeSubmissionInput {
   taskVersionId: ID!
   idempotencyKey: ID!
   language: ITProgrammingLanguage!
-  file: Upload!
+  file: Upload
+  sourceCode: String
 }
 
 enum TaskCandidateStatus { pending approved rejected }

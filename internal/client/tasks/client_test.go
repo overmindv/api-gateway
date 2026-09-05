@@ -259,6 +259,59 @@ func TestClientMapsCodeSubmission(t *testing.T) {
 	}
 }
 
+// TestCodeSubmissionBodyFromConsole проверяет консольный вариант: поле source_code без файла.
+func TestCodeSubmissionBodyFromConsole(t *testing.T) {
+	t.Parallel()
+
+	requests := 0
+	client := testClient(t, func(request *http.Request) *http.Response {
+		requests++
+		if request.URL.Path != "/v1/tasks/task-id/code-submissions" {
+			t.Fatalf("unexpected path: %s", request.URL.Path)
+		}
+		if err := request.ParseMultipartForm(512 << 10); err != nil {
+			t.Fatal(err)
+		}
+		if request.FormValue("language") != "python" || request.FormValue("idempotency_key") != "key-id" {
+			t.Fatalf("unexpected multipart fields: %v", request.MultipartForm.Value)
+		}
+		if request.FormValue("source_code") != "print(input())" {
+			t.Fatalf("source_code field = %q", request.FormValue("source_code"))
+		}
+		if len(request.MultipartForm.File["file"]) != 0 {
+			t.Fatalf("консольный вариант не должен передавать файл: %v", request.MultipartForm.File)
+		}
+
+		return jsonResponse(t, http.StatusAccepted, sampleCodeSubmission())
+	})
+
+	sourceCode := "print(input())"
+	created, err := client.SubmitCode(context.Background(), "task-id", CodeSubmissionInput{
+		TaskVersionID:  "version-id",
+		IdempotencyKey: "key-id",
+		Language:       "python",
+		SourceCode:     &sourceCode,
+	}, Actor{UserID: "user-id", Roles: []string{"student"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.Status != "queued" || requests != 1 {
+		t.Fatalf("unexpected created submission: %+v, requests = %d", created, requests)
+	}
+}
+
+// TestCodeSubmissionBodyRejectsNoSource проверяет требование ровно одного источника решения.
+func TestCodeSubmissionBodyRejectsNoSource(t *testing.T) {
+	t.Parallel()
+	if _, _, err := codeSubmissionBody(CodeSubmissionInput{
+		TaskVersionID:  "version-id",
+		IdempotencyKey: "key-id",
+		Language:       "python",
+	}); err == nil {
+		t.Fatal("codeSubmissionBody() должен отклонить отсутствие источника кода")
+	}
+}
+
 // TestCodeSubmissionBodyRejectsLargeFile проверяет лимит до сетевого запроса.
 func TestCodeSubmissionBodyRejectsLargeFile(t *testing.T) {
 	t.Parallel()
