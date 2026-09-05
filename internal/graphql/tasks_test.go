@@ -295,7 +295,7 @@ func TestITTaskCodeSubmissionQueries(t *testing.T) {
 		TaskVersionID:  "version-id",
 		IdempotencyKey: "key-id",
 		Language:       model.ITProgrammingLanguagePython,
-		File: gqlgen.Upload{
+		File: &gqlgen.Upload{
 			File:        bytes.NewReader([]byte("print(42)")),
 			Filename:    "solution.py",
 			Size:        9,

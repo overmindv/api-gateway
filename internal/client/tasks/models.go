@@ -175,6 +175,8 @@ type CodeSubmissionInput struct {
 	Language       string
 	FileName       string
 	File           io.Reader
+	// SourceCode задаёт консольный вариант решения; если задан, File и FileName игнорируются.
+	SourceCode *string
 }
 
 type ExecutionPhaseResult struct {

@@ -120,7 +120,8 @@ type ITCodeSubmissionInput struct {
 	TaskVersionID  string                `json:"taskVersionId"`
 	IdempotencyKey string                `json:"idempotencyKey"`
 	Language       ITProgrammingLanguage `json:"language"`
-	File           graphql.Upload        `json:"file"`
+	File           *graphql.Upload       `json:"file,omitempty"`
+	SourceCode     *string               `json:"sourceCode,omitempty"`
 }
 
 type ITCodeSubmissionList struct {

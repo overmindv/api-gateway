@@ -297,16 +297,8 @@ func requestBody(input any) (io.Reader, error) {
 }
 
 // codeSubmissionBody формирует ограниченное multipart-тело для tasks.
+// Решение передаётся ровно одним способом: кодом из консоли (source_code) либо файлом.
 func codeSubmissionBody(input CodeSubmissionInput) (io.Reader, string, error) {
-	if input.File == nil {
-		return nil, "", fmt.Errorf("source file is required")
-	}
-
-	fileName := filepath.Base(input.FileName)
-	if fileName == "." || fileName == "" {
-		return nil, "", fmt.Errorf("source file name is required")
-	}
-
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	fields := map[string]string{
@@ -320,21 +312,35 @@ func codeSubmissionBody(input CodeSubmissionInput) (io.Reader, string, error) {
 		}
 	}
 
-	part, err := writer.CreateFormFile("file", fileName)
-	if err != nil {
-		return nil, "", fmt.Errorf("create multipart source file: %w", err)
-	}
-	written, err := io.Copy(part, io.LimitReader(input.File, maxCodeSourceSize+1))
-	if err != nil {
-		return nil, "", fmt.Errorf("copy multipart source file: %w", err)
-	}
-	if written > maxCodeSourceSize {
-		return nil, "", &Error{
-			Code:       "INVALID_SOURCE_FILE",
-			Message:    "файл решения превышает 262144 байта",
-			StatusCode: http.StatusBadRequest,
+	switch {
+	case input.SourceCode != nil:
+		if err := writer.WriteField("source_code", *input.SourceCode); err != nil {
+			return nil, "", fmt.Errorf("write multipart field source_code: %w", err)
 		}
+	case input.File != nil:
+		fileName := filepath.Base(input.FileName)
+		if fileName == "." || fileName == "" {
+			return nil, "", fmt.Errorf("source file name is required")
+		}
+		part, err := writer.CreateFormFile("file", fileName)
+		if err != nil {
+			return nil, "", fmt.Errorf("create multipart source file: %w", err)
+		}
+		written, err := io.Copy(part, io.LimitReader(input.File, maxCodeSourceSize+1))
+		if err != nil {
+			return nil, "", fmt.Errorf("copy multipart source file: %w", err)
+		}
+		if written > maxCodeSourceSize {
+			return nil, "", &Error{
+				Code:       "INVALID_SOURCE_FILE",
+				Message:    "файл решения превышает 262144 байта",
+				StatusCode: http.StatusBadRequest,
+			}
+		}
+	default:
+		return nil, "", fmt.Errorf("source file or source code is required")
 	}
+
 	if err := writer.Close(); err != nil {
 		return nil, "", fmt.Errorf("close multipart writer: %w", err)
 	}

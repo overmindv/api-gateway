@@ -129,15 +129,20 @@ func submissionInput(input model.ITSubmissionInput) tasks.SubmissionInput {
 	}
 }
 
-// codeSubmissionInput преобразует GraphQL upload в поток multipart-клиента tasks.
+// codeSubmissionInput преобразует GraphQL upload либо код из консоли в multipart-клиент tasks.
 func codeSubmissionInput(input model.ITCodeSubmissionInput) tasks.CodeSubmissionInput {
-	return tasks.CodeSubmissionInput{
+	dto := tasks.CodeSubmissionInput{
 		TaskVersionID:  input.TaskVersionID,
 		IdempotencyKey: input.IdempotencyKey,
 		Language:       input.Language.String(),
-		FileName:       input.File.Filename,
-		File:           input.File.File,
+		SourceCode:     input.SourceCode,
 	}
+	if input.File != nil {
+		dto.FileName = input.File.Filename
+		dto.File = input.File.File
+	}
+
+	return dto
 }
 
 // taskModel преобразует полную задачу tasks в GraphQL-модель.
