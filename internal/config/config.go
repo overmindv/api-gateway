@@ -16,6 +16,7 @@ type Config struct {
 	Tasks      Tasks
 	TaskHunter TaskHunter
 	JWT        JWT
+	Session    Session
 }
 
 type HTTP struct {
@@ -53,6 +54,11 @@ type JWT struct {
 	Secret       string
 	Issuer       string
 	AdminUserIDs []string
+}
+
+// Session описывает атрибуты httpOnly session cookie.
+type Session struct {
+	Secure bool
 }
 
 // Load читает конфигурацию api-gateway из environment.
@@ -93,6 +99,10 @@ func Load() (Config, error) {
 			Secret:       env("JWT_SECRET", "local-development-secret-change-me"),
 			Issuer:       env("JWT_ISSUER", "users"),
 			AdminUserIDs: envCSV("ADMIN_USER_IDS", nil),
+		},
+		Session: Session{
+			// По умолчанию cookie помечается Secure; для локальной разработки over http выставляют SESSION_COOKIE_SECURE=false.
+			Secure: envBool("SESSION_COOKIE_SECURE", true),
 		},
 	}
 
@@ -172,6 +182,17 @@ func env(key, fallback string) string {
 // На вход получает имя переменной и fallback, на выход возвращает parsed duration или fallback при ошибке.
 func envDuration(key string, fallback time.Duration) time.Duration {
 	value, err := time.ParseDuration(env(key, fallback.String()))
+	if err != nil {
+		return fallback
+	}
+
+	return value
+}
+
+// envBool читает boolean из environment variable и возвращает fallback при ошибке формата.
+// На вход получает имя переменной и fallback, на выход возвращает parsed boolean или fallback.
+func envBool(key string, fallback bool) bool {
+	value, err := strconv.ParseBool(env(key, ""))
 	if err != nil {
 		return fallback
 	}

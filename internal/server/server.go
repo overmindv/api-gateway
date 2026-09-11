@@ -27,7 +27,7 @@ type healthChecker interface{ Health(context.Context) error }
 
 // New собирает HTTP server api-gateway со всеми middleware и routes.
 // На вход получает конфигурацию, clients, health checker, authenticator и loggers, на выход возвращает готовый Server.
-func New(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, log *slog.Logger, requestLog *slog.Logger) *Server {
+func New(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, sessionSecure bool, log *slog.Logger, requestLog *slog.Logger) *Server {
 	mux := http.NewServeMux()
 
 	mux.Handle("POST /graphql", graphqldelivery.HandlerWithTaskHunter(users, catalog, tasks, taskHunter, requestLog))
@@ -58,6 +58,7 @@ func New(cfg config.HTTP, users users.UserService, catalog entities.CatalogServi
 	mux.HandleFunc("GET /healthz", healthHandler)
 
 	var handler http.Handler = mux
+	handler = middleware.SessionCookie(middleware.SessionConfig{Secure: sessionSecure}, handler)
 	handler = middleware.JWT(authenticator, handler)
 	handler = middleware.CORS(cfg.CORSOrigins, handler)
 	handler = middleware.Logging(requestLog, handler, "/health", "/healthz")
