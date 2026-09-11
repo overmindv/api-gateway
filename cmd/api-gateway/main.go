@@ -39,7 +39,7 @@ func main() {
 	tasksService := tasks.New(cfg.Tasks.URL, cfg.Tasks.Timeout, requestLog)
 	taskHunterService := taskhunter.New(cfg.TaskHunter.URL, cfg.TaskHunter.Token, cfg.TaskHunter.Timeout, requestLog)
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
-	httpServer := server.New(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, usersService, authenticator, log, requestLog)
+	httpServer := server.New(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, usersService, authenticator, cfg.Session.Secure, log, requestLog)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

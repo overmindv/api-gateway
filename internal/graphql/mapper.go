@@ -1,9 +1,29 @@
 package graphql
 
 import (
+	"time"
+
 	"github.com/overmindv/api-gateway/internal/client/users"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 )
+
+// defaultSessionTTL задаёт fallback-время жизни session cookie, если expiresAt не парсится.
+const defaultSessionTTL = 24 * time.Hour
+
+// sessionMaxAge считает оставшееся время жизни токена для Max-Age cookie.
+func sessionMaxAge(expiresAt string) time.Duration {
+	expires, err := time.Parse(time.RFC3339, expiresAt)
+	if err != nil {
+		return defaultSessionTTL
+	}
+
+	remaining := time.Until(expires)
+	if remaining <= 0 {
+		return defaultSessionTTL
+	}
+
+	return remaining
+}
 
 func toUser(user *users.User) *model.User {
 	return &model.User{

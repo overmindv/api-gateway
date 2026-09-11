@@ -90,6 +90,12 @@ func JWT(authenticator *JWTAuthenticator, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("Authorization")
 		if header == "" {
+			// Сессия приходит в httpOnly cookie (JS прочитать её не может).
+			if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
+				header = "Bearer " + cookie.Value
+			}
+		}
+		if header == "" {
 			next.ServeHTTP(w, r)
 			return
 		}

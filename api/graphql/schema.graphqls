@@ -167,6 +167,7 @@ input UpdateUserInput {
 }
 
 type Query {
+  me: User!
   getUser(id: ID!): User!
   userByUsername(username: String!): User!
   users(search: String = "", limit: Int = 20, offset: Int = 0): [User!]!
@@ -199,6 +200,7 @@ type Query {
 type Mutation {
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
+  logout: Boolean!
   updateUser(id: ID!, input: UpdateUserInput!): User!
   deleteUser(id: ID!): Boolean!
   setUserAdmin(id: ID!, admin: Boolean!): User!

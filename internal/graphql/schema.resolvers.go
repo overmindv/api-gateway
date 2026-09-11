@@ -28,6 +28,8 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		return nil, errors.New("users returned an empty registration response")
 	}
 
+	middleware.SetSessionToken(ctx, response.Token, sessionMaxAge(response.ExpiresAt))
+
 	return toAuthPayload(response), nil
 }
 
@@ -41,7 +43,16 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		return nil, errors.New("users returned an empty login response")
 	}
 
+	middleware.SetSessionToken(ctx, response.Token, sessionMaxAge(response.ExpiresAt))
+
 	return toAuthPayload(response), nil
+}
+
+// Logout is the resolver for the logout field.
+func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
+	middleware.ClearSessionToken(ctx)
+
+	return true, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
@@ -467,6 +478,23 @@ func (r *mutationResolver) SubmitITTaskCode(ctx context.Context, taskID string, 
 	}
 
 	return codeSubmissionModel(result), nil
+}
+
+// Me is the resolver for the me field.
+func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
+	info, err := middleware.RequireAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
+	response, err := r.Resolver.Users.GetUser(ctx, info.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if response == nil {
+		return nil, errors.New("users returned an empty me response")
+	}
+
+	return toUser(response), nil
 }
 
 // GetUser is the resolver for the getUser field.
