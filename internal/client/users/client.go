@@ -15,7 +15,8 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
-const userFields = `id email username firstName lastName birthDate phone roles isAdmin isSuperuser createdAt updatedAt`
+const userFields = `id email username firstName lastName birthDate phone avatarFileId roles isAdmin isSuperuser createdAt updatedAt`
+const publicUserFields = `id username firstName lastName avatarFileId isAdmin createdAt`
 
 type Client struct {
 	url       string
@@ -143,6 +144,48 @@ func (c *Client) UpdateUser(ctx context.Context, id string, input UpdateUserInpu
 	}
 
 	return data.UpdateUser, nil
+}
+
+// SetMyAvatar устанавливает или очищает avatar_file_id текущего пользователя.
+func (c *Client) SetMyAvatar(ctx context.Context, fileID *string) (*User, error) {
+	var data struct {
+		User *User `json:"setMyAvatar"`
+	}
+	err := c.call(ctx, "SetMyAvatar", `mutation SetMyAvatar($fileId: ID) { setMyAvatar(fileId: $fileId) { `+userFields+` } }`, map[string]any{"fileId": fileID}, true, &data)
+	if err != nil {
+		return nil, err
+	}
+	if data.User == nil {
+		return nil, &Error{Code: "BAD_GATEWAY", Message: "users returned an empty avatar response"}
+	}
+
+	return data.User, nil
+}
+
+// GetPublicUser получает безопасный профиль без приватных полей.
+func (c *Client) GetPublicUser(ctx context.Context, id string) (*PublicUser, error) {
+	var data struct {
+		User *PublicUser `json:"publicUser"`
+	}
+	err := c.call(ctx, "PublicUser", `query PublicUser($id: ID!) { publicUser(id: $id) { `+publicUserFields+` } }`, map[string]any{"id": id}, true, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data.User, nil
+}
+
+// ListPublicUsers выполняет безопасный поиск пользователей.
+func (c *Client) ListPublicUsers(ctx context.Context, search string, limit, offset int) ([]*PublicUser, error) {
+	var data struct {
+		Users []*PublicUser `json:"publicUsers"`
+	}
+	err := c.call(ctx, "PublicUsers", `query PublicUsers($search: String!, $limit: Int, $offset: Int) { publicUsers(search: $search, limit: $limit, offset: $offset) { `+publicUserFields+` } }`, map[string]any{"search": search, "limit": limit, "offset": offset}, true, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data.Users, nil
 }
 
 func (c *Client) DeleteUser(ctx context.Context, id string) (bool, error) {
