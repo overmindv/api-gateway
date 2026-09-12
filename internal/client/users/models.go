@@ -12,21 +12,35 @@ type UserService interface {
 	DeleteUser(context.Context, string) (bool, error)
 	SetUserAdmin(context.Context, string, bool) (*User, error)
 	SetUserAdminByUsername(context.Context, string, bool) (*User, error)
+	SetMyAvatar(context.Context, *string) (*User, error)
+	GetPublicUser(context.Context, string) (*PublicUser, error)
+	ListPublicUsers(context.Context, string, int, int) ([]*PublicUser, error)
 }
 
 type User struct {
-	ID          string   `json:"id"`
-	Email       string   `json:"email"`
-	Username    string   `json:"username"`
-	FirstName   string   `json:"firstName"`
-	LastName    string   `json:"lastName"`
-	BirthDate   *string  `json:"birthDate"`
-	Phone       *string  `json:"phone"`
-	Roles       []string `json:"roles"`
-	IsAdmin     bool     `json:"isAdmin"`
-	IsSuperuser bool     `json:"isSuperuser"`
-	CreatedAt   string   `json:"createdAt"`
-	UpdatedAt   string   `json:"updatedAt"`
+	ID           string   `json:"id"`
+	Email        string   `json:"email"`
+	Username     string   `json:"username"`
+	FirstName    string   `json:"firstName"`
+	LastName     string   `json:"lastName"`
+	BirthDate    *string  `json:"birthDate"`
+	Phone        *string  `json:"phone"`
+	AvatarFileID *string  `json:"avatarFileId"`
+	Roles        []string `json:"roles"`
+	IsAdmin      bool     `json:"isAdmin"`
+	IsSuperuser  bool     `json:"isSuperuser"`
+	CreatedAt    string   `json:"createdAt"`
+	UpdatedAt    string   `json:"updatedAt"`
+}
+
+type PublicUser struct {
+	ID           string  `json:"id"`
+	Username     string  `json:"username"`
+	FirstName    string  `json:"firstName"`
+	LastName     string  `json:"lastName"`
+	AvatarFileID *string `json:"avatarFileId"`
+	IsAdmin      bool    `json:"isAdmin"`
+	CreatedAt    string  `json:"createdAt"`
 }
 
 type AuthPayload struct {

@@ -71,7 +71,9 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, input mode
 		return nil, errors.New("users returned an empty update response")
 	}
 
-	return toUser(response), nil
+	users := []*users.User{response}
+
+	return r.hydrateUsers(ctx, users)[0], nil
 }
 
 // DeleteUser is the resolver for the deleteUser field.
@@ -494,7 +496,9 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 		return nil, errors.New("users returned an empty me response")
 	}
 
-	return toUser(response), nil
+	users := []*users.User{response}
+
+	return r.hydrateUsers(ctx, users)[0], nil
 }
 
 // GetUser is the resolver for the getUser field.
@@ -510,7 +514,9 @@ func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, er
 		return nil, errors.New("users returned an empty get response")
 	}
 
-	return toUser(response), nil
+	users := []*users.User{response}
+
+	return r.hydrateUsers(ctx, users)[0], nil
 }
 
 // UserByUsername is the resolver for the userByUsername field.
@@ -538,14 +544,8 @@ func (r *queryResolver) Users(ctx context.Context, search *string, limit *int, o
 	if err != nil {
 		return nil, err
 	}
-	users := make([]*model.User, 0, len(response))
-	for _, user := range response {
-		if user != nil {
-			users = append(users, toUser(user))
-		}
-	}
 
-	return users, nil
+	return r.hydrateUsers(ctx, response), nil
 }
 
 // Universities is the resolver for the universities field.

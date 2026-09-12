@@ -98,6 +98,21 @@ func (s *userServiceStub) SetUserAdminByUsername(_ context.Context, username str
 	return user, nil
 }
 
+func (s *userServiceStub) SetMyAvatar(_ context.Context, fileID *string) (*users.User, error) {
+	user := upstreamUser()
+	user.AvatarFileID = fileID
+
+	return user, nil
+}
+
+func (s *userServiceStub) GetPublicUser(_ context.Context, id string) (*users.PublicUser, error) {
+	return &users.PublicUser{ID: id, Username: "user", FirstName: "First", LastName: "Last", IsAdmin: false, CreatedAt: "now"}, nil
+}
+
+func (s *userServiceStub) ListPublicUsers(_ context.Context, search string, limit, offset int) ([]*users.PublicUser, error) {
+	return []*users.PublicUser{{ID: "user-id", Username: "user", FirstName: "First", LastName: "Last", IsAdmin: false, CreatedAt: "now"}}, nil
+}
+
 func TestPublicResolversMapRequests(t *testing.T) {
 	stub := &userServiceStub{}
 	resolver := &mutationResolver{Resolver: &Resolver{Users: stub}}
