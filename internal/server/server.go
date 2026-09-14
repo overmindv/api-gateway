@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/overmindv/api-gateway/internal/client/entities"
+	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
@@ -34,10 +35,15 @@ func New(cfg config.HTTP, users users.UserService, catalog entities.CatalogServi
 
 // NewWithMedia собирает gateway server с Media client и сохраняет совместимость старого New для тестов.
 func NewWithMedia(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, sessionSecure bool, log *slog.Logger, requestLog *slog.Logger) *Server {
+	return NewWithFeed(cfg, users, catalog, tasks, taskHunter, mediaSvc, nil, usersHealth, authenticator, sessionSecure, log, requestLog)
+}
+
+// NewWithFeed собирает gateway server с клиентом ленты активностей.
+func NewWithFeed(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, sessionSecure bool, log *slog.Logger, requestLog *slog.Logger) *Server {
 	mux := http.NewServeMux()
 	metrics := &graphqldelivery.Metrics{}
 
-	mux.Handle("POST /graphql", graphqldelivery.HandlerWithMediaAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, requestLog, metrics))
+	mux.Handle("POST /graphql", graphqldelivery.HandlerWithFeedAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, feedSvc, requestLog, metrics))
 	mux.Handle("GET /playground", graphqldelivery.Playground())
 	mux.HandleFunc("GET /metrics", metrics.Handler)
 
@@ -62,6 +68,13 @@ func NewWithMedia(cfg config.HTTP, users users.UserService, catalog entities.Cat
 			if err := mediaSvc.Health(r.Context()); err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				_, _ = w.Write([]byte(`{"status":"unhealthy","media":"unavailable"}`))
+				return
+			}
+		}
+		if feedSvc != nil {
+			if err := feedSvc.Health(r.Context()); err != nil {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, _ = w.Write([]byte(`{"status":"unhealthy","feed":"unavailable"}`))
 				return
 			}
 		}

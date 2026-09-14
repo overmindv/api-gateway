@@ -106,6 +106,22 @@ type CreateUniversityInput struct {
 	Status     *CatalogStatus `json:"status,omitempty"`
 }
 
+type FeedConnection struct {
+	Items  []*FeedItem `json:"items"`
+	Limit  int         `json:"limit"`
+	Offset int         `json:"offset"`
+}
+
+type FeedItem struct {
+	ID          string   `json:"id"`
+	Kind        FeedKind `json:"kind"`
+	Title       string   `json:"title"`
+	Text        string   `json:"text"`
+	Href        string   `json:"href"`
+	ActorUserID string   `json:"actorUserId"`
+	OccurredAt  string   `json:"occurredAt"`
+}
+
 type ITAdminTaskFilter struct {
 	Status     *ITTaskStatus     `json:"status,omitempty"`
 	TaskType   *ITTaskType       `json:"taskType,omitempty"`
@@ -728,6 +744,75 @@ func (e *DegreeLevel) UnmarshalJSON(b []byte) error {
 }
 
 func (e DegreeLevel) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type FeedKind string
+
+const (
+	FeedKindUniversityCreated   FeedKind = "university_created"
+	FeedKindUniversityActivated FeedKind = "university_activated"
+	FeedKindProgramCreated      FeedKind = "program_created"
+	FeedKindProgramActivated    FeedKind = "program_activated"
+	FeedKindCourseCreated       FeedKind = "course_created"
+	FeedKindCourseActivated     FeedKind = "course_activated"
+	FeedKindTopicCreated        FeedKind = "topic_created"
+	FeedKindTopicActivated      FeedKind = "topic_activated"
+	FeedKindTaskPublished       FeedKind = "task_published"
+)
+
+var AllFeedKind = []FeedKind{
+	FeedKindUniversityCreated,
+	FeedKindUniversityActivated,
+	FeedKindProgramCreated,
+	FeedKindProgramActivated,
+	FeedKindCourseCreated,
+	FeedKindCourseActivated,
+	FeedKindTopicCreated,
+	FeedKindTopicActivated,
+	FeedKindTaskPublished,
+}
+
+func (e FeedKind) IsValid() bool {
+	switch e {
+	case FeedKindUniversityCreated, FeedKindUniversityActivated, FeedKindProgramCreated, FeedKindProgramActivated, FeedKindCourseCreated, FeedKindCourseActivated, FeedKindTopicCreated, FeedKindTopicActivated, FeedKindTaskPublished:
+		return true
+	}
+	return false
+}
+
+func (e FeedKind) String() string {
+	return string(e)
+}
+
+func (e *FeedKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FeedKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FeedKind", str)
+	}
+	return nil
+}
+
+func (e FeedKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *FeedKind) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e FeedKind) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil
