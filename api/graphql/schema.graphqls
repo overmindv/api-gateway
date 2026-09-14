@@ -237,6 +237,36 @@ input UpdateUserInput {
   phone: String
 }
 
+# Feed — лента активностей (новости каталога и задач).
+enum FeedKind {
+  university_created
+  university_activated
+  program_created
+  program_activated
+  course_created
+  course_activated
+  topic_created
+  topic_activated
+  task_published
+}
+
+type FeedItem {
+  id: ID!
+  kind: FeedKind!
+  title: String!
+  text: String!
+  href: String!
+  actorUserId: ID!
+  occurredAt: String!
+}
+
+type FeedConnection {
+  items: [FeedItem!]!
+  limit: Int!
+  offset: Int!
+}
+
+
 type Query {
   me: User!
   getUser(id: ID!): User!
@@ -271,6 +301,7 @@ type Query {
   mediaFile(id: ID!): MediaFile!
   myMediaFiles(filter: MediaFileFilter, pagination: PaginationInput): MediaFileConnection!
   mediaDownloadUrl(fileId: ID!, variant: String = "original"): MediaDownload!
+  feed(pagination: PaginationInput): FeedConnection!
 }
 
 type Mutation {

@@ -69,6 +69,22 @@ type ComplexityRoot struct {
 		YearNumber  func(childComplexity int) int
 	}
 
+	FeedConnection struct {
+		Items  func(childComplexity int) int
+		Limit  func(childComplexity int) int
+		Offset func(childComplexity int) int
+	}
+
+	FeedItem struct {
+		ActorUserID func(childComplexity int) int
+		Href        func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Kind        func(childComplexity int) int
+		OccurredAt  func(childComplexity int) int
+		Text        func(childComplexity int) int
+		Title       func(childComplexity int) int
+	}
+
 	ITCodeSubmission struct {
 		Compilation       func(childComplexity int) int
 		CompletedAt       func(childComplexity int) int
@@ -327,6 +343,7 @@ type ComplexityRoot struct {
 		AdminITTasks           func(childComplexity int, filter *model.ITAdminTaskFilter, pagination *model.PaginationInput) int
 		Course                 func(childComplexity int, id string) int
 		Courses                func(childComplexity int, programID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
+		Feed                   func(childComplexity int, pagination *model.PaginationInput) int
 		GetUser                func(childComplexity int, id string) int
 		ItCodeSubmission       func(childComplexity int, id string) int
 		ItSubmission           func(childComplexity int, id string) int
@@ -573,6 +590,7 @@ type QueryResolver interface {
 	MediaFile(ctx context.Context, id string) (*model.MediaFile, error)
 	MyMediaFiles(ctx context.Context, filter *model.MediaFileFilter, pagination *model.PaginationInput) (*model.MediaFileConnection, error)
 	MediaDownloadURL(ctx context.Context, fileID string, variant *string) (*model.MediaDownload, error)
+	Feed(ctx context.Context, pagination *model.PaginationInput) (*model.FeedConnection, error)
 }
 
 type executableSchema struct {
@@ -680,6 +698,68 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Course.YearNumber(childComplexity), true
+
+	case "FeedConnection.items":
+		if e.complexity.FeedConnection.Items == nil {
+			break
+		}
+
+		return e.complexity.FeedConnection.Items(childComplexity), true
+	case "FeedConnection.limit":
+		if e.complexity.FeedConnection.Limit == nil {
+			break
+		}
+
+		return e.complexity.FeedConnection.Limit(childComplexity), true
+	case "FeedConnection.offset":
+		if e.complexity.FeedConnection.Offset == nil {
+			break
+		}
+
+		return e.complexity.FeedConnection.Offset(childComplexity), true
+
+	case "FeedItem.actorUserId":
+		if e.complexity.FeedItem.ActorUserID == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.ActorUserID(childComplexity), true
+	case "FeedItem.href":
+		if e.complexity.FeedItem.Href == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.Href(childComplexity), true
+	case "FeedItem.id":
+		if e.complexity.FeedItem.ID == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.ID(childComplexity), true
+	case "FeedItem.kind":
+		if e.complexity.FeedItem.Kind == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.Kind(childComplexity), true
+	case "FeedItem.occurredAt":
+		if e.complexity.FeedItem.OccurredAt == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.OccurredAt(childComplexity), true
+	case "FeedItem.text":
+		if e.complexity.FeedItem.Text == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.Text(childComplexity), true
+	case "FeedItem.title":
+		if e.complexity.FeedItem.Title == nil {
+			break
+		}
+
+		return e.complexity.FeedItem.Title(childComplexity), true
 
 	case "ITCodeSubmission.compilation":
 		if e.complexity.ITCodeSubmission.Compilation == nil {
@@ -2052,6 +2132,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Courses(childComplexity, args["programId"].(*string), args["filter"].(*model.CatalogFilter), args["pagination"].(*model.PaginationInput)), true
+	case "Query.feed":
+		if e.complexity.Query.Feed == nil {
+			break
+		}
+
+		args, err := ec.field_Query_feed_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Feed(childComplexity, args["pagination"].(*model.PaginationInput)), true
 	case "Query.getUser":
 		if e.complexity.Query.GetUser == nil {
 			break
@@ -3353,6 +3444,36 @@ input UpdateUserInput {
   phone: String
 }
 
+# Feed — лента активностей (новости каталога и задач).
+enum FeedKind {
+  university_created
+  university_activated
+  program_created
+  program_activated
+  course_created
+  course_activated
+  topic_created
+  topic_activated
+  task_published
+}
+
+type FeedItem {
+  id: ID!
+  kind: FeedKind!
+  title: String!
+  text: String!
+  href: String!
+  actorUserId: ID!
+  occurredAt: String!
+}
+
+type FeedConnection {
+  items: [FeedItem!]!
+  limit: Int!
+  offset: Int!
+}
+
+
 type Query {
   me: User!
   getUser(id: ID!): User!
@@ -3387,6 +3508,7 @@ type Query {
   mediaFile(id: ID!): MediaFile!
   myMediaFiles(filter: MediaFileFilter, pagination: PaginationInput): MediaFileConnection!
   mediaDownloadUrl(fileId: ID!, variant: String = "original"): MediaDownload!
+  feed(pagination: PaginationInput): FeedConnection!
 }
 
 type Mutation {
@@ -4047,6 +4169,17 @@ func (ec *executionContext) field_Query_courses_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["pagination"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_feed_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "pagination", ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPaginationInput)
+	if err != nil {
+		return nil, err
+	}
+	args["pagination"] = arg0
 	return args, nil
 }
 
@@ -4898,6 +5031,312 @@ func (ec *executionContext) _Course_updatedAt(ctx context.Context, field graphql
 func (ec *executionContext) fieldContext_Course_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Course",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedConnection_items(ctx context.Context, field graphql.CollectedField, obj *model.FeedConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedConnection_items,
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		ec.marshalNFeedItem2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedItemᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedConnection_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_FeedItem_id(ctx, field)
+			case "kind":
+				return ec.fieldContext_FeedItem_kind(ctx, field)
+			case "title":
+				return ec.fieldContext_FeedItem_title(ctx, field)
+			case "text":
+				return ec.fieldContext_FeedItem_text(ctx, field)
+			case "href":
+				return ec.fieldContext_FeedItem_href(ctx, field)
+			case "actorUserId":
+				return ec.fieldContext_FeedItem_actorUserId(ctx, field)
+			case "occurredAt":
+				return ec.fieldContext_FeedItem_occurredAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FeedItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedConnection_limit(ctx context.Context, field graphql.CollectedField, obj *model.FeedConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedConnection_limit,
+		func(ctx context.Context) (any, error) {
+			return obj.Limit, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedConnection_limit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedConnection_offset(ctx context.Context, field graphql.CollectedField, obj *model.FeedConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedConnection_offset,
+		func(ctx context.Context) (any, error) {
+			return obj.Offset, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedConnection_offset(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedItem_id(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedItem_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedItem_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedItem_kind(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedItem_kind,
+		func(ctx context.Context) (any, error) {
+			return obj.Kind, nil
+		},
+		nil,
+		ec.marshalNFeedKind2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedKind,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedItem_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type FeedKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedItem_title(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedItem_title,
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedItem_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedItem_text(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedItem_text,
+		func(ctx context.Context) (any, error) {
+			return obj.Text, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedItem_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedItem_href(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedItem_href,
+		func(ctx context.Context) (any, error) {
+			return obj.Href, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedItem_href(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedItem_actorUserId(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedItem_actorUserId,
+		func(ctx context.Context) (any, error) {
+			return obj.ActorUserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedItem_actorUserId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeedItem_occurredAt(ctx context.Context, field graphql.CollectedField, obj *model.FeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_FeedItem_occurredAt,
+		func(ctx context.Context) (any, error) {
+			return obj.OccurredAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_FeedItem_occurredAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeedItem",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -13731,6 +14170,55 @@ func (ec *executionContext) fieldContext_Query_mediaDownloadUrl(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_feed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_feed,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Feed(ctx, fc.Args["pagination"].(*model.PaginationInput))
+		},
+		nil,
+		ec.marshalNFeedConnection2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_feed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "items":
+				return ec.fieldContext_FeedConnection_items(ctx, field)
+			case "limit":
+				return ec.fieldContext_FeedConnection_limit(ctx, field)
+			case "offset":
+				return ec.fieldContext_FeedConnection_offset(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FeedConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_feed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -20265,6 +20753,124 @@ func (ec *executionContext) _Course(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var feedConnectionImplementors = []string{"FeedConnection"}
+
+func (ec *executionContext) _FeedConnection(ctx context.Context, sel ast.SelectionSet, obj *model.FeedConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feedConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeedConnection")
+		case "items":
+			out.Values[i] = ec._FeedConnection_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "limit":
+			out.Values[i] = ec._FeedConnection_limit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "offset":
+			out.Values[i] = ec._FeedConnection_offset(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var feedItemImplementors = []string{"FeedItem"}
+
+func (ec *executionContext) _FeedItem(ctx context.Context, sel ast.SelectionSet, obj *model.FeedItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, feedItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeedItem")
+		case "id":
+			out.Values[i] = ec._FeedItem_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._FeedItem_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._FeedItem_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "text":
+			out.Values[i] = ec._FeedItem_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "href":
+			out.Values[i] = ec._FeedItem_href(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "actorUserId":
+			out.Values[i] = ec._FeedItem_actorUserId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "occurredAt":
+			out.Values[i] = ec._FeedItem_occurredAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var iTCodeSubmissionImplementors = []string{"ITCodeSubmission"}
 
 func (ec *executionContext) _ITCodeSubmission(ctx context.Context, sel ast.SelectionSet, obj *model.ITCodeSubmission) graphql.Marshaler {
@@ -22757,6 +23363,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "feed":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_feed(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -24153,6 +24781,84 @@ func (ec *executionContext) unmarshalNDegreeLevel2githubᚗcomᚋovermindvᚋapi
 }
 
 func (ec *executionContext) marshalNDegreeLevel2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐDegreeLevel(ctx context.Context, sel ast.SelectionSet, v model.DegreeLevel) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNFeedConnection2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedConnection(ctx context.Context, sel ast.SelectionSet, v model.FeedConnection) graphql.Marshaler {
+	return ec._FeedConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFeedConnection2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedConnection(ctx context.Context, sel ast.SelectionSet, v *model.FeedConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FeedConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFeedItem2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FeedItem) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNFeedItem2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNFeedItem2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedItem(ctx context.Context, sel ast.SelectionSet, v *model.FeedItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FeedItem(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFeedKind2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedKind(ctx context.Context, v any) (model.FeedKind, error) {
+	var res model.FeedKind
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFeedKind2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐFeedKind(ctx context.Context, sel ast.SelectionSet, v model.FeedKind) graphql.Marshaler {
 	return v
 }
 

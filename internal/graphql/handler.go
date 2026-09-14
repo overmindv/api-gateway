@@ -13,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/overmindv/api-gateway/internal/client/entities"
+	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
@@ -41,6 +42,11 @@ func HandlerWithMedia(users users.UserService, catalog entities.CatalogService, 
 
 // HandlerWithMediaAndMetrics создаёт GraphQL handler и связывает orchestration metrics.
 func HandlerWithMediaAndMetrics(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, log *slog.Logger, metrics *Metrics) http.Handler {
+	return HandlerWithFeedAndMetrics(users, catalog, tasksSvc, taskHunter, mediaSvc, nil, log, metrics)
+}
+
+// HandlerWithFeedAndMetrics создаёт GraphQL handler с лентой активностей.
+func HandlerWithFeedAndMetrics(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, log *slog.Logger, metrics *Metrics) http.Handler {
 	var candidates tasks.CandidateService
 	if service, ok := tasksSvc.(tasks.CandidateService); ok {
 		candidates = service
@@ -52,6 +58,7 @@ func HandlerWithMediaAndMetrics(users users.UserService, catalog entities.Catalo
 		Candidates: candidates,
 		TaskHunter: taskHunter,
 		Media:      mediaSvc,
+		Feed:       feedSvc,
 		Log:        log,
 		Metrics:    metrics,
 	}}))
