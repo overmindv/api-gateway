@@ -393,6 +393,9 @@ func filterQuery(filter TaskFilter, includeStatus bool) url.Values {
 	if filter.TopicID != nil {
 		values.Set("topic_id", *filter.TopicID)
 	}
+	if filter.Search != "" {
+		values.Set("search", filter.Search)
+	}
 
 	return values
 }

@@ -411,6 +411,14 @@ type RegisterInput struct {
 	Phone     *string `json:"phone,omitempty"`
 }
 
+type SearchResults struct {
+	Universities []*University    `json:"universities"`
+	Programs     []*Program       `json:"programs"`
+	Courses      []*Course        `json:"courses"`
+	Topics       []*Topic         `json:"topics"`
+	Tasks        []*ITTaskSummary `json:"tasks"`
+}
+
 type StartTaskCollectionInput struct {
 	IdempotencyKey    string   `json:"idempotencyKey"`
 	TelegramChannels  []string `json:"telegramChannels,omitempty"`
