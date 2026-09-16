@@ -357,6 +357,7 @@ type ComplexityRoot struct {
 		MyMediaFiles           func(childComplexity int, filter *model.MediaFileFilter, pagination *model.PaginationInput) int
 		Program                func(childComplexity int, id string) int
 		Programs               func(childComplexity int, universityID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
+		Search                 func(childComplexity int, query string, limit int) int
 		SearchUsers            func(childComplexity int, search string, pagination *model.PaginationInput) int
 		TaskCandidate          func(childComplexity int, id string) int
 		TaskCandidates         func(childComplexity int, filter *model.TaskCandidateFilter, pagination *model.PaginationInput) int
@@ -373,6 +374,14 @@ type ComplexityRoot struct {
 		UserProfile            func(childComplexity int, id string) int
 		Users                  func(childComplexity int, search *string, limit *int, offset *int) int
 		ValidateCatalogBinding func(childComplexity int, input model.CatalogBindingInput) int
+	}
+
+	SearchResults struct {
+		Courses      func(childComplexity int) int
+		Programs     func(childComplexity int) int
+		Tasks        func(childComplexity int) int
+		Topics       func(childComplexity int) int
+		Universities func(childComplexity int) int
 	}
 
 	TaskCandidate struct {
@@ -557,6 +566,7 @@ type MutationResolver interface {
 	DeleteMediaFile(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
+	Search(ctx context.Context, query string, limit int) (*model.SearchResults, error)
 	Me(ctx context.Context) (*model.User, error)
 	GetUser(ctx context.Context, id string) (*model.User, error)
 	UserByUsername(ctx context.Context, username string) (*model.User, error)
@@ -2281,6 +2291,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Programs(childComplexity, args["universityId"].(*string), args["filter"].(*model.CatalogFilter), args["pagination"].(*model.PaginationInput)), true
+	case "Query.search":
+		if e.complexity.Query.Search == nil {
+			break
+		}
+
+		args, err := ec.field_Query_search_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Search(childComplexity, args["query"].(string), args["limit"].(int)), true
 	case "Query.searchUsers":
 		if e.complexity.Query.SearchUsers == nil {
 			break
@@ -2452,6 +2473,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.ValidateCatalogBinding(childComplexity, args["input"].(model.CatalogBindingInput)), true
+
+	case "SearchResults.courses":
+		if e.complexity.SearchResults.Courses == nil {
+			break
+		}
+
+		return e.complexity.SearchResults.Courses(childComplexity), true
+	case "SearchResults.programs":
+		if e.complexity.SearchResults.Programs == nil {
+			break
+		}
+
+		return e.complexity.SearchResults.Programs(childComplexity), true
+	case "SearchResults.tasks":
+		if e.complexity.SearchResults.Tasks == nil {
+			break
+		}
+
+		return e.complexity.SearchResults.Tasks(childComplexity), true
+	case "SearchResults.topics":
+		if e.complexity.SearchResults.Topics == nil {
+			break
+		}
+
+		return e.complexity.SearchResults.Topics(childComplexity), true
+	case "SearchResults.universities":
+		if e.complexity.SearchResults.Universities == nil {
+			break
+		}
+
+		return e.complexity.SearchResults.Universities(childComplexity), true
 
 	case "TaskCandidate.approvedTaskId":
 		if e.complexity.TaskCandidate.ApprovedTaskID == nil {
@@ -3474,7 +3526,16 @@ type FeedConnection {
 }
 
 
+type SearchResults {
+  universities: [University!]!
+  programs: [Program!]!
+  courses: [Course!]!
+  topics: [Topic!]!
+  tasks: [ITTaskSummary!]!
+}
+
 type Query {
+  search(query: String!, limit: Int! = 5): SearchResults!
   me: User!
   getUser(id: ID!): User!
   userByUsername(username: String!): User!
@@ -4363,6 +4424,22 @@ func (ec *executionContext) field_Query_searchUsers_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_search_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "query", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["query"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -12187,6 +12264,59 @@ func (ec *executionContext) fieldContext_PublicUserConnection_offset(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_search(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_search,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Search(ctx, fc.Args["query"].(string), fc.Args["limit"].(int))
+		},
+		nil,
+		ec.marshalNSearchResults2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐSearchResults,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_search(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "universities":
+				return ec.fieldContext_SearchResults_universities(ctx, field)
+			case "programs":
+				return ec.fieldContext_SearchResults_programs(ctx, field)
+			case "courses":
+				return ec.fieldContext_SearchResults_courses(ctx, field)
+			case "topics":
+				return ec.fieldContext_SearchResults_topics(ctx, field)
+			case "tasks":
+				return ec.fieldContext_SearchResults_tasks(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchResults", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_search_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -14322,6 +14452,263 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResults_universities(ctx context.Context, field graphql.CollectedField, obj *model.SearchResults) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResults_universities,
+		func(ctx context.Context) (any, error) {
+			return obj.Universities, nil
+		},
+		nil,
+		ec.marshalNUniversity2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐUniversityᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResults_universities(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_University_id(ctx, field)
+			case "name":
+				return ec.fieldContext_University_name(ctx, field)
+			case "shortName":
+				return ec.fieldContext_University_shortName(ctx, field)
+			case "city":
+				return ec.fieldContext_University_city(ctx, field)
+			case "country":
+				return ec.fieldContext_University_country(ctx, field)
+			case "websiteUrl":
+				return ec.fieldContext_University_websiteUrl(ctx, field)
+			case "logoFileId":
+				return ec.fieldContext_University_logoFileId(ctx, field)
+			case "status":
+				return ec.fieldContext_University_status(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_University_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_University_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type University", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResults_programs(ctx context.Context, field graphql.CollectedField, obj *model.SearchResults) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResults_programs,
+		func(ctx context.Context) (any, error) {
+			return obj.Programs, nil
+		},
+		nil,
+		ec.marshalNProgram2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐProgramᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResults_programs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Program_id(ctx, field)
+			case "universityId":
+				return ec.fieldContext_Program_universityId(ctx, field)
+			case "name":
+				return ec.fieldContext_Program_name(ctx, field)
+			case "shortName":
+				return ec.fieldContext_Program_shortName(ctx, field)
+			case "faculty":
+				return ec.fieldContext_Program_faculty(ctx, field)
+			case "degreeLevel":
+				return ec.fieldContext_Program_degreeLevel(ctx, field)
+			case "startYear":
+				return ec.fieldContext_Program_startYear(ctx, field)
+			case "status":
+				return ec.fieldContext_Program_status(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Program_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Program_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Program", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResults_courses(ctx context.Context, field graphql.CollectedField, obj *model.SearchResults) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResults_courses,
+		func(ctx context.Context) (any, error) {
+			return obj.Courses, nil
+		},
+		nil,
+		ec.marshalNCourse2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐCourseᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResults_courses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Course_id(ctx, field)
+			case "programId":
+				return ec.fieldContext_Course_programId(ctx, field)
+			case "name":
+				return ec.fieldContext_Course_name(ctx, field)
+			case "slug":
+				return ec.fieldContext_Course_slug(ctx, field)
+			case "description":
+				return ec.fieldContext_Course_description(ctx, field)
+			case "semester":
+				return ec.fieldContext_Course_semester(ctx, field)
+			case "yearNumber":
+				return ec.fieldContext_Course_yearNumber(ctx, field)
+			case "status":
+				return ec.fieldContext_Course_status(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Course_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Course_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Course", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResults_topics(ctx context.Context, field graphql.CollectedField, obj *model.SearchResults) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResults_topics,
+		func(ctx context.Context) (any, error) {
+			return obj.Topics, nil
+		},
+		nil,
+		ec.marshalNTopic2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐTopicᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResults_topics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Topic_id(ctx, field)
+			case "courseId":
+				return ec.fieldContext_Topic_courseId(ctx, field)
+			case "parentTopicId":
+				return ec.fieldContext_Topic_parentTopicId(ctx, field)
+			case "title":
+				return ec.fieldContext_Topic_title(ctx, field)
+			case "slug":
+				return ec.fieldContext_Topic_slug(ctx, field)
+			case "description":
+				return ec.fieldContext_Topic_description(ctx, field)
+			case "orderIndex":
+				return ec.fieldContext_Topic_orderIndex(ctx, field)
+			case "difficulty":
+				return ec.fieldContext_Topic_difficulty(ctx, field)
+			case "status":
+				return ec.fieldContext_Topic_status(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Topic_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Topic_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResults_tasks(ctx context.Context, field graphql.CollectedField, obj *model.SearchResults) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResults_tasks,
+		func(ctx context.Context) (any, error) {
+			return obj.Tasks, nil
+		},
+		nil,
+		ec.marshalNITTaskSummary2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITTaskSummaryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResults_tasks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ITTaskSummary_id(ctx, field)
+			case "status":
+				return ec.fieldContext_ITTaskSummary_status(ctx, field)
+			case "taskVersionId":
+				return ec.fieldContext_ITTaskSummary_taskVersionId(ctx, field)
+			case "versionNumber":
+				return ec.fieldContext_ITTaskSummary_versionNumber(ctx, field)
+			case "topicId":
+				return ec.fieldContext_ITTaskSummary_topicId(ctx, field)
+			case "title":
+				return ec.fieldContext_ITTaskSummary_title(ctx, field)
+			case "taskType":
+				return ec.fieldContext_ITTaskSummary_taskType(ctx, field)
+			case "difficulty":
+				return ec.fieldContext_ITTaskSummary_difficulty(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ITTaskSummary_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_ITTaskSummary_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ITTaskSummary", field.Name)
 		},
 	}
 	return fc, nil
@@ -22637,6 +23024,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "search":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_search(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "me":
 			field := field
 
@@ -23393,6 +23802,65 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var searchResultsImplementors = []string{"SearchResults"}
+
+func (ec *executionContext) _SearchResults(ctx context.Context, sel ast.SelectionSet, obj *model.SearchResults) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, searchResultsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SearchResults")
+		case "universities":
+			out.Values[i] = ec._SearchResults_universities(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "programs":
+			out.Values[i] = ec._SearchResults_programs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "courses":
+			out.Values[i] = ec._SearchResults_courses(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "topics":
+			out.Values[i] = ec._SearchResults_topics(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasks":
+			out.Values[i] = ec._SearchResults_tasks(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -25853,6 +26321,20 @@ func (ec *executionContext) marshalNPublicUserConnection2ᚖgithubᚗcomᚋoverm
 func (ec *executionContext) unmarshalNRegisterInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐRegisterInput(ctx context.Context, v any) (model.RegisterInput, error) {
 	res, err := ec.unmarshalInputRegisterInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSearchResults2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐSearchResults(ctx context.Context, sel ast.SelectionSet, v model.SearchResults) graphql.Marshaler {
+	return ec._SearchResults(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSearchResults2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐSearchResults(ctx context.Context, sel ast.SelectionSet, v *model.SearchResults) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SearchResults(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNStartTaskCollectionInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐStartTaskCollectionInput(ctx context.Context, v any) (model.StartTaskCollectionInput, error) {

@@ -267,7 +267,16 @@ type FeedConnection {
 }
 
 
+type SearchResults {
+  universities: [University!]!
+  programs: [Program!]!
+  courses: [Course!]!
+  topics: [Topic!]!
+  tasks: [ITTaskSummary!]!
+}
+
 type Query {
+  search(query: String!, limit: Int! = 5): SearchResults!
   me: User!
   getUser(id: ID!): User!
   userByUsername(username: String!): User!
