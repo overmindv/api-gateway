@@ -3,7 +3,6 @@ package tasks
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,10 +11,9 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/overmindv/api-gateway/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
 const maxCodeSourceSize = 256 << 10
@@ -49,7 +47,7 @@ type CandidateService interface {
 // ListCandidates получает очередь модерации с явными фильтрами.
 func (c *Client) ListCandidates(ctx context.Context, filter CandidateFilter, actor Actor) (CandidateList, error) {
 	values := url.Values{}
-	values.Set("limit", strconv.Itoa(filter.Limit))
+	values.Set("limit", strconv.Itoa(httpx.ClampLimit(filter.Limit)))
 	values.Set("offset", strconv.Itoa(filter.Offset))
 	if filter.Status != "" {
 		values.Set("status", filter.Status)
@@ -87,19 +85,21 @@ func (c *Client) RejectCandidate(ctx context.Context, id string, revision int, r
 }
 
 type Client struct {
-	baseURL string
-	http    *http.Client
-	log     *slog.Logger
+	http *http.Client
+	hx   *httpx.Client
 }
 
 // New создаёт HTTP-клиент внутреннего API tasks.
 func New(baseURL string, timeout time.Duration, log *slog.Logger) *Client {
+	httpClient := &http.Client{
+		Timeout: timeout,
+	}
+
 	return &Client{
-		baseURL: strings.TrimRight(baseURL, "/"),
-		http: &http.Client{
-			Timeout: timeout,
-		},
-		log: log,
+		http: httpClient,
+		hx: httpx.New("tasks", baseURL, httpClient, log, func(statusCode int) error {
+			return &Error{StatusCode: statusCode}
+		}),
 	}
 }
 
@@ -161,7 +161,7 @@ func (c *Client) GetSubmission(ctx context.Context, id string, actor Actor) (Sub
 // ListMySubmissions получает историю решений текущего пользователя.
 func (c *Client) ListMySubmissions(ctx context.Context, taskID *string, limit, offset int, actor Actor) (SubmissionList, error) {
 	values := url.Values{}
-	values.Set("limit", strconv.Itoa(limit))
+	values.Set("limit", strconv.Itoa(httpx.ClampLimit(limit)))
 	values.Set("offset", strconv.Itoa(offset))
 	if taskID != nil {
 		values.Set("task_id", *taskID)
@@ -196,7 +196,7 @@ func (c *Client) GetCodeSubmission(ctx context.Context, id string, actor Actor) 
 // ListMyCodeSubmissions получает историю программных решений текущего пользователя.
 func (c *Client) ListMyCodeSubmissions(ctx context.Context, taskID *string, limit, offset int, actor Actor) (CodeSubmissionList, error) {
 	values := url.Values{}
-	values.Set("limit", strconv.Itoa(limit))
+	values.Set("limit", strconv.Itoa(httpx.ClampLimit(limit)))
 	values.Set("offset", strconv.Itoa(offset))
 	if taskID != nil {
 		values.Set("task_id", *taskID)
@@ -208,92 +208,22 @@ func (c *Client) ListMyCodeSubmissions(ctx context.Context, taskID *string, limi
 // Health проверяет готовность tasks по HTTP-статусу /ready.
 // Тело не декодируется: parker отдаёт на /ready простой текст, а не JSON.
 func (c *Client) Health(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/ready", nil)
-	if err != nil {
-		return fmt.Errorf("create tasks health request: %w", err)
-	}
-	setHeaders(req, "", Actor{}, middleware.RequestID(ctx))
-	started := time.Now()
-	response, err := c.http.Do(req)
-	if err != nil {
-		c.log.WarnContext(ctx, "tasks health call failed", "request_id", middleware.RequestID(ctx), "error", err, "duration", time.Since(started))
-
-		return fmt.Errorf("call tasks health: %w", err)
-	}
-	defer func() {
-		_ = response.Body.Close()
-	}()
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		_, _ = io.Copy(io.Discard, response.Body)
-
-		return fmt.Errorf("tasks readiness status %d", response.StatusCode)
-	}
-	c.log.InfoContext(ctx, "tasks health ok", "request_id", middleware.RequestID(ctx), "status", response.StatusCode, "duration", time.Since(started))
-
-	return nil
+	return c.hx.Health(ctx)
 }
 
 // request выполняет типизированный запрос к tasks.
 func request[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor) (T, error) {
-	body, err := requestBody(input)
-	if err != nil {
-		var zero T
-
-		return zero, err
-	}
-	contentType := ""
-	if input != nil {
-		contentType = "application/json"
-	}
-
-	return requestWithBody[T](c, ctx, method, path, body, contentType, actor)
+	return httpx.DoJSON[T](c.hx, ctx, method, path, input, hxActor(actor))
 }
 
 // requestWithBody выполняет типизированный запрос с уже подготовленным телом.
 func requestWithBody[T any](c *Client, ctx context.Context, method, path string, body io.Reader, contentType string, actor Actor) (T, error) {
-	var zero T
-
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
-	if err != nil {
-		return zero, fmt.Errorf("create tasks request: %w", err)
-	}
-	setHeaders(req, contentType, actor, middleware.RequestID(ctx))
-
-	started := time.Now()
-	response, err := c.http.Do(req)
-	if err != nil {
-		c.log.WarnContext(ctx, "tasks http call failed", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "error", err, "duration", time.Since(started))
-
-		return zero, fmt.Errorf("call tasks: %w", err)
-	}
-	defer func() {
-		_ = response.Body.Close()
-	}()
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		return zero, c.decodeError(ctx, response, method, path, started)
-	}
-	if response.StatusCode == http.StatusNoContent {
-		return zero, nil
-	}
-	if err := json.NewDecoder(io.LimitReader(response.Body, 8<<20)).Decode(&zero); err != nil {
-		return zero, fmt.Errorf("decode tasks response: %w", err)
-	}
-	c.log.InfoContext(ctx, "tasks http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
-
-	return zero, nil
+	return httpx.DoWithBody[T](c.hx, ctx, method, path, body, contentType, hxActor(actor))
 }
 
-// requestBody кодирует необязательное JSON-тело запроса.
-func requestBody(input any) (io.Reader, error) {
-	if input == nil {
-		return nil, nil
-	}
-	data, err := json.Marshal(input)
-	if err != nil {
-		return nil, fmt.Errorf("marshal tasks request: %w", err)
-	}
-
-	return bytes.NewReader(data), nil
+// hxActor приводит Actor клиента к httpx.Actor для проброса заголовков.
+func hxActor(actor Actor) httpx.Actor {
+	return httpx.Actor{UserID: actor.UserID, Roles: actor.Roles}
 }
 
 // codeSubmissionBody формирует ограниченное multipart-тело для tasks.
@@ -348,38 +278,10 @@ func codeSubmissionBody(input CodeSubmissionInput) (io.Reader, string, error) {
 	return body, writer.FormDataContentType(), nil
 }
 
-// setHeaders добавляет служебные и actor headers.
-func setHeaders(req *http.Request, contentType string, actor Actor, requestID string) {
-	req.Header.Set("Accept", "application/json")
-	if contentType != "" {
-		req.Header.Set("Content-Type", contentType)
-	}
-	if requestID != "" {
-		req.Header.Set(middleware.RequestIDHeader, requestID)
-	}
-	if actor.UserID != "" {
-		req.Header.Set("X-User-ID", actor.UserID)
-		req.Header.Set("X-User-Roles", strings.Join(actor.Roles, ","))
-	}
-}
-
-// decodeError преобразует безопасную upstream-ошибку в typed error.
-func (c *Client) decodeError(ctx context.Context, response *http.Response, method, path string, started time.Time) error {
-	upstream := Error{StatusCode: response.StatusCode}
-	if err := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&upstream); err != nil {
-		c.log.WarnContext(ctx, "tasks http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", err, "duration", time.Since(started))
-
-		return fmt.Errorf("tasks returned HTTP %d: %w", response.StatusCode, err)
-	}
-	c.log.WarnContext(ctx, "tasks http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "code", upstream.Code, "duration", time.Since(started))
-
-	return &upstream
-}
-
 // filterQuery кодирует явные фильтры и pagination.
 func filterQuery(filter TaskFilter, includeStatus bool) url.Values {
 	values := url.Values{}
-	values.Set("limit", strconv.Itoa(filter.Limit))
+	values.Set("limit", strconv.Itoa(httpx.ClampLimit(filter.Limit)))
 	values.Set("offset", strconv.Itoa(filter.Offset))
 	if includeStatus && filter.Status != "" {
 		values.Set("status", filter.Status)
