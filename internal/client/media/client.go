@@ -1,19 +1,14 @@
 package media
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/overmindv/api-gateway/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
 type Service interface {
@@ -29,15 +24,20 @@ type Service interface {
 }
 
 type Client struct {
-	baseURL string
-	token   string
-	http    *http.Client
-	log     *slog.Logger
+	http *http.Client
+	hx   *httpx.Client
 }
 
 // New создаёт internal HTTP client Media.
 func New(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client {
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), token: token, http: &http.Client{Timeout: timeout}, log: log}
+	httpClient := &http.Client{Timeout: timeout}
+
+	return &Client{
+		http: httpClient,
+		hx: httpx.New("media", baseURL, httpClient, log, func(_ int) error {
+			return &Error{}
+		}, httpx.Header{Name: "X-Media-Service-Token", Value: token}),
+	}
 }
 
 func (c *Client) CreateUpload(ctx context.Context, input CreateUploadInput, actor Actor) (UploadTarget, error) {
@@ -55,7 +55,7 @@ func (c *Client) GetFile(ctx context.Context, id string, actor Actor) (File, err
 func (c *Client) ListFiles(ctx context.Context, status string, limit, offset int, actor Actor) (FileList, error) {
 	query := url.Values{}
 	query.Set("status", status)
-	query.Set("limit", strconv.Itoa(limit))
+	query.Set("limit", strconv.Itoa(httpx.ClampLimit(limit)))
 	query.Set("offset", strconv.Itoa(offset))
 	return request[FileList](c, ctx, http.MethodGet, "/v1/files?"+query.Encode(), nil, actor)
 }
@@ -74,73 +74,14 @@ func (c *Client) ResolvePublicFiles(ctx context.Context, ids, variants []string)
 
 // Health проверяет готовность Media по HTTP status (тело /ready может быть не JSON).
 func (c *Client) Health(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/ready", nil)
-	if err != nil {
-		return fmt.Errorf("create media health request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-Media-Service-Token", c.token)
-	if requestID := middleware.RequestID(ctx); requestID != "" {
-		req.Header.Set(middleware.RequestIDHeader, requestID)
-	}
-	response, err := c.http.Do(req)
-	if err != nil {
-		return fmt.Errorf("media health: %w", err)
-	}
-	defer func() { _ = response.Body.Close() }()
-	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64<<10))
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("media health returned HTTP %d", response.StatusCode)
-	}
-
-	return nil
+	return c.hx.Health(ctx)
 }
 
 func request[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor) (T, error) {
-	var zero T
-	var body io.Reader
-	if input != nil {
-		data, err := json.Marshal(input)
-		if err != nil {
-			return zero, fmt.Errorf("marshal media request: %w", err)
-		}
-		body = bytes.NewReader(data)
-	}
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
-	if err != nil {
-		return zero, fmt.Errorf("create media request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-Media-Service-Token", c.token)
-	if input != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	if requestID := middleware.RequestID(ctx); requestID != "" {
-		req.Header.Set(middleware.RequestIDHeader, requestID)
-	}
-	if actor.UserID != "" {
-		req.Header.Set("X-User-ID", actor.UserID)
-		req.Header.Set("X-User-Roles", strings.Join(actor.Roles, ","))
-	}
-	started := time.Now()
-	response, err := c.http.Do(req)
-	if err != nil {
-		return zero, fmt.Errorf("call media: %w", err)
-	}
-	defer func() {
-		_ = response.Body.Close()
-	}()
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		var upstream Error
-		if err := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&upstream); err != nil {
-			return zero, fmt.Errorf("media returned HTTP %d", response.StatusCode)
-		}
-		return zero, &upstream
-	}
-	if err := json.NewDecoder(io.LimitReader(response.Body, 8<<20)).Decode(&zero); err != nil {
-		return zero, fmt.Errorf("decode media response: %w", err)
-	}
-	c.log.InfoContext(ctx, "media http call", "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
+	return httpx.DoJSON[T](c.hx, ctx, method, path, input, hxActor(actor))
+}
 
-	return zero, nil
+// hxActor приводит Actor клиента к httpx.Actor для проброса заголовков.
+func hxActor(actor Actor) httpx.Actor {
+	return httpx.Actor{UserID: actor.UserID, Roles: actor.Roles}
 }

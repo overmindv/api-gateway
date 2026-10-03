@@ -1,19 +1,14 @@
 package entities
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/overmindv/api-gateway/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
 type CatalogService interface {
@@ -50,18 +45,18 @@ type CatalogService interface {
 }
 
 type Client struct {
-	baseURL string
-	http    *http.Client
-	log     *slog.Logger
+	http *http.Client
+	hx   *httpx.Client
 }
 
 func New(baseURL string, timeout time.Duration, log *slog.Logger) *Client {
+	httpClient := &http.Client{Timeout: timeout}
+
 	return &Client{
-		baseURL: strings.TrimRight(baseURL, "/"),
-		http: &http.Client{
-			Timeout: timeout,
-		},
-		log: log,
+		http: httpClient,
+		hx: httpx.New("entities", baseURL, httpClient, log, func(_ int) error {
+			return &Error{}
+		}),
 	}
 }
 
@@ -196,97 +191,24 @@ func (c *Client) ValidateBinding(ctx context.Context, input Binding) (Validation
 }
 
 func (c *Client) Health(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/ready", nil)
-	if err != nil {
-		return fmt.Errorf("create entities health request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-	if requestID := middleware.RequestID(ctx); requestID != "" {
-		req.Header.Set(middleware.RequestIDHeader, requestID)
-	}
-	started := time.Now()
-	response, err := c.http.Do(req)
-	if err != nil {
-		c.log.WarnContext(ctx, "entities health call failed", "request_id", middleware.RequestID(ctx), "error", err, "duration", time.Since(started))
-
-		return fmt.Errorf("call entities health: %w", err)
-	}
-	defer func() {
-		_ = response.Body.Close()
-	}()
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		_, _ = io.Copy(io.Discard, response.Body)
-
-		return fmt.Errorf("entities readiness status %d", response.StatusCode)
-	}
-	c.log.InfoContext(ctx, "entities health ok", "request_id", middleware.RequestID(ctx), "status", response.StatusCode, "duration", time.Since(started))
-
-	return nil
+	return c.hx.Health(ctx)
 }
 
-// request выполняет typed HTTP-запрос в Entities.
-// На вход получает client, context, HTTP method/path, optional body и actor, на выход возвращает decoded response или upstream error.
+// request выполняет типизированный запрос к entities.
 func request[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor) (T, error) {
-	var zero T
-	started := time.Now()
-	var body io.Reader
-	if input != nil {
-		data, err := json.Marshal(input)
-		if err != nil {
-			return zero, fmt.Errorf("marshal entities request: %w", err)
-		}
-		body = bytes.NewReader(data)
-	}
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
-	if err != nil {
-		return zero, fmt.Errorf("create entities request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-	if input != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	if requestID := middleware.RequestID(ctx); requestID != "" {
-		req.Header.Set(middleware.RequestIDHeader, requestID)
-	}
-	if actor.UserID != "" {
-		req.Header.Set("X-User-ID", actor.UserID)
-		req.Header.Set("X-User-Roles", strings.Join(actor.Roles, ","))
-	}
-	response, err := c.http.Do(req)
-	if err != nil {
-		c.log.WarnContext(ctx, "entities http call failed", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "error", err, "duration", time.Since(started))
+	return httpx.DoJSON[T](c.hx, ctx, method, path, input, hxActor(actor))
+}
 
-		return zero, fmt.Errorf("call entities: %w", err)
-	}
-	defer func() {
-		_ = response.Body.Close()
-	}()
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		var upstream Error
-		if decodeErr := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&upstream); decodeErr != nil {
-			c.log.WarnContext(ctx, "entities http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", decodeErr, "duration", time.Since(started))
-
-			return zero, fmt.Errorf("entities returned HTTP %d", response.StatusCode)
-		}
-		c.log.WarnContext(ctx, "entities http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "code", upstream.Code, "message", upstream.Message, "duration", time.Since(started))
-
-		return zero, &upstream
-	}
-	if err := json.NewDecoder(io.LimitReader(response.Body, 8<<20)).Decode(&zero); err != nil {
-		c.log.WarnContext(ctx, "entities http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "error", err, "duration", time.Since(started))
-
-		return zero, fmt.Errorf("decode entities response: %w", err)
-	}
-	c.log.InfoContext(ctx, "entities http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
-
-	return zero, nil
+// hxActor приводит Actor клиента к httpx.Actor для проброса заголовков.
+func hxActor(actor Actor) httpx.Actor {
+	return httpx.Actor{UserID: actor.UserID, Roles: actor.Roles}
 }
 
 func query(options ListOptions, parentKey, parentID string) string {
 	values := url.Values{}
 	values.Set("search", options.Search)
 	values.Set("status", options.Status)
-	values.Set("limit", strconv.Itoa(options.Limit))
+	values.Set("limit", strconv.Itoa(httpx.ClampLimit(options.Limit)))
 	values.Set("offset", strconv.Itoa(options.Offset))
 	if parentKey != "" {
 		values.Set(parentKey, parentID)
