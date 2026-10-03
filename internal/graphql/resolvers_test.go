@@ -190,3 +190,27 @@ func TestProtectedResolversMapRequests(t *testing.T) {
 		t.Fatalf("DeleteUser() = %v, %v", deleted, err)
 	}
 }
+
+// TestGetUserIDOR запрещает не-админу получать полный профиль другого пользователя.
+func TestGetUserIDOR(t *testing.T) {
+	root := &Resolver{Users: &userServiceStub{}}
+	query := &queryResolver{Resolver: root}
+
+	// Владелец запрашивает свой профиль — разрешено.
+	ownerCtx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "user-id", Token: "jwt", Roles: []string{"user"}})
+	if _, err := query.GetUser(ownerCtx, "user-id"); err != nil {
+		t.Fatalf("owner GetUser() unexpected error: %v", err)
+	}
+
+	// Админ запрашивает чужой профиль — разрешено.
+	adminCtx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "admin-id", Token: "jwt", Roles: []string{"admin"}})
+	if _, err := query.GetUser(adminCtx, "user-id"); err != nil {
+		t.Fatalf("admin GetUser() unexpected error: %v", err)
+	}
+
+	// Обычный пользователь запрашивает чужой профиль — запрещено (IDOR).
+	attackerCtx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "attacker-id", Token: "jwt", Roles: []string{"user"}})
+	if _, err := query.GetUser(attackerCtx, "user-id"); !errors.Is(err, apperror.ErrPermissionDenied) {
+		t.Fatalf("expected ErrPermissionDenied for foreign user, got %v", err)
+	}
+}
