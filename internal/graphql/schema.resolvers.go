@@ -503,8 +503,16 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
-	if _, err := middleware.RequireAuth(ctx); err != nil {
+	auth, err := middleware.RequireAuth(ctx)
+	if err != nil {
 		return nil, err
+	}
+	// IDOR-защита: полный профиль (email, phone, birthDate) доступен только владельцу
+	// или администратору. Для чужих профилей есть публичный `userProfile`/`PublicUser`.
+	if auth.UserID != id {
+		if _, err := middleware.RequireAdmin(ctx); err != nil {
+			return nil, err
+		}
 	}
 	response, err := r.Resolver.Users.GetUser(ctx, id)
 	if err != nil {

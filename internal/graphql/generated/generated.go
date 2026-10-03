@@ -95,7 +95,6 @@ type ComplexityRoot struct {
 		Failure           func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Language          func(childComplexity int) int
-		SourceCode        func(childComplexity int) int
 		SourceFileName    func(childComplexity int) int
 		Status            func(childComplexity int) int
 		TaskID            func(childComplexity int) int
@@ -825,12 +824,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ITCodeSubmission.Language(childComplexity), true
-	case "ITCodeSubmission.sourceCode":
-		if e.complexity.ITCodeSubmission.SourceCode == nil {
-			break
-		}
-
-		return e.complexity.ITCodeSubmission.SourceCode(childComplexity), true
 	case "ITCodeSubmission.sourceFileName":
 		if e.complexity.ITCodeSubmission.SourceFileName == nil {
 			break
@@ -3419,7 +3412,6 @@ type ITCodeSubmission {
   correlationId: ID!
   language: ITProgrammingLanguage!
   sourceFileName: String!
-  sourceCode: String!
   status: ITCodeSubmissionStatus!
   verdict: ITExecutionVerdict
   compilation: ITExecutionPhaseResult
@@ -5685,35 +5677,6 @@ func (ec *executionContext) fieldContext_ITCodeSubmission_sourceFileName(_ conte
 	return fc, nil
 }
 
-func (ec *executionContext) _ITCodeSubmission_sourceCode(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ITCodeSubmission_sourceCode,
-		func(ctx context.Context) (any, error) {
-			return obj.SourceCode, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ITCodeSubmission_sourceCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ITCodeSubmission",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _ITCodeSubmission_status(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6061,8 +6024,6 @@ func (ec *executionContext) fieldContext_ITCodeSubmissionList_items(_ context.Co
 				return ec.fieldContext_ITCodeSubmission_language(ctx, field)
 			case "sourceFileName":
 				return ec.fieldContext_ITCodeSubmission_sourceFileName(ctx, field)
-			case "sourceCode":
-				return ec.fieldContext_ITCodeSubmission_sourceCode(ctx, field)
 			case "status":
 				return ec.fieldContext_ITCodeSubmission_status(ctx, field)
 			case "verdict":
@@ -11033,8 +10994,6 @@ func (ec *executionContext) fieldContext_Mutation_submitITTaskCode(ctx context.C
 				return ec.fieldContext_ITCodeSubmission_language(ctx, field)
 			case "sourceFileName":
 				return ec.fieldContext_ITCodeSubmission_sourceFileName(ctx, field)
-			case "sourceCode":
-				return ec.fieldContext_ITCodeSubmission_sourceCode(ctx, field)
 			case "status":
 				return ec.fieldContext_ITCodeSubmission_status(ctx, field)
 			case "verdict":
@@ -13745,8 +13704,6 @@ func (ec *executionContext) fieldContext_Query_itCodeSubmission(ctx context.Cont
 				return ec.fieldContext_ITCodeSubmission_language(ctx, field)
 			case "sourceFileName":
 				return ec.fieldContext_ITCodeSubmission_sourceFileName(ctx, field)
-			case "sourceCode":
-				return ec.fieldContext_ITCodeSubmission_sourceCode(ctx, field)
 			case "status":
 				return ec.fieldContext_ITCodeSubmission_status(ctx, field)
 			case "verdict":
@@ -21311,11 +21268,6 @@ func (ec *executionContext) _ITCodeSubmission(ctx context.Context, sel ast.Selec
 			}
 		case "sourceFileName":
 			out.Values[i] = ec._ITCodeSubmission_sourceFileName(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "sourceCode":
-			out.Values[i] = ec._ITCodeSubmission_sourceCode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
