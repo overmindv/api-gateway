@@ -11,6 +11,7 @@ import (
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
+	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
@@ -40,10 +41,15 @@ func NewWithMedia(cfg config.HTTP, users users.UserService, catalog entities.Cat
 
 // NewWithFeed собирает gateway server с клиентом ленты активностей.
 func NewWithFeed(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, sessionSecure bool, log *slog.Logger, requestLog *slog.Logger) *Server {
+	return NewWithRecommendations(cfg, users, catalog, tasks, taskHunter, mediaSvc, feedSvc, nil, usersHealth, authenticator, sessionSecure, log, requestLog)
+}
+
+// NewWithRecommendations подключает необязательный сервис рекомендаций к gateway.
+func NewWithRecommendations(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, recommendationsSvc recommendations.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, sessionSecure bool, log *slog.Logger, requestLog *slog.Logger) *Server {
 	mux := http.NewServeMux()
 	metrics := &graphqldelivery.Metrics{}
 
-	mux.Handle("POST /graphql", graphqldelivery.HandlerWithFeedAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, feedSvc, requestLog, metrics))
+	mux.Handle("POST /graphql", graphqldelivery.HandlerWithRecommendationsAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, feedSvc, recommendationsSvc, requestLog, metrics))
 	mux.Handle("GET /playground", graphqldelivery.Playground())
 	mux.HandleFunc("GET /metrics", metrics.Handler)
 

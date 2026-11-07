@@ -368,6 +368,24 @@ type PaginationInput struct {
 	Offset *int `json:"offset,omitempty"`
 }
 
+type PracticePlan struct {
+	PolicyVersion string              `json:"policyVersion"`
+	TotalMinutes  int                 `json:"totalMinutes"`
+	Warnings      []string            `json:"warnings"`
+	Items         []*PracticePlanItem `json:"items"`
+}
+
+type PracticePlanItem struct {
+	TaskID           string `json:"taskId"`
+	TaskVersionID    string `json:"taskVersionId"`
+	TopicID          string `json:"topicId"`
+	Title            string `json:"title"`
+	Difficulty       string `json:"difficulty"`
+	TaskType         string `json:"taskType"`
+	EstimatedMinutes int    `json:"estimatedMinutes"`
+	ReasonCode       string `json:"reasonCode"`
+}
+
 type Program struct {
 	ID           string        `json:"id"`
 	UniversityID *string       `json:"universityId,omitempty"`
