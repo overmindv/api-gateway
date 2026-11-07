@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"log/slog"
 
 	"github.com/overmindv/api-gateway/internal/client/entities"
@@ -12,13 +13,14 @@ import (
 )
 
 type Resolver struct {
-	Users      users.UserService
-	Catalog    entities.CatalogService
-	Tasks      tasks.Service
-	Candidates tasks.CandidateService
-	TaskHunter taskhunter.Service
-	Media      media.Service
-	Feed       feed.FeedService
-	Log        *slog.Logger
-	Metrics    *Metrics
+	Recommendations recommendations.Service
+	Users           users.UserService
+	Catalog         entities.CatalogService
+	Tasks           tasks.Service
+	Candidates      tasks.CandidateService
+	TaskHunter      taskhunter.Service
+	Media           media.Service
+	Feed            feed.FeedService
+	Log             *slog.Logger
+	Metrics         *Metrics
 }

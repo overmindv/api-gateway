@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"errors"
+	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"log/slog"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
@@ -55,6 +56,11 @@ func errorCodeAndMessage(err error) (string, string) {
 
 	if gqlErr, ok := err.(*gqlerror.Error); ok && gqlErr.Err == nil {
 		return "GRAPHQL_ERROR", "Не удалось выполнить действие."
+	}
+
+	var recommendationError *recommendations.Error
+	if errors.As(err, &recommendationError) {
+		return recommendationError.Code, "Не удалось выполнить действие."
 	}
 
 	var upstreamError *users.Error

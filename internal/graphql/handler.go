@@ -15,6 +15,7 @@ import (
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
+	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
@@ -47,20 +48,26 @@ func HandlerWithMediaAndMetrics(users users.UserService, catalog entities.Catalo
 
 // HandlerWithFeedAndMetrics создаёт GraphQL handler с лентой активностей.
 func HandlerWithFeedAndMetrics(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, log *slog.Logger, metrics *Metrics) http.Handler {
+	return HandlerWithRecommendationsAndMetrics(users, catalog, tasksSvc, taskHunter, mediaSvc, feedSvc, nil, log, metrics)
+}
+
+// HandlerWithRecommendationsAndMetrics подключает необязательный preview практики.
+func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, recommendationsSvc recommendations.Service, log *slog.Logger, metrics *Metrics) http.Handler {
 	var candidates tasks.CandidateService
 	if service, ok := tasksSvc.(tasks.CandidateService); ok {
 		candidates = service
 	}
 	server := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{
-		Users:      users,
-		Catalog:    catalog,
-		Tasks:      tasksSvc,
-		Candidates: candidates,
-		TaskHunter: taskHunter,
-		Media:      mediaSvc,
-		Feed:       feedSvc,
-		Log:        log,
-		Metrics:    metrics,
+		Users:           users,
+		Catalog:         catalog,
+		Tasks:           tasksSvc,
+		Candidates:      candidates,
+		TaskHunter:      taskHunter,
+		Media:           mediaSvc,
+		Feed:            feedSvc,
+		Recommendations: recommendationsSvc,
+		Log:             log,
+		Metrics:         metrics,
 	}}))
 	server.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
@@ -77,6 +84,7 @@ func HandlerWithFeedAndMetrics(users users.UserService, catalog entities.Catalog
 	server.Use(extension.AutomaticPersistedQuery{
 		Cache: lru.New[string](100),
 	})
+	server.AroundOperations(limitPracticePlanOperation)
 	server.SetErrorPresenter(ErrorPresenter(log))
 	server.SetRecoverFunc(func(ctx context.Context, recovered any) error {
 		log.ErrorContext(ctx, "graphql panic recovered", "request_id", middleware.RequestID(ctx), "panic", recovered)
@@ -89,4 +97,25 @@ func HandlerWithFeedAndMetrics(users users.UserService, catalog entities.Catalog
 
 func Playground() http.Handler {
 	return playground.Handler("api-gateway GraphQL", "/graphql")
+}
+
+// limitPracticePlanOperation ограничивает дорогое построение одним вызовом на операцию.
+// CollectFields учитывает fragments, directives и слияние полей с одинаковым alias.
+func limitPracticePlanOperation(ctx context.Context, next gqlgen.OperationHandler) gqlgen.ResponseHandler {
+	operation := gqlgen.GetOperationContext(ctx)
+	if operation.Operation.Operation == ast.Query {
+		count := 0
+		for _, field := range gqlgen.CollectFields(operation, operation.Operation.SelectionSet, []string{"Query"}) {
+			if field.Name != "practicePlan" {
+				continue
+			}
+			count++
+			if count > 1 {
+				response := gqlgen.ErrorResponse(ctx, "Не удалось выполнить действие.")
+				response.Errors[0].Extensions = map[string]any{"code": "OPERATION_LIMIT_EXCEEDED"}
+				return gqlgen.OneShot(response)
+			}
+		}
+	}
+	return next(ctx)
 }
