@@ -3,13 +3,13 @@ package graphql
 import (
 	"context"
 	"errors"
-	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"log/slog"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/overmindv/api-gateway/internal/apperror"
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	mediaclient "github.com/overmindv/api-gateway/internal/client/media"
+	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"

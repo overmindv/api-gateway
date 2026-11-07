@@ -227,7 +227,7 @@ func (r *queryResolver) practiceEvidence(ctx context.Context, actor tasks.Actor)
 		if ok && previous.Verdict == "accepted" && item.Verdict != "accepted" {
 			return
 		}
-		if ok && !(item.Verdict == "accepted" && previous.Verdict != "accepted") {
+		if ok && (item.Verdict != "accepted" || previous.Verdict == "accepted") {
 			previousTime, _ := time.Parse(time.RFC3339Nano, previous.OccurredAt)
 			itemTime, _ := time.Parse(time.RFC3339Nano, item.OccurredAt)
 			if !itemTime.After(previousTime) {

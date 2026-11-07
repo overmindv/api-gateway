@@ -5,19 +5,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"strconv"
+	"strings"
+	"testing"
 	"time"
 
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/middleware"
-	"io"
-	"log/slog"
-	"net/http/httptest"
-	"strings"
-	"testing"
 )
 
 func TestPracticePlanRejectsForgedActorWithoutJWT(t *testing.T) {

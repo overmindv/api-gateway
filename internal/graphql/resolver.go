@@ -1,12 +1,12 @@
 package graphql
 
 import (
-	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"log/slog"
 
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
+	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
