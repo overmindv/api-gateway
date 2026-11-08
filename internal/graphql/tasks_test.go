@@ -532,3 +532,15 @@ func sampleUpstreamCodeSubmission() tasks.CodeSubmission {
 		UpdatedAt: "2026-08-13T12:00:01Z",
 	}
 }
+
+func TestPublicTaskSearchReachesOwnerWithPagination(t *testing.T) {
+	svc := &tasksServiceStub{}
+	handler := Handler(nil, nil, svc, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	req := httptest.NewRequest(http.MethodPost, "/graphql", bytes.NewBufferString(`{"query":"{itTasks(filter:{search:\"  массив  \"}, pagination:{limit:12,offset:24}){items{id title} offset}}"}`))
+	req.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, req)
+	if response.Code != http.StatusOK || svc.filter.Search != "массив" || svc.filter.Offset != 24 || svc.filter.Limit != 12 {
+		t.Fatalf("search not forwarded: status=%d filter=%+v body=%s", response.Code, svc.filter, response.Body.String())
+	}
+}

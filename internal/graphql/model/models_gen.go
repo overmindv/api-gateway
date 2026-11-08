@@ -246,6 +246,7 @@ type ITTaskExampleInput struct {
 }
 
 type ITTaskFilter struct {
+	Search     *string           `json:"search,omitempty"`
 	TaskType   *ITTaskType       `json:"taskType,omitempty"`
 	Difficulty *ITTaskDifficulty `json:"difficulty,omitempty"`
 	TopicID    *string           `json:"topicId,omitempty"`
