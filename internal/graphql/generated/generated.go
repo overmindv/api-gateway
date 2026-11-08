@@ -3534,7 +3534,7 @@ type ITCodeSubmissionList {
   offset: Int!
 }
 
-input ITTaskFilter { taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
+input ITTaskFilter { search: String, taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
 input ITAdminTaskFilter { status: ITTaskStatus, taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
 input ITTaskOptionInput { text: String!, isCorrect: Boolean! }
 input ITTaskExampleInput { input: String!, output: String!, explanation: String = "" }
@@ -20512,13 +20512,20 @@ func (ec *executionContext) unmarshalInputITTaskFilter(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"taskType", "difficulty", "topicId"}
+	fieldsInOrder := [...]string{"search", "taskType", "difficulty", "topicId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "search":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("search"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Search = data
 		case "taskType":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskType"))
 			data, err := ec.unmarshalOITTaskType2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITTaskType(ctx, v)

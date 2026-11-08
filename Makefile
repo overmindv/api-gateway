@@ -40,4 +40,4 @@ $(GQLGEN):
 	GOBIN="$(LOCAL_BIN)" go install github.com/99designs/gqlgen@v0.17.81
 
 $(GOLANGCI_LINT):
-	GOBIN="$(LOCAL_BIN)" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
+	GOBIN="$(LOCAL_BIN)" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4
