@@ -10,15 +10,16 @@ import (
 )
 
 type Config struct {
-	HTTP       HTTP
-	Users      Users
-	Entities   Entities
-	Tasks      Tasks
-	TaskHunter TaskHunter
-	Media      Media
-	Feed       Feed
-	JWT        JWT
-	Session    Session
+	HTTP            HTTP
+	Users           Users
+	Entities        Entities
+	Tasks           Tasks
+	TaskHunter      TaskHunter
+	Media           Media
+	Feed            Feed
+	Recommendations Recommendations
+	JWT             JWT
+	Session         Session
 }
 
 type HTTP struct {
@@ -59,6 +60,12 @@ type Media struct {
 }
 
 type Feed struct {
+	URL     string
+	Token   string
+	Timeout time.Duration
+}
+
+type Recommendations struct {
 	URL     string
 	Token   string
 	Timeout time.Duration
@@ -118,6 +125,11 @@ func Load() (Config, error) {
 			URL:     env("FEED_URL", "http://localhost:8087"),
 			Token:   strings.TrimSpace(os.Getenv("FEED_TOKEN")),
 			Timeout: envDuration("FEED_TIMEOUT", 10*time.Second),
+		},
+		Recommendations: Recommendations{
+			URL:     strings.TrimSpace(os.Getenv("RECOMMENDATIONS_URL")),
+			Token:   strings.TrimSpace(os.Getenv("RECOMMENDATIONS_SERVICE_TOKEN")),
+			Timeout: envDuration("RECOMMENDATIONS_TIMEOUT", 5*time.Second),
 		},
 		JWT: JWT{
 			Secret:       env("JWT_SECRET", "local-development-secret-change-me"),
@@ -189,6 +201,19 @@ func Load() (Config, error) {
 	}
 	if cfg.Feed.Timeout <= 0 {
 		return Config{}, fmt.Errorf("FEED_TIMEOUT must be positive")
+	}
+
+	if cfg.Recommendations.URL != "" {
+		parsed, err := url.Parse(cfg.Recommendations.URL)
+		if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.User != nil {
+			return Config{}, fmt.Errorf("RECOMMENDATIONS_URL must be an absolute HTTP(S) URL without credentials")
+		}
+		if cfg.Recommendations.Token == "" {
+			return Config{}, fmt.Errorf("RECOMMENDATIONS_SERVICE_TOKEN must not be empty when enabled")
+		}
+		if cfg.Recommendations.Timeout <= 0 {
+			return Config{}, fmt.Errorf("RECOMMENDATIONS_TIMEOUT must be positive")
+		}
 	}
 
 	if cfg.JWT.Secret == "" {

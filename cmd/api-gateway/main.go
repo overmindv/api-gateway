@@ -12,6 +12,7 @@ import (
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
+	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
@@ -42,8 +43,12 @@ func main() {
 	taskHunterService := taskhunter.New(cfg.TaskHunter.URL, cfg.TaskHunter.Token, cfg.TaskHunter.Timeout, requestLog)
 	mediaService := media.New(cfg.Media.URL, cfg.Media.Token, cfg.Media.Timeout, requestLog)
 	feedService := feed.New(cfg.Feed.URL, cfg.Feed.Token, cfg.Feed.Timeout, requestLog)
+	var recommendationsService recommendations.Service
+	if cfg.Recommendations.URL != "" {
+		recommendationsService = recommendations.New(cfg.Recommendations.URL, cfg.Recommendations.Token, cfg.Recommendations.Timeout, requestLog)
+	}
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
-	httpServer := server.NewWithFeed(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, mediaService, feedService, usersService, authenticator, cfg.Session.Secure, log, requestLog)
+	httpServer := server.NewWithRecommendations(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, mediaService, feedService, recommendationsService, usersService, authenticator, cfg.Session.Secure, log, requestLog)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

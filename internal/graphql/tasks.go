@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"strings"
 
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
@@ -35,6 +36,9 @@ func publicTaskFilter(filter *model.ITTaskFilter, pagination *model.PaginationIn
 	}
 	if filter != nil {
 		result.TopicID = filter.TopicID
+		if filter.Search != nil {
+			result.Search = strings.TrimSpace(*filter.Search)
+		}
 		if filter.TaskType != nil {
 			result.TaskType = filter.TaskType.String()
 		}

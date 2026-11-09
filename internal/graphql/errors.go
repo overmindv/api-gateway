@@ -9,6 +9,7 @@ import (
 	"github.com/overmindv/api-gateway/internal/apperror"
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	mediaclient "github.com/overmindv/api-gateway/internal/client/media"
+	"github.com/overmindv/api-gateway/internal/client/recommendations"
 	"github.com/overmindv/api-gateway/internal/client/taskhunter"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/client/users"
@@ -55,6 +56,11 @@ func errorCodeAndMessage(err error) (string, string) {
 
 	if gqlErr, ok := err.(*gqlerror.Error); ok && gqlErr.Err == nil {
 		return "GRAPHQL_ERROR", "Не удалось выполнить действие."
+	}
+
+	var recommendationError *recommendations.Error
+	if errors.As(err, &recommendationError) {
+		return recommendationError.Code, "Не удалось выполнить действие."
 	}
 
 	var upstreamError *users.Error

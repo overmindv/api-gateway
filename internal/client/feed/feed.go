@@ -1,19 +1,14 @@
 package feed
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/overmindv/api-gateway/internal/middleware"
+	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
 // FeedService — контракт чтения ленты активностей.
@@ -43,21 +38,26 @@ type FeedList struct {
 
 // Client — internal HTTP клиент сервиса Feed.
 type Client struct {
-	baseURL string
-	token   string
-	http    *http.Client
-	log     *slog.Logger
+	http *http.Client
+	hx   *httpx.Client
 }
 
 // New создаёт internal HTTP client Feed.
 func New(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client {
-	return &Client{baseURL: strings.TrimRight(baseURL, "/"), token: token, http: &http.Client{Timeout: timeout}, log: log}
+	httpClient := &http.Client{Timeout: timeout}
+
+	return &Client{
+		http: httpClient,
+		hx: httpx.New("feed", baseURL, httpClient, log, func(_ int) error {
+			return &Error{}
+		}, httpx.Header{Name: "X-Feed-Service-Token", Value: token}),
+	}
 }
 
 // ListFeed запрашивает страницу ленты активностей.
 func (c *Client) ListFeed(ctx context.Context, limit, offset int) (FeedList, error) {
 	query := url.Values{}
-	query.Set("limit", strconv.Itoa(limit))
+	query.Set("limit", strconv.Itoa(httpx.ClampLimit(limit)))
 	query.Set("offset", strconv.Itoa(offset))
 
 	return request[FeedList](c, ctx, http.MethodGet, "/v1/feed?"+query.Encode(), nil)
@@ -65,69 +65,11 @@ func (c *Client) ListFeed(ctx context.Context, limit, offset int) (FeedList, err
 
 // Health проверяет готовность сервиса Feed.
 func (c *Client) Health(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/ready", nil)
-	if err != nil {
-		return fmt.Errorf("create feed health request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-Feed-Service-Token", c.token)
-	if requestID := middleware.RequestID(ctx); requestID != "" {
-		req.Header.Set(middleware.RequestIDHeader, requestID)
-	}
-	response, err := c.http.Do(req)
-	if err != nil {
-		return fmt.Errorf("feed health: %w", err)
-	}
-	defer func() { _ = response.Body.Close() }()
-	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64<<10))
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("feed health returned HTTP %d", response.StatusCode)
-	}
-
-	return nil
+	return c.hx.Health(ctx)
 }
 
 func request[T any](c *Client, ctx context.Context, method, path string, input any) (T, error) {
-	var zero T
-	var body io.Reader
-	if input != nil {
-		data, err := json.Marshal(input)
-		if err != nil {
-			return zero, fmt.Errorf("marshal feed request: %w", err)
-		}
-		body = bytes.NewReader(data)
-	}
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
-	if err != nil {
-		return zero, fmt.Errorf("create feed request: %w", err)
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-Feed-Service-Token", c.token)
-	if input != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	if requestID := middleware.RequestID(ctx); requestID != "" {
-		req.Header.Set(middleware.RequestIDHeader, requestID)
-	}
-	started := time.Now()
-	response, err := c.http.Do(req)
-	if err != nil {
-		return zero, fmt.Errorf("call feed: %w", err)
-	}
-	defer func() { _ = response.Body.Close() }()
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		var upstream Error
-		if err := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&upstream); err != nil {
-			return zero, fmt.Errorf("feed returned HTTP %d", response.StatusCode)
-		}
-		return zero, &upstream
-	}
-	if err := json.NewDecoder(io.LimitReader(response.Body, 8<<20)).Decode(&zero); err != nil {
-		return zero, fmt.Errorf("decode feed response: %w", err)
-	}
-	c.log.InfoContext(ctx, "feed http call", "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
-
-	return zero, nil
+	return httpx.DoJSON[T](c.hx, ctx, method, path, input, httpx.Actor{})
 }
 
 // Error — ошибка upstream сервиса Feed.

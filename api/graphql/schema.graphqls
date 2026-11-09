@@ -177,7 +177,7 @@ type ITCodeSubmissionList {
   offset: Int!
 }
 
-input ITTaskFilter { taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
+input ITTaskFilter { search: String, taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
 input ITAdminTaskFilter { status: ITTaskStatus, taskType: ITTaskType, difficulty: ITTaskDifficulty, topicId: ID }
 input ITTaskOptionInput { text: String!, isCorrect: Boolean! }
 input ITTaskExampleInput { input: String!, output: String!, explanation: String = "" }
@@ -275,6 +275,7 @@ type SearchResults {
 }
 
 type Query {
+  practicePlan(topicIds: [ID!]!, minutes: Int!): PracticePlan!
   search(query: String!, limit: Int! = 5): SearchResults!
   me: User!
   getUser(id: ID!): User!
@@ -354,4 +355,23 @@ type Mutation {
   createMediaUploadParts(fileId: ID!, partNumbers: [Int!]!): [MediaUploadPart!]!
   completeMediaUpload(input: CompleteMediaUploadInput!): MediaFile!
   deleteMediaFile(id: ID!): Boolean!
+}
+
+# Предварительная подборка практики по выбранным темам и бюджету времени.
+type PracticePlan {
+  policyVersion: String!
+  totalMinutes: Int!
+  warnings: [String!]!
+  items: [PracticePlanItem!]!
+}
+
+type PracticePlanItem {
+  taskId: ID!
+  taskVersionId: ID!
+  topicId: ID!
+  title: String!
+  difficulty: String!
+  taskType: String!
+  estimatedMinutes: Int!
+  reasonCode: String!
 }
