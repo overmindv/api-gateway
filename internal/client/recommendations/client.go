@@ -48,6 +48,17 @@ type Plan struct {
 	Items         []Item   `json:"items"`
 }
 
+type Goal struct {
+	TopicIDs []string `json:"topic_ids"`
+	Minutes  int      `json:"minutes"`
+	Revision int64    `json:"revision"`
+}
+
+type GoalInput struct {
+	TopicIDs []string `json:"topic_ids"`
+	Minutes  int      `json:"minutes"`
+}
+
 type Item struct {
 	TaskID           string `json:"task_id"`
 	TaskVersionID    string `json:"task_version_id"`
@@ -69,17 +80,62 @@ func (e *Error) Error() string { return e.Code }
 type Service interface {
 	PracticePlan(context.Context, Request, string) (Plan, error)
 }
+
+type GoalService interface {
+	GetGoal(context.Context, string) (*Goal, error)
+	SaveGoal(context.Context, GoalInput, string) (Goal, error)
+	DeleteGoal(context.Context, string) error
+}
 type Client struct{ hx *httpx.Client }
 
 func New(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client {
 	client := &http.Client{Timeout: timeout, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
 	return &Client{hx: httpx.New("recommendations", baseURL, client, log, func(status int) error {
 		code := "SERVICE_UNAVAILABLE"
-		if status == http.StatusBadRequest {
+		switch status {
+		case http.StatusBadRequest:
 			code = "INVALID_ARGUMENT"
+		case http.StatusNotFound:
+			code = "NOT_FOUND"
 		}
 		return &Error{Code: code}
 	}, httpx.Header{Name: "Authorization", Value: "Bearer " + token})}
+}
+
+func (c *Client) GetGoal(ctx context.Context, userID string) (*Goal, error) {
+	goal, err := httpx.DoJSON[Goal](c.hx, ctx, http.MethodGet, "/v1/practice-goal", nil, httpx.Actor{UserID: userID})
+	if err != nil {
+		var upstream *Error
+		if errors.As(err, &upstream) && upstream.Code == "NOT_FOUND" {
+			return nil, nil
+		}
+		return nil, goalError(err)
+	}
+	return &goal, nil
+}
+
+func (c *Client) SaveGoal(ctx context.Context, input GoalInput, userID string) (Goal, error) {
+	goal, err := httpx.DoJSON[Goal](c.hx, ctx, http.MethodPut, "/v1/practice-goal", input, httpx.Actor{UserID: userID})
+	if err != nil {
+		return Goal{}, goalError(err)
+	}
+	return goal, nil
+}
+
+func (c *Client) DeleteGoal(ctx context.Context, userID string) error {
+	_, err := httpx.DoJSON[struct{}](c.hx, ctx, http.MethodDelete, "/v1/practice-goal", nil, httpx.Actor{UserID: userID})
+	return goalError(err)
+}
+
+func goalError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var upstream *Error
+	if errors.As(err, &upstream) {
+		return upstream
+	}
+	return &Error{Code: "SERVICE_UNAVAILABLE"}
 }
 
 func (c *Client) PracticePlan(ctx context.Context, input Request, userID string) (Plan, error) {

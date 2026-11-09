@@ -369,6 +369,18 @@ type PaginationInput struct {
 	Offset *int `json:"offset,omitempty"`
 }
 
+type PracticeGoal struct {
+	Topics   []*PracticeGoalTopic `json:"topics"`
+	Minutes  int                  `json:"minutes"`
+	Revision int                  `json:"revision"`
+}
+
+type PracticeGoalTopic struct {
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Status string `json:"status"`
+}
+
 type PracticePlan struct {
 	PolicyVersion string              `json:"policyVersion"`
 	TotalMinutes  int                 `json:"totalMinutes"`

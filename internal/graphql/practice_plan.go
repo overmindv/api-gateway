@@ -84,7 +84,7 @@ func practiceInvalid() error     { return &recommendations.Error{Code: "INVALID_
 func practiceUnavailable() error { return &recommendations.Error{Code: "SERVICE_UNAVAILABLE"} }
 
 // practiceTopics получает полный ограниченный граф: обрезать prerequisites небезопасно.
-func (r *queryResolver) practiceTopics(ctx context.Context, selected []string) ([]recommendations.Topic, error) {
+func (r *Resolver) practiceTopics(ctx context.Context, selected []string) ([]recommendations.Topic, error) {
 	queue := append([]string{}, selected...)
 	seen := make(map[string]bool, len(queue))
 	for _, id := range queue {

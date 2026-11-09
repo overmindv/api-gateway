@@ -45,10 +45,12 @@ func practiceContext() context.Context {
 
 type practiceFixture struct {
 	input               recommendations.Request
+	goal                *recommendations.Goal
 	calls               int
 	recommendationCalls int
 	failPath            string
 	inactive            bool
+	missingTopic        bool
 	cycle               bool
 	manyTopics          bool
 	taskCount           int
@@ -76,6 +78,33 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 			}
 		}
 		switch {
+		case r.URL.Path == "/v1/practice-goal":
+			if r.Header.Get("X-User-ID") != practiceUser || r.Header.Get("Authorization") != "Bearer service-token" {
+				t.Error("unverified goal actor or token")
+			}
+			switch r.Method {
+			case http.MethodGet:
+				if f.goal == nil {
+					w.WriteHeader(404)
+					write(map[string]string{"code": "NOT_FOUND", "message": "Not found"})
+				} else {
+					write(f.goal)
+				}
+			case http.MethodPut:
+				var input recommendations.GoalInput
+				if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+					t.Error(err)
+				}
+				revision := int64(1)
+				if f.goal != nil {
+					revision = f.goal.Revision + 1
+				}
+				f.goal = &recommendations.Goal{TopicIDs: input.TopicIDs, Minutes: input.Minutes, Revision: revision}
+				write(f.goal)
+			case http.MethodDelete:
+				f.goal = nil
+				w.WriteHeader(204)
+			}
 		case r.URL.Path == "/v1/practice-plan":
 			f.recommendationCalls++
 			if r.Header.Get("X-User-ID") != practiceUser || r.Header.Get("Authorization") != "Bearer service-token" {
@@ -107,11 +136,16 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 				}
 				write(prereqs)
 			} else {
+				if f.missingTopic {
+					w.WriteHeader(404)
+					write(map[string]string{"code": "TOPIC_NOT_FOUND", "message": "Not found"})
+					return
+				}
 				status := "active"
 				if f.inactive {
 					status = "draft"
 				}
-				write(entities.Topic{ID: id, Status: status})
+				write(entities.Topic{ID: id, Title: "Topic", Status: status})
 			}
 		case r.URL.Path == "/v1/tasks":
 			topic := r.URL.Query().Get("topic_id")
@@ -181,6 +215,53 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 	t.Cleanup(upstream.Close)
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	return &queryResolver{&Resolver{Catalog: entities.New(upstream.URL, time.Second, log), Tasks: tasks.New(upstream.URL, time.Second, log), Recommendations: recommendations.New(upstream.URL, "service-token", time.Second, log)}}
+}
+
+func TestSavedPracticeGoalLifecycle(t *testing.T) {
+	f := &practiceFixture{}
+	r := f.resolver(t)
+	ctx := practiceContext()
+	if got, err := r.MyPracticeGoal(ctx); err != nil || got != nil {
+		t.Fatalf("missing goal: %+v %v", got, err)
+	}
+	mutation := &mutationResolver{r.Resolver}
+	for want := 1; want <= 2; want++ {
+		goal, err := mutation.SavePracticeGoal(ctx, []string{practiceTopic}, 60)
+		if err != nil || goal.Revision != want || goal.Minutes != 60 || len(goal.Topics) != 1 || goal.Topics[0].Title != "Topic" {
+			t.Fatalf("save goal: %+v %v", goal, err)
+		}
+	}
+	if got, err := r.MyPracticeGoal(ctx); err != nil || got == nil || got.Revision != 2 {
+		t.Fatalf("reload goal: %+v %v", got, err)
+	}
+	for i := 0; i < 2; i++ {
+		if ok, err := mutation.DeletePracticeGoal(ctx); err != nil || !ok {
+			t.Fatalf("delete goal: %t %v", ok, err)
+		}
+	}
+	if got, err := r.MyPracticeGoal(ctx); err != nil || got != nil {
+		t.Fatalf("deleted goal: %+v %v", got, err)
+	}
+}
+
+func TestSavedPracticeGoalValidatesBeforeStorage(t *testing.T) {
+	f := &practiceFixture{}
+	r := f.resolver(t)
+	mutation := &mutationResolver{r.Resolver}
+	_, err := mutation.SavePracticeGoal(practiceContext(), []string{practiceTopic, practiceTopic}, 60)
+	code, _ := errorCodeAndMessage(err)
+	if code != "INVALID_ARGUMENT" || f.calls != 0 {
+		t.Fatalf("invalid goal reached upstream: %s calls=%d", code, f.calls)
+	}
+}
+
+func TestSavedPracticeGoalShowsDeletedTopicForRepair(t *testing.T) {
+	f := &practiceFixture{missingTopic: true, goal: &recommendations.Goal{TopicIDs: []string{practiceTopic}, Minutes: 60, Revision: 1}}
+	r := f.resolver(t)
+	goal, err := r.MyPracticeGoal(practiceContext())
+	if err != nil || goal == nil || len(goal.Topics) != 1 || goal.Topics[0].Status != "archived" {
+		t.Fatalf("deleted topic cannot be removed from goal: %+v %v", goal, err)
+	}
 }
 
 func TestPracticePlanCollectsSafePublishedMetadataAndOwnFinalEvidence(t *testing.T) {

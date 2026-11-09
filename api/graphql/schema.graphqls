@@ -276,6 +276,7 @@ type SearchResults {
 
 type Query {
   practicePlan(topicIds: [ID!]!, minutes: Int!): PracticePlan!
+  myPracticeGoal: PracticeGoal
   search(query: String!, limit: Int! = 5): SearchResults!
   me: User!
   getUser(id: ID!): User!
@@ -314,6 +315,8 @@ type Query {
 }
 
 type Mutation {
+  savePracticeGoal(topicIds: [ID!]!, minutes: Int!): PracticeGoal!
+  deletePracticeGoal: Boolean!
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!
@@ -374,4 +377,16 @@ type PracticePlanItem {
   taskType: String!
   estimatedMinutes: Int!
   reasonCode: String!
+}
+
+type PracticeGoal {
+  topics: [PracticeGoalTopic!]!
+  minutes: Int!
+  revision: Int!
+}
+
+type PracticeGoalTopic {
+  id: ID!
+  title: String!
+  status: String!
 }
