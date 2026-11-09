@@ -296,6 +296,7 @@ type ComplexityRoot struct {
 		RemoveTopicPrerequisite      func(childComplexity int, input model.TopicPrerequisiteInput) int
 		SavePracticeGoal             func(childComplexity int, topicIds []string, minutes int) int
 		SetMyAvatar                  func(childComplexity int, fileID *string) int
+		SetMyPracticeStatsPublic     func(childComplexity int, public bool) int
 		SetUserAdmin                 func(childComplexity int, id string, admin bool) int
 		SetUserAdminByUsername       func(childComplexity int, username string, admin bool) int
 		StartTaskCollection          func(childComplexity int, input model.StartTaskCollectionInput) int
@@ -322,6 +323,15 @@ type ComplexityRoot struct {
 		Title  func(childComplexity int) int
 	}
 
+	PracticeLeaderboardEntry struct {
+		DisplayName func(childComplexity int) int
+		Rank        func(childComplexity int) int
+		Score       func(childComplexity int) int
+		SolvedTasks func(childComplexity int) int
+		UserID      func(childComplexity int) int
+		Username    func(childComplexity int) int
+	}
+
 	PracticePlan struct {
 		Items         func(childComplexity int) int
 		PolicyVersion func(childComplexity int) int
@@ -338,6 +348,29 @@ type ComplexityRoot struct {
 		TaskVersionID    func(childComplexity int) int
 		Title            func(childComplexity int) int
 		TopicID          func(childComplexity int) int
+	}
+
+	PracticeProgress struct {
+		AcceptedAttempts func(childComplexity int) int
+		AccuracyPercent  func(childComplexity int) int
+		Attempts         func(childComplexity int) int
+		ByDifficulty     func(childComplexity int) int
+		Daily            func(childComplexity int) int
+		Public           func(childComplexity int) int
+		Score            func(childComplexity int) int
+		SolvedTasks      func(childComplexity int) int
+		UserID           func(childComplexity int) int
+	}
+
+	PracticeProgressDay struct {
+		Accepted func(childComplexity int) int
+		Attempts func(childComplexity int) int
+		Date     func(childComplexity int) int
+	}
+
+	PracticeProgressDifficulty struct {
+		Difficulty func(childComplexity int) int
+		Solved     func(childComplexity int) int
 	}
 
 	Program struct {
@@ -387,7 +420,10 @@ type ComplexityRoot struct {
 		MyITSubmissions        func(childComplexity int, taskID *string, pagination *model.PaginationInput) int
 		MyMediaFiles           func(childComplexity int, filter *model.MediaFileFilter, pagination *model.PaginationInput) int
 		MyPracticeGoal         func(childComplexity int) int
+		MyPracticeProgress     func(childComplexity int) int
+		PracticeLeaderboard    func(childComplexity int, courseID *string) int
 		PracticePlan           func(childComplexity int, topicIds []string, minutes int) int
+		PracticeProgress       func(childComplexity int, userID string) int
 		Program                func(childComplexity int, id string) int
 		Programs               func(childComplexity int, universityID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
 		Search                 func(childComplexity int, query string, limit int) int
@@ -558,6 +594,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	SavePracticeGoal(ctx context.Context, topicIds []string, minutes int) (*model.PracticeGoal, error)
 	DeletePracticeGoal(ctx context.Context) (bool, error)
+	SetMyPracticeStatsPublic(ctx context.Context, public bool) (bool, error)
 	Register(ctx context.Context, input model.RegisterInput) (*model.AuthPayload, error)
 	Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error)
 	Logout(ctx context.Context) (bool, error)
@@ -603,6 +640,9 @@ type MutationResolver interface {
 type QueryResolver interface {
 	PracticePlan(ctx context.Context, topicIds []string, minutes int) (*model.PracticePlan, error)
 	MyPracticeGoal(ctx context.Context) (*model.PracticeGoal, error)
+	MyPracticeProgress(ctx context.Context) (*model.PracticeProgress, error)
+	PracticeProgress(ctx context.Context, userID string) (*model.PracticeProgress, error)
+	PracticeLeaderboard(ctx context.Context, courseID *string) ([]*model.PracticeLeaderboardEntry, error)
 	Search(ctx context.Context, query string, limit int) (*model.SearchResults, error)
 	Me(ctx context.Context) (*model.User, error)
 	GetUser(ctx context.Context, id string) (*model.User, error)
@@ -1890,6 +1930,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SetMyAvatar(childComplexity, args["fileId"].(*string)), true
+	case "Mutation.setMyPracticeStatsPublic":
+		if e.complexity.Mutation.SetMyPracticeStatsPublic == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setMyPracticeStatsPublic_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetMyPracticeStatsPublic(childComplexity, args["public"].(bool)), true
 	case "Mutation.setUserAdmin":
 		if e.complexity.Mutation.SetUserAdmin == nil {
 			break
@@ -2061,6 +2112,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PracticeGoalTopic.Title(childComplexity), true
 
+	case "PracticeLeaderboardEntry.displayName":
+		if e.complexity.PracticeLeaderboardEntry.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.PracticeLeaderboardEntry.DisplayName(childComplexity), true
+	case "PracticeLeaderboardEntry.rank":
+		if e.complexity.PracticeLeaderboardEntry.Rank == nil {
+			break
+		}
+
+		return e.complexity.PracticeLeaderboardEntry.Rank(childComplexity), true
+	case "PracticeLeaderboardEntry.score":
+		if e.complexity.PracticeLeaderboardEntry.Score == nil {
+			break
+		}
+
+		return e.complexity.PracticeLeaderboardEntry.Score(childComplexity), true
+	case "PracticeLeaderboardEntry.solvedTasks":
+		if e.complexity.PracticeLeaderboardEntry.SolvedTasks == nil {
+			break
+		}
+
+		return e.complexity.PracticeLeaderboardEntry.SolvedTasks(childComplexity), true
+	case "PracticeLeaderboardEntry.userId":
+		if e.complexity.PracticeLeaderboardEntry.UserID == nil {
+			break
+		}
+
+		return e.complexity.PracticeLeaderboardEntry.UserID(childComplexity), true
+	case "PracticeLeaderboardEntry.username":
+		if e.complexity.PracticeLeaderboardEntry.Username == nil {
+			break
+		}
+
+		return e.complexity.PracticeLeaderboardEntry.Username(childComplexity), true
+
 	case "PracticePlan.items":
 		if e.complexity.PracticePlan.Items == nil {
 			break
@@ -2134,6 +2222,93 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.PracticePlanItem.TopicID(childComplexity), true
+
+	case "PracticeProgress.acceptedAttempts":
+		if e.complexity.PracticeProgress.AcceptedAttempts == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.AcceptedAttempts(childComplexity), true
+	case "PracticeProgress.accuracyPercent":
+		if e.complexity.PracticeProgress.AccuracyPercent == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.AccuracyPercent(childComplexity), true
+	case "PracticeProgress.attempts":
+		if e.complexity.PracticeProgress.Attempts == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.Attempts(childComplexity), true
+	case "PracticeProgress.byDifficulty":
+		if e.complexity.PracticeProgress.ByDifficulty == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.ByDifficulty(childComplexity), true
+	case "PracticeProgress.daily":
+		if e.complexity.PracticeProgress.Daily == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.Daily(childComplexity), true
+	case "PracticeProgress.public":
+		if e.complexity.PracticeProgress.Public == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.Public(childComplexity), true
+	case "PracticeProgress.score":
+		if e.complexity.PracticeProgress.Score == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.Score(childComplexity), true
+	case "PracticeProgress.solvedTasks":
+		if e.complexity.PracticeProgress.SolvedTasks == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.SolvedTasks(childComplexity), true
+	case "PracticeProgress.userId":
+		if e.complexity.PracticeProgress.UserID == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgress.UserID(childComplexity), true
+
+	case "PracticeProgressDay.accepted":
+		if e.complexity.PracticeProgressDay.Accepted == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgressDay.Accepted(childComplexity), true
+	case "PracticeProgressDay.attempts":
+		if e.complexity.PracticeProgressDay.Attempts == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgressDay.Attempts(childComplexity), true
+	case "PracticeProgressDay.date":
+		if e.complexity.PracticeProgressDay.Date == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgressDay.Date(childComplexity), true
+
+	case "PracticeProgressDifficulty.difficulty":
+		if e.complexity.PracticeProgressDifficulty.Difficulty == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgressDifficulty.Difficulty(childComplexity), true
+	case "PracticeProgressDifficulty.solved":
+		if e.complexity.PracticeProgressDifficulty.Solved == nil {
+			break
+		}
+
+		return e.complexity.PracticeProgressDifficulty.Solved(childComplexity), true
 
 	case "Program.createdAt":
 		if e.complexity.Program.CreatedAt == nil {
@@ -2435,6 +2610,23 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.MyPracticeGoal(childComplexity), true
+	case "Query.myPracticeProgress":
+		if e.complexity.Query.MyPracticeProgress == nil {
+			break
+		}
+
+		return e.complexity.Query.MyPracticeProgress(childComplexity), true
+	case "Query.practiceLeaderboard":
+		if e.complexity.Query.PracticeLeaderboard == nil {
+			break
+		}
+
+		args, err := ec.field_Query_practiceLeaderboard_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PracticeLeaderboard(childComplexity, args["courseId"].(*string)), true
 	case "Query.practicePlan":
 		if e.complexity.Query.PracticePlan == nil {
 			break
@@ -2446,6 +2638,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.PracticePlan(childComplexity, args["topicIds"].([]string), args["minutes"].(int)), true
+	case "Query.practiceProgress":
+		if e.complexity.Query.PracticeProgress == nil {
+			break
+		}
+
+		args, err := ec.field_Query_practiceProgress_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PracticeProgress(childComplexity, args["userId"].(string)), true
 	case "Query.program":
 		if e.complexity.Query.Program == nil {
 			break
@@ -3713,6 +3916,9 @@ type SearchResults {
 type Query {
   practicePlan(topicIds: [ID!]!, minutes: Int!): PracticePlan!
   myPracticeGoal: PracticeGoal
+  myPracticeProgress: PracticeProgress!
+  practiceProgress(userId: ID!): PracticeProgress
+  practiceLeaderboard(courseId: ID): [PracticeLeaderboardEntry!]!
   search(query: String!, limit: Int! = 5): SearchResults!
   me: User!
   getUser(id: ID!): User!
@@ -3753,6 +3959,7 @@ type Query {
 type Mutation {
   savePracticeGoal(topicIds: [ID!]!, minutes: Int!): PracticeGoal!
   deletePracticeGoal: Boolean!
+  setMyPracticeStatsPublic(public: Boolean!): Boolean!
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!
@@ -3825,6 +4032,31 @@ type PracticeGoalTopic {
   id: ID!
   title: String!
   status: String!
+}
+
+# Измеренная практика, а не оценка освоения темы.
+type PracticeProgress {
+  userId: ID!
+  public: Boolean!
+  attempts: Int!
+  acceptedAttempts: Int!
+  solvedTasks: Int!
+  score: Int!
+  accuracyPercent: Int!
+  daily: [PracticeProgressDay!]!
+  byDifficulty: [PracticeProgressDifficulty!]!
+}
+
+type PracticeProgressDay { date: String!, attempts: Int!, accepted: Int! }
+type PracticeProgressDifficulty { difficulty: String!, solved: Int! }
+
+type PracticeLeaderboardEntry {
+  rank: Int!
+  userId: ID!
+  username: String!
+  displayName: String!
+  score: Int!
+  solvedTasks: Int!
 }
 `, BuiltIn: false},
 }
@@ -4200,6 +4432,17 @@ func (ec *executionContext) field_Mutation_setMyAvatar_args(ctx context.Context,
 		return nil, err
 	}
 	args["fileId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setMyPracticeStatsPublic_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "public", ec.unmarshalNBoolean2bool)
+	if err != nil {
+		return nil, err
+	}
+	args["public"] = arg0
 	return args, nil
 }
 
@@ -4606,6 +4849,17 @@ func (ec *executionContext) field_Query_myMediaFiles_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_practiceLeaderboard_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "courseId", ec.unmarshalOID2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["courseId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_practicePlan_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -4619,6 +4873,17 @@ func (ec *executionContext) field_Query_practicePlan_args(ctx context.Context, r
 		return nil, err
 	}
 	args["minutes"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_practiceProgress_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "userId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["userId"] = arg0
 	return args, nil
 }
 
@@ -9485,6 +9750,47 @@ func (ec *executionContext) fieldContext_Mutation_deletePracticeGoal(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_setMyPracticeStatsPublic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_setMyPracticeStatsPublic,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SetMyPracticeStatsPublic(ctx, fc.Args["public"].(bool))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setMyPracticeStatsPublic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setMyPracticeStatsPublic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_register(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -12130,6 +12436,180 @@ func (ec *executionContext) fieldContext_PracticeGoalTopic_status(_ context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _PracticeLeaderboardEntry_rank(ctx context.Context, field graphql.CollectedField, obj *model.PracticeLeaderboardEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeLeaderboardEntry_rank,
+		func(ctx context.Context) (any, error) {
+			return obj.Rank, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeLeaderboardEntry_rank(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeLeaderboardEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeLeaderboardEntry_userId(ctx context.Context, field graphql.CollectedField, obj *model.PracticeLeaderboardEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeLeaderboardEntry_userId,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeLeaderboardEntry_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeLeaderboardEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeLeaderboardEntry_username(ctx context.Context, field graphql.CollectedField, obj *model.PracticeLeaderboardEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeLeaderboardEntry_username,
+		func(ctx context.Context) (any, error) {
+			return obj.Username, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeLeaderboardEntry_username(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeLeaderboardEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeLeaderboardEntry_displayName(ctx context.Context, field graphql.CollectedField, obj *model.PracticeLeaderboardEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeLeaderboardEntry_displayName,
+		func(ctx context.Context) (any, error) {
+			return obj.DisplayName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeLeaderboardEntry_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeLeaderboardEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeLeaderboardEntry_score(ctx context.Context, field graphql.CollectedField, obj *model.PracticeLeaderboardEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeLeaderboardEntry_score,
+		func(ctx context.Context) (any, error) {
+			return obj.Score, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeLeaderboardEntry_score(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeLeaderboardEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeLeaderboardEntry_solvedTasks(ctx context.Context, field graphql.CollectedField, obj *model.PracticeLeaderboardEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeLeaderboardEntry_solvedTasks,
+		func(ctx context.Context) (any, error) {
+			return obj.SolvedTasks, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeLeaderboardEntry_solvedTasks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeLeaderboardEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PracticePlan_policyVersion(ctx context.Context, field graphql.CollectedField, obj *model.PracticePlan) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -12491,6 +12971,426 @@ func (ec *executionContext) fieldContext_PracticePlanItem_reasonCode(_ context.C
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_userId(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_userId,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_public(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_public,
+		func(ctx context.Context) (any, error) {
+			return obj.Public, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_public(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_attempts(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_attempts,
+		func(ctx context.Context) (any, error) {
+			return obj.Attempts, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_attempts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_acceptedAttempts(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_acceptedAttempts,
+		func(ctx context.Context) (any, error) {
+			return obj.AcceptedAttempts, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_acceptedAttempts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_solvedTasks(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_solvedTasks,
+		func(ctx context.Context) (any, error) {
+			return obj.SolvedTasks, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_solvedTasks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_score(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_score,
+		func(ctx context.Context) (any, error) {
+			return obj.Score, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_score(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_accuracyPercent(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_accuracyPercent,
+		func(ctx context.Context) (any, error) {
+			return obj.AccuracyPercent, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_accuracyPercent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_daily(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_daily,
+		func(ctx context.Context) (any, error) {
+			return obj.Daily, nil
+		},
+		nil,
+		ec.marshalNPracticeProgressDay2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgressDayᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_daily(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "date":
+				return ec.fieldContext_PracticeProgressDay_date(ctx, field)
+			case "attempts":
+				return ec.fieldContext_PracticeProgressDay_attempts(ctx, field)
+			case "accepted":
+				return ec.fieldContext_PracticeProgressDay_accepted(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PracticeProgressDay", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgress_byDifficulty(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgress) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgress_byDifficulty,
+		func(ctx context.Context) (any, error) {
+			return obj.ByDifficulty, nil
+		},
+		nil,
+		ec.marshalNPracticeProgressDifficulty2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgressDifficultyᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgress_byDifficulty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgress",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "difficulty":
+				return ec.fieldContext_PracticeProgressDifficulty_difficulty(ctx, field)
+			case "solved":
+				return ec.fieldContext_PracticeProgressDifficulty_solved(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PracticeProgressDifficulty", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgressDay_date(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgressDay) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgressDay_date,
+		func(ctx context.Context) (any, error) {
+			return obj.Date, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgressDay_date(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgressDay",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgressDay_attempts(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgressDay) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgressDay_attempts,
+		func(ctx context.Context) (any, error) {
+			return obj.Attempts, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgressDay_attempts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgressDay",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgressDay_accepted(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgressDay) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgressDay_accepted,
+		func(ctx context.Context) (any, error) {
+			return obj.Accepted, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgressDay_accepted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgressDay",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgressDifficulty_difficulty(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgressDifficulty) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgressDifficulty_difficulty,
+		func(ctx context.Context) (any, error) {
+			return obj.Difficulty, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgressDifficulty_difficulty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgressDifficulty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PracticeProgressDifficulty_solved(ctx context.Context, field graphql.CollectedField, obj *model.PracticeProgressDifficulty) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PracticeProgressDifficulty_solved,
+		func(ctx context.Context) (any, error) {
+			return obj.Solved, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PracticeProgressDifficulty_solved(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PracticeProgressDifficulty",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13184,6 +14084,171 @@ func (ec *executionContext) fieldContext_Query_myPracticeGoal(_ context.Context,
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PracticeGoal", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myPracticeProgress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_myPracticeProgress,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().MyPracticeProgress(ctx)
+		},
+		nil,
+		ec.marshalNPracticeProgress2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgress,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_myPracticeProgress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_PracticeProgress_userId(ctx, field)
+			case "public":
+				return ec.fieldContext_PracticeProgress_public(ctx, field)
+			case "attempts":
+				return ec.fieldContext_PracticeProgress_attempts(ctx, field)
+			case "acceptedAttempts":
+				return ec.fieldContext_PracticeProgress_acceptedAttempts(ctx, field)
+			case "solvedTasks":
+				return ec.fieldContext_PracticeProgress_solvedTasks(ctx, field)
+			case "score":
+				return ec.fieldContext_PracticeProgress_score(ctx, field)
+			case "accuracyPercent":
+				return ec.fieldContext_PracticeProgress_accuracyPercent(ctx, field)
+			case "daily":
+				return ec.fieldContext_PracticeProgress_daily(ctx, field)
+			case "byDifficulty":
+				return ec.fieldContext_PracticeProgress_byDifficulty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PracticeProgress", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_practiceProgress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_practiceProgress,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().PracticeProgress(ctx, fc.Args["userId"].(string))
+		},
+		nil,
+		ec.marshalOPracticeProgress2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgress,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_practiceProgress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_PracticeProgress_userId(ctx, field)
+			case "public":
+				return ec.fieldContext_PracticeProgress_public(ctx, field)
+			case "attempts":
+				return ec.fieldContext_PracticeProgress_attempts(ctx, field)
+			case "acceptedAttempts":
+				return ec.fieldContext_PracticeProgress_acceptedAttempts(ctx, field)
+			case "solvedTasks":
+				return ec.fieldContext_PracticeProgress_solvedTasks(ctx, field)
+			case "score":
+				return ec.fieldContext_PracticeProgress_score(ctx, field)
+			case "accuracyPercent":
+				return ec.fieldContext_PracticeProgress_accuracyPercent(ctx, field)
+			case "daily":
+				return ec.fieldContext_PracticeProgress_daily(ctx, field)
+			case "byDifficulty":
+				return ec.fieldContext_PracticeProgress_byDifficulty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PracticeProgress", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_practiceProgress_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_practiceLeaderboard(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_practiceLeaderboard,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().PracticeLeaderboard(ctx, fc.Args["courseId"].(*string))
+		},
+		nil,
+		ec.marshalNPracticeLeaderboardEntry2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeLeaderboardEntryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_practiceLeaderboard(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "rank":
+				return ec.fieldContext_PracticeLeaderboardEntry_rank(ctx, field)
+			case "userId":
+				return ec.fieldContext_PracticeLeaderboardEntry_userId(ctx, field)
+			case "username":
+				return ec.fieldContext_PracticeLeaderboardEntry_username(ctx, field)
+			case "displayName":
+				return ec.fieldContext_PracticeLeaderboardEntry_displayName(ctx, field)
+			case "score":
+				return ec.fieldContext_PracticeLeaderboardEntry_score(ctx, field)
+			case "solvedTasks":
+				return ec.fieldContext_PracticeLeaderboardEntry_solvedTasks(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PracticeLeaderboardEntry", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_practiceLeaderboard_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -23440,6 +24505,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "setMyPracticeStatsPublic":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setMyPracticeStatsPublic(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "register":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_register(ctx, field)
@@ -23848,6 +24920,70 @@ func (ec *executionContext) _PracticeGoalTopic(ctx context.Context, sel ast.Sele
 	return out
 }
 
+var practiceLeaderboardEntryImplementors = []string{"PracticeLeaderboardEntry"}
+
+func (ec *executionContext) _PracticeLeaderboardEntry(ctx context.Context, sel ast.SelectionSet, obj *model.PracticeLeaderboardEntry) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, practiceLeaderboardEntryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PracticeLeaderboardEntry")
+		case "rank":
+			out.Values[i] = ec._PracticeLeaderboardEntry_rank(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._PracticeLeaderboardEntry_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "username":
+			out.Values[i] = ec._PracticeLeaderboardEntry_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "displayName":
+			out.Values[i] = ec._PracticeLeaderboardEntry_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "score":
+			out.Values[i] = ec._PracticeLeaderboardEntry_score(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "solvedTasks":
+			out.Values[i] = ec._PracticeLeaderboardEntry_solvedTasks(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var practicePlanImplementors = []string{"PracticePlan"}
 
 func (ec *executionContext) _PracticePlan(ctx context.Context, sel ast.SelectionSet, obj *model.PracticePlan) graphql.Marshaler {
@@ -23950,6 +25086,178 @@ func (ec *executionContext) _PracticePlanItem(ctx context.Context, sel ast.Selec
 			}
 		case "reasonCode":
 			out.Values[i] = ec._PracticePlanItem_reasonCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var practiceProgressImplementors = []string{"PracticeProgress"}
+
+func (ec *executionContext) _PracticeProgress(ctx context.Context, sel ast.SelectionSet, obj *model.PracticeProgress) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, practiceProgressImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PracticeProgress")
+		case "userId":
+			out.Values[i] = ec._PracticeProgress_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "public":
+			out.Values[i] = ec._PracticeProgress_public(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "attempts":
+			out.Values[i] = ec._PracticeProgress_attempts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "acceptedAttempts":
+			out.Values[i] = ec._PracticeProgress_acceptedAttempts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "solvedTasks":
+			out.Values[i] = ec._PracticeProgress_solvedTasks(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "score":
+			out.Values[i] = ec._PracticeProgress_score(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "accuracyPercent":
+			out.Values[i] = ec._PracticeProgress_accuracyPercent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "daily":
+			out.Values[i] = ec._PracticeProgress_daily(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "byDifficulty":
+			out.Values[i] = ec._PracticeProgress_byDifficulty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var practiceProgressDayImplementors = []string{"PracticeProgressDay"}
+
+func (ec *executionContext) _PracticeProgressDay(ctx context.Context, sel ast.SelectionSet, obj *model.PracticeProgressDay) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, practiceProgressDayImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PracticeProgressDay")
+		case "date":
+			out.Values[i] = ec._PracticeProgressDay_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "attempts":
+			out.Values[i] = ec._PracticeProgressDay_attempts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "accepted":
+			out.Values[i] = ec._PracticeProgressDay_accepted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var practiceProgressDifficultyImplementors = []string{"PracticeProgressDifficulty"}
+
+func (ec *executionContext) _PracticeProgressDifficulty(ctx context.Context, sel ast.SelectionSet, obj *model.PracticeProgressDifficulty) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, practiceProgressDifficultyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PracticeProgressDifficulty")
+		case "difficulty":
+			out.Values[i] = ec._PracticeProgressDifficulty_difficulty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "solved":
+			out.Values[i] = ec._PracticeProgressDifficulty_solved(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -24220,6 +25528,69 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_myPracticeGoal(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myPracticeProgress":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myPracticeProgress(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "practiceProgress":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_practiceProgress(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "practiceLeaderboard":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_practiceLeaderboard(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -27461,6 +28832,60 @@ func (ec *executionContext) marshalNPracticeGoalTopic2ᚖgithubᚗcomᚋovermind
 	return ec._PracticeGoalTopic(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPracticeLeaderboardEntry2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeLeaderboardEntryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PracticeLeaderboardEntry) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPracticeLeaderboardEntry2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeLeaderboardEntry(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPracticeLeaderboardEntry2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeLeaderboardEntry(ctx context.Context, sel ast.SelectionSet, v *model.PracticeLeaderboardEntry) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PracticeLeaderboardEntry(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNPracticePlan2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticePlan(ctx context.Context, sel ast.SelectionSet, v model.PracticePlan) graphql.Marshaler {
 	return ec._PracticePlan(ctx, sel, &v)
 }
@@ -27527,6 +28952,128 @@ func (ec *executionContext) marshalNPracticePlanItem2ᚖgithubᚗcomᚋovermindv
 		return graphql.Null
 	}
 	return ec._PracticePlanItem(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPracticeProgress2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgress(ctx context.Context, sel ast.SelectionSet, v model.PracticeProgress) graphql.Marshaler {
+	return ec._PracticeProgress(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPracticeProgress2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgress(ctx context.Context, sel ast.SelectionSet, v *model.PracticeProgress) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PracticeProgress(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPracticeProgressDay2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgressDayᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PracticeProgressDay) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPracticeProgressDay2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgressDay(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPracticeProgressDay2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgressDay(ctx context.Context, sel ast.SelectionSet, v *model.PracticeProgressDay) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PracticeProgressDay(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPracticeProgressDifficulty2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgressDifficultyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PracticeProgressDifficulty) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPracticeProgressDifficulty2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgressDifficulty(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPracticeProgressDifficulty2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgressDifficulty(ctx context.Context, sel ast.SelectionSet, v *model.PracticeProgressDifficulty) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PracticeProgressDifficulty(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProgram2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐProgram(ctx context.Context, sel ast.SelectionSet, v model.Program) graphql.Marshaler {
@@ -28835,6 +30382,13 @@ func (ec *executionContext) marshalOPracticeGoal2ᚖgithubᚗcomᚋovermindvᚋa
 		return graphql.Null
 	}
 	return ec._PracticeGoal(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPracticeProgress2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeProgress(ctx context.Context, sel ast.SelectionSet, v *model.PracticeProgress) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PracticeProgress(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {

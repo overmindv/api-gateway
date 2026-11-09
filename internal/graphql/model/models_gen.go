@@ -381,6 +381,15 @@ type PracticeGoalTopic struct {
 	Status string `json:"status"`
 }
 
+type PracticeLeaderboardEntry struct {
+	Rank        int    `json:"rank"`
+	UserID      string `json:"userId"`
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
+	Score       int    `json:"score"`
+	SolvedTasks int    `json:"solvedTasks"`
+}
+
 type PracticePlan struct {
 	PolicyVersion string              `json:"policyVersion"`
 	TotalMinutes  int                 `json:"totalMinutes"`
@@ -397,6 +406,29 @@ type PracticePlanItem struct {
 	TaskType         string `json:"taskType"`
 	EstimatedMinutes int    `json:"estimatedMinutes"`
 	ReasonCode       string `json:"reasonCode"`
+}
+
+type PracticeProgress struct {
+	UserID           string                        `json:"userId"`
+	Public           bool                          `json:"public"`
+	Attempts         int                           `json:"attempts"`
+	AcceptedAttempts int                           `json:"acceptedAttempts"`
+	SolvedTasks      int                           `json:"solvedTasks"`
+	Score            int                           `json:"score"`
+	AccuracyPercent  int                           `json:"accuracyPercent"`
+	Daily            []*PracticeProgressDay        `json:"daily"`
+	ByDifficulty     []*PracticeProgressDifficulty `json:"byDifficulty"`
+}
+
+type PracticeProgressDay struct {
+	Date     string `json:"date"`
+	Attempts int    `json:"attempts"`
+	Accepted int    `json:"accepted"`
+}
+
+type PracticeProgressDifficulty struct {
+	Difficulty string `json:"difficulty"`
+	Solved     int    `json:"solved"`
 }
 
 type Program struct {

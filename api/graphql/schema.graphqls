@@ -277,6 +277,9 @@ type SearchResults {
 type Query {
   practicePlan(topicIds: [ID!]!, minutes: Int!): PracticePlan!
   myPracticeGoal: PracticeGoal
+  myPracticeProgress: PracticeProgress!
+  practiceProgress(userId: ID!): PracticeProgress
+  practiceLeaderboard(courseId: ID): [PracticeLeaderboardEntry!]!
   search(query: String!, limit: Int! = 5): SearchResults!
   me: User!
   getUser(id: ID!): User!
@@ -317,6 +320,7 @@ type Query {
 type Mutation {
   savePracticeGoal(topicIds: [ID!]!, minutes: Int!): PracticeGoal!
   deletePracticeGoal: Boolean!
+  setMyPracticeStatsPublic(public: Boolean!): Boolean!
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!
@@ -389,4 +393,29 @@ type PracticeGoalTopic {
   id: ID!
   title: String!
   status: String!
+}
+
+# Измеренная практика, а не оценка освоения темы.
+type PracticeProgress {
+  userId: ID!
+  public: Boolean!
+  attempts: Int!
+  acceptedAttempts: Int!
+  solvedTasks: Int!
+  score: Int!
+  accuracyPercent: Int!
+  daily: [PracticeProgressDay!]!
+  byDifficulty: [PracticeProgressDifficulty!]!
+}
+
+type PracticeProgressDay { date: String!, attempts: Int!, accepted: Int! }
+type PracticeProgressDifficulty { difficulty: String!, solved: Int! }
+
+type PracticeLeaderboardEntry {
+  rank: Int!
+  userId: ID!
+  username: String!
+  displayName: String!
+  score: Int!
+  solvedTasks: Int!
 }
