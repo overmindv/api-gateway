@@ -106,6 +106,13 @@ type CreateUniversityInput struct {
 	Status     *CatalogStatus `json:"status,omitempty"`
 }
 
+type ExternalTaskResult struct {
+	Title  string   `json:"title"`
+	URL    string   `json:"url"`
+	Rating int      `json:"rating"`
+	Tags   []string `json:"tags"`
+}
+
 type FeedConnection struct {
 	Items  []*FeedItem `json:"items"`
 	Limit  int         `json:"limit"`
@@ -187,6 +194,7 @@ type ITExecutionTestResult struct {
 }
 
 type ITSubmission struct {
+	TaskTitle           string              `json:"taskTitle"`
 	ID                  string              `json:"id"`
 	UserID              string              `json:"userId"`
 	TaskID              string              `json:"taskId"`
@@ -302,6 +310,22 @@ type ITTaskSummary struct {
 	UpdatedAt     string           `json:"updatedAt"`
 }
 
+type LearningMaterial struct {
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	URL     string `json:"url"`
+	Action  string `json:"action"`
+	Minutes int    `json:"minutes"`
+}
+
+type LearningPlan struct {
+	AiStatus  string              `json:"aiStatus"`
+	Topics    []*PracticeTopicRef `json:"topics"`
+	Materials []*LearningMaterial `json:"materials"`
+	Practice  *PracticePlan       `json:"practice,omitempty"`
+	Warnings  []string            `json:"warnings"`
+}
+
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -370,9 +394,10 @@ type PaginationInput struct {
 }
 
 type PracticeGoal struct {
-	Topics   []*PracticeGoalTopic `json:"topics"`
-	Minutes  int                  `json:"minutes"`
-	Revision int                  `json:"revision"`
+	Topics       []*PracticeGoalTopic `json:"topics"`
+	Minutes      int                  `json:"minutes"`
+	SessionCount int                  `json:"sessionCount"`
+	Revision     int                  `json:"revision"`
 }
 
 type PracticeGoalTopic struct {
@@ -391,10 +416,15 @@ type PracticeLeaderboardEntry struct {
 }
 
 type PracticePlan struct {
-	PolicyVersion string              `json:"policyVersion"`
-	TotalMinutes  int                 `json:"totalMinutes"`
-	Warnings      []string            `json:"warnings"`
-	Items         []*PracticePlanItem `json:"items"`
+	AiStatus            string                  `json:"aiStatus"`
+	PolicyVersion       string                  `json:"policyVersion"`
+	TotalMinutes        int                     `json:"totalMinutes"`
+	Warnings            []string                `json:"warnings"`
+	Items               []*PracticePlanItem     `json:"items"`
+	RequestedSessions   int                     `json:"requestedSessions"`
+	TotalPlannedMinutes int                     `json:"totalPlannedMinutes"`
+	Sessions            []*PracticeSession      `json:"sessions"`
+	TopicInsights       []*PracticeTopicInsight `json:"topicInsights"`
 }
 
 type PracticePlanItem struct {
@@ -429,6 +459,57 @@ type PracticeProgressDay struct {
 type PracticeProgressDifficulty struct {
 	Difficulty string `json:"difficulty"`
 	Solved     int    `json:"solved"`
+}
+
+type PracticeSession struct {
+	Number       int                 `json:"number"`
+	TotalMinutes int                 `json:"totalMinutes"`
+	Items        []*PracticePlanItem `json:"items"`
+}
+
+type PracticeTopicInsight struct {
+	TopicID               string              `json:"topicId"`
+	Title                 string              `json:"title"`
+	IsTarget              bool                `json:"isTarget"`
+	AcceptedTasks         int                 `json:"acceptedTasks"`
+	FailedTasks           int                 `json:"failedTasks"`
+	EligibleTasks         int                 `json:"eligibleTasks"`
+	PlannedTasks          int                 `json:"plannedTasks"`
+	RemainingToReadiness  int                 `json:"remainingToReadiness"`
+	RecommendedDifficulty string              `json:"recommendedDifficulty"`
+	MinimumMinutes        int                 `json:"minimumMinutes"`
+	BlockedBy             []*PracticeTopicRef `json:"blockedBy"`
+	NextAction            string              `json:"nextAction"`
+}
+
+type PracticeTopicRef struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+}
+
+type ProblemList struct {
+	ID                string               `json:"id"`
+	Name              string               `json:"name"`
+	SourceID          string               `json:"sourceId"`
+	SourceURL         string               `json:"sourceUrl"`
+	MemberCount       int                  `json:"memberCount"`
+	PendingCandidates int                  `json:"pendingCandidates"`
+	CreatedAt         string               `json:"createdAt"`
+	UpdatedAt         string               `json:"updatedAt"`
+	Members           []*ProblemListMember `json:"members"`
+}
+
+type ProblemListMember struct {
+	TaskID     string           `json:"taskId"`
+	Title      string           `json:"title"`
+	Difficulty ITTaskDifficulty `json:"difficulty"`
+	Status     ITTaskStatus     `json:"status"`
+}
+
+type ProblemListPage struct {
+	Items  []*ProblemList `json:"items"`
+	Limit  int            `json:"limit"`
+	Offset int            `json:"offset"`
 }
 
 type Program struct {
@@ -473,6 +554,37 @@ type RegisterInput struct {
 	Phone     *string `json:"phone,omitempty"`
 }
 
+type SavedLearningMaterial struct {
+	ID      string           `json:"id"`
+	Title   string           `json:"title"`
+	URL     string           `json:"url"`
+	Action  string           `json:"action"`
+	Minutes int              `json:"minutes"`
+	Status  MaterialProgress `json:"status"`
+}
+
+type SavedLearningPlan struct {
+	ID                string                   `json:"id"`
+	Goal              string                   `json:"goal"`
+	IsOwner           bool                     `json:"isOwner"`
+	Public            bool                     `json:"public"`
+	Revision          int                      `json:"revision"`
+	Minutes           int                      `json:"minutes"`
+	SessionCount      int                      `json:"sessionCount"`
+	Materials         []*SavedLearningMaterial `json:"materials"`
+	Tasks             []*SavedLearningTask     `json:"tasks"`
+	ProgressAvailable bool                     `json:"progressAvailable"`
+}
+
+type SavedLearningTask struct {
+	ID                  string  `json:"id"`
+	VersionID           string  `json:"versionId"`
+	Title               string  `json:"title"`
+	Minutes             int     `json:"minutes"`
+	Completed           bool    `json:"completed"`
+	CompletionVersionID *string `json:"completionVersionId,omitempty"`
+}
+
 type SearchResults struct {
 	Universities []*University    `json:"universities"`
 	Programs     []*Program       `json:"programs"`
@@ -502,6 +614,7 @@ type TaskCandidate struct {
 	RetrievedAt       string              `json:"retrievedAt"`
 	CollectionJobID   string              `json:"collectionJobId"`
 	TopicID           *string             `json:"topicId,omitempty"`
+	ProblemListID     *string             `json:"problemListId,omitempty"`
 	Title             string              `json:"title"`
 	Statement         string              `json:"statement"`
 	Difficulty        ITTaskDifficulty    `json:"difficulty"`
@@ -515,9 +628,10 @@ type TaskCandidate struct {
 }
 
 type TaskCandidateFilter struct {
-	Status     *TaskCandidateStatus `json:"status,omitempty"`
-	SourceID   *string              `json:"sourceId,omitempty"`
-	Difficulty *ITTaskDifficulty    `json:"difficulty,omitempty"`
+	Status        *TaskCandidateStatus `json:"status,omitempty"`
+	SourceID      *string              `json:"sourceId,omitempty"`
+	Difficulty    *ITTaskDifficulty    `json:"difficulty,omitempty"`
+	ProblemListID *string              `json:"problemListId,omitempty"`
 }
 
 type TaskCandidateList struct {
@@ -1290,6 +1404,63 @@ func (e *ITTaskType) UnmarshalJSON(b []byte) error {
 }
 
 func (e ITTaskType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MaterialProgress string
+
+const (
+	MaterialProgressTodo       MaterialProgress = "TODO"
+	MaterialProgressInProgress MaterialProgress = "IN_PROGRESS"
+	MaterialProgressDone       MaterialProgress = "DONE"
+)
+
+var AllMaterialProgress = []MaterialProgress{
+	MaterialProgressTodo,
+	MaterialProgressInProgress,
+	MaterialProgressDone,
+}
+
+func (e MaterialProgress) IsValid() bool {
+	switch e {
+	case MaterialProgressTodo, MaterialProgressInProgress, MaterialProgressDone:
+		return true
+	}
+	return false
+}
+
+func (e MaterialProgress) String() string {
+	return string(e)
+}
+
+func (e *MaterialProgress) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialProgress(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialProgress", str)
+	}
+	return nil
+}
+
+func (e MaterialProgress) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialProgress) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialProgress) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

@@ -99,12 +99,23 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 				if f.goal != nil {
 					revision = f.goal.Revision + 1
 				}
-				f.goal = &recommendations.Goal{TopicIDs: input.TopicIDs, Minutes: input.Minutes, Revision: revision}
+				f.goal = &recommendations.Goal{TopicIDs: input.TopicIDs, Minutes: input.Minutes, SessionCount: max(1, input.SessionCount), Revision: revision}
 				write(f.goal)
 			case http.MethodDelete:
 				f.goal = nil
 				w.WriteHeader(204)
 			}
+		case r.URL.Path == "/v1/topics":
+			write([]entities.Topic{{ID: practiceTopic, Title: "Python", Status: "active"}})
+		case r.URL.Path == "/v1/learning-outline":
+			var in recommendations.OutlineRequest
+			if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+				t.Error(err)
+			}
+			if in.Goal != "Junior AI" || r.Header.Get("X-User-ID") != practiceUser {
+				t.Error("outline goal/actor")
+			}
+			write(recommendations.Outline{AIStatus: "GENERATED", TopicIDs: []string{practiceTopic}, Materials: []recommendations.Material{{ID: "python", Title: "Python", URL: "https://docs.python.org/3/tutorial/", Minutes: 25}}})
 		case r.URL.Path == "/v1/practice-plan":
 			f.recommendationCalls++
 			if r.Header.Get("X-User-ID") != practiceUser || r.Header.Get("Authorization") != "Bearer service-token" {
@@ -119,7 +130,11 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 			if err := json.Unmarshal(data, &f.input); err != nil {
 				t.Fatal(err)
 			}
-			write(recommendations.Plan{PolicyVersion: "practice-v1", TotalMinutes: 10, Warnings: []string{}, Items: []recommendations.Item{{TaskID: practiceTask, TaskVersionID: practiceVersion, TopicID: practiceTopic, Title: "Public", Difficulty: "easy", TaskType: "single_choice", EstimatedMinutes: 10, ReasonCode: "START_TOPIC"}}})
+			items := []recommendations.Item{{TaskID: practiceTask, TaskVersionID: practiceVersion, TopicID: practiceTopic, Title: "Public", Difficulty: "easy", TaskType: "single_choice", EstimatedMinutes: 10, ReasonCode: "START_TOPIC"}}
+			write(recommendations.Plan{PolicyVersion: "practice-v3", TotalMinutes: 10, Warnings: []string{}, Items: items,
+				RequestedSessions: max(1, f.input.SessionCount), TotalPlannedMinutes: 10,
+				Sessions:      []recommendations.Session{{Number: 1, TotalMinutes: 10, Items: items}},
+				TopicInsights: []recommendations.TopicInsight{{TopicID: practiceTopic, IsTarget: true, BlockedBy: []string{practiceBase}, NextAction: "COMPLETE_PREREQUISITES"}}})
 		case strings.HasPrefix(r.URL.Path, "/v1/topics/"):
 			id := strings.TrimPrefix(r.URL.Path, "/v1/topics/")
 			if strings.HasSuffix(id, "/prerequisites") {
@@ -226,7 +241,7 @@ func TestSavedPracticeGoalLifecycle(t *testing.T) {
 	}
 	mutation := &mutationResolver{r.Resolver}
 	for want := 1; want <= 2; want++ {
-		goal, err := mutation.SavePracticeGoal(ctx, []string{practiceTopic}, 60)
+		goal, err := mutation.SavePracticeGoal(ctx, []string{practiceTopic}, 60, nil)
 		if err != nil || goal.Revision != want || goal.Minutes != 60 || len(goal.Topics) != 1 || goal.Topics[0].Title != "Topic" {
 			t.Fatalf("save goal: %+v %v", goal, err)
 		}
@@ -248,7 +263,7 @@ func TestSavedPracticeGoalValidatesBeforeStorage(t *testing.T) {
 	f := &practiceFixture{}
 	r := f.resolver(t)
 	mutation := &mutationResolver{r.Resolver}
-	_, err := mutation.SavePracticeGoal(practiceContext(), []string{practiceTopic, practiceTopic}, 60)
+	_, err := mutation.SavePracticeGoal(practiceContext(), []string{practiceTopic, practiceTopic}, 60, nil)
 	code, _ := errorCodeAndMessage(err)
 	if code != "INVALID_ARGUMENT" || f.calls != 0 {
 		t.Fatalf("invalid goal reached upstream: %s calls=%d", code, f.calls)
@@ -267,7 +282,7 @@ func TestSavedPracticeGoalShowsDeletedTopicForRepair(t *testing.T) {
 func TestPracticePlanCollectsSafePublishedMetadataAndOwnFinalEvidence(t *testing.T) {
 	f := &practiceFixture{}
 	r := f.resolver(t)
-	plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60)
+	plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,7 +316,7 @@ func TestPracticePlanValidatesBeforeOutboundCalls(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f := &practiceFixture{}
 			r := f.resolver(t)
-			_, err := r.PracticePlan(practiceContext(), tc.ids, tc.minutes)
+			_, err := r.PracticePlan(practiceContext(), tc.ids, tc.minutes, nil, nil)
 			code, _ := errorCodeAndMessage(err)
 			if code != "INVALID_ARGUMENT" || f.calls != 0 {
 				t.Fatalf("code=%s calls=%d", code, f.calls)
@@ -315,7 +330,7 @@ func TestPracticePlanDependencyFailureDoesNotBecomeColdStart(t *testing.T) {
 		t.Run(path, func(t *testing.T) {
 			f := &practiceFixture{failPath: path}
 			r := f.resolver(t)
-			plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60)
+			plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
 			code, message := errorCodeAndMessage(err)
 			if code != "SERVICE_UNAVAILABLE" || plan != nil || strings.Contains(message, "private") {
 				t.Fatalf("unsafe dependency result: plan=%+v code=%s message=%s", plan, code, message)
@@ -330,7 +345,7 @@ func TestPracticePlanDependencyFailureDoesNotBecomeColdStart(t *testing.T) {
 func TestPracticePlanRejectsInactiveCyclicOrIncompleteGraph(t *testing.T) {
 	for _, f := range []*practiceFixture{{inactive: true}, {cycle: true}, {manyTopics: true}} {
 		r := f.resolver(t)
-		_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60)
+		_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
 		code, _ := errorCodeAndMessage(err)
 		if code != "INVALID_ARGUMENT" || f.recommendationCalls != 0 {
 			t.Fatalf("unsafe graph forwarded: code=%s calls=%d", code, f.recommendationCalls)
@@ -341,7 +356,7 @@ func TestPracticePlanRejectsInactiveCyclicOrIncompleteGraph(t *testing.T) {
 func TestPracticePlanPaginatesAllTopicsAndCapsEachHistory(t *testing.T) {
 	f := &practiceFixture{taskCount: 1200, historyCount: 1001}
 	r := f.resolver(t)
-	plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic, practiceBase}, 240)
+	plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic, practiceBase}, 240, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +374,7 @@ func TestPracticePlanPaginatesAllTopicsAndCapsEachHistory(t *testing.T) {
 func TestPracticePlanExactHistoryBoundIsNotTruncated(t *testing.T) {
 	f := &practiceFixture{historyCount: 1000}
 	r := f.resolver(t)
-	_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60)
+	_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,9 +385,24 @@ func TestPracticePlanExactHistoryBoundIsNotTruncated(t *testing.T) {
 
 func TestPracticePlanDisabled(t *testing.T) {
 	r := &queryResolver{&Resolver{}}
-	_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60)
+	_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
 	code, _ := errorCodeAndMessage(err)
 	if code != "SERVICE_UNAVAILABLE" {
 		t.Fatalf("got %s", code)
+	}
+}
+
+func TestPracticeAITextIsBoundedAndForwarded(t *testing.T) {
+	f := &practiceFixture{}
+	r := f.resolver(t)
+	goal := "  Junior AI  "
+	plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, &goal)
+	if err != nil || plan == nil || f.input.Goal != "Junior AI" {
+		t.Fatalf("goal forwarding: %v, %q", err, f.input.Goal)
+	}
+	calls := f.calls
+	goal = strings.Repeat("я", 1001)
+	if _, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, &goal); err == nil || f.calls != calls {
+		t.Fatal("oversized goal reached upstream")
 	}
 }

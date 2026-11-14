@@ -42,6 +42,8 @@ type CandidateService interface {
 	UpdateCandidate(context.Context, string, CandidateReview, Actor) (Candidate, error)
 	ApproveCandidate(context.Context, string, CandidateReview, Actor) (Task, error)
 	RejectCandidate(context.Context, string, int, string, Actor) (Candidate, error)
+	ListProblemLists(context.Context, int, int, Actor) (ProblemListList, error)
+	GetProblemList(context.Context, string, Actor) (ProblemListDetail, error)
 }
 
 // ListCandidates получает очередь модерации с явными фильтрами.
@@ -58,8 +60,25 @@ func (c *Client) ListCandidates(ctx context.Context, filter CandidateFilter, act
 	if filter.Difficulty != "" {
 		values.Set("difficulty", filter.Difficulty)
 	}
+	if filter.ProblemListID != nil && *filter.ProblemListID != "" {
+		values.Set("problem_list_id", *filter.ProblemListID)
+	}
 
 	return request[CandidateList](c, ctx, http.MethodGet, pathWithQuery("/v1/admin/task-candidates", values), nil, actor)
+}
+
+// ListProblemLists получает журнал списков задач.
+func (c *Client) ListProblemLists(ctx context.Context, limit, offset int, actor Actor) (ProblemListList, error) {
+	values := url.Values{}
+	values.Set("limit", strconv.Itoa(httpx.ClampLimit(limit)))
+	values.Set("offset", strconv.Itoa(offset))
+
+	return request[ProblemListList](c, ctx, http.MethodGet, pathWithQuery("/v1/admin/problem-lists", values), nil, actor)
+}
+
+// GetProblemList получает детали списка вместе с опубликованными задачами.
+func (c *Client) GetProblemList(ctx context.Context, id string, actor Actor) (ProblemListDetail, error) {
+	return request[ProblemListDetail](c, ctx, http.MethodGet, "/v1/admin/problem-lists/"+url.PathEscape(id), nil, actor)
 }
 
 // GetCandidate получает кандидата с immutable provenance.

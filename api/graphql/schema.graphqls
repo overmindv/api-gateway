@@ -125,7 +125,7 @@ type ITTaskSource { sourceId: String!, sourceName: String!, sourceUrl: String!, 
 type ITTask { id: ID!, status: ITTaskStatus!, taskVersionId: ID!, versionNumber: Int!, topicId: ID, title: String!, statement: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty!, options: [ITTaskOption!]!, tags: [String!]!, examples: [ITTaskExample!]!, constraints: [String!]!, source: ITTaskSource, createdAt: String!, updatedAt: String! }
 type ITTaskSummary { id: ID!, status: ITTaskStatus!, taskVersionId: ID!, versionNumber: Int!, topicId: ID, title: String!, taskType: ITTaskType!, difficulty: ITTaskDifficulty!, createdAt: String!, updatedAt: String! }
 type ITTaskList { items: [ITTaskSummary!]!, limit: Int!, offset: Int! }
-type ITSubmission { id: ID!, userId: ID!, taskId: ID!, taskVersionId: ID!, taskVersionNumber: Int!, selectedOptionIds: [ID!]!, correctOptionIds: [ID!]!, correct: Boolean!, verdict: ITSubmissionVerdict!, taskUpdated: Boolean!, latestTaskVersionId: ID!, latestVersionNumber: Int!, createdAt: String! }
+type ITSubmission { taskTitle: String!, id: ID!, userId: ID!, taskId: ID!, taskVersionId: ID!, taskVersionNumber: Int!, selectedOptionIds: [ID!]!, correctOptionIds: [ID!]!, correct: Boolean!, verdict: ITSubmissionVerdict!, taskUpdated: Boolean!, latestTaskVersionId: ID!, latestVersionNumber: Int!, createdAt: String! }
 type ITSubmissionList { items: [ITSubmission!]!, limit: Int!, offset: Int! }
 
 type ITExecutionPhaseResult {
@@ -193,10 +193,15 @@ input ITCodeSubmissionInput {
 }
 
 enum TaskCandidateStatus { pending approved rejected }
-type TaskCandidate { id: ID!, status: TaskCandidateStatus!, revision: Int!, externalId: String!, sourceId: String!, sourceName: String!, sourceUrl: String!, sourcePublishedAt: String, retrievedAt: String!, collectionJobId: ID!, topicId: ID, title: String!, statement: String!, difficulty: ITTaskDifficulty!, tags: [String!]!, examples: [ITTaskExample!]!, constraints: [String!]!, approvedTaskId: ID, rejectionReason: String!, createdAt: String!, updatedAt: String! }
+type TaskCandidate { id: ID!, status: TaskCandidateStatus!, revision: Int!, externalId: String!, sourceId: String!, sourceName: String!, sourceUrl: String!, sourcePublishedAt: String, retrievedAt: String!, collectionJobId: ID!, topicId: ID, problemListId: ID, title: String!, statement: String!, difficulty: ITTaskDifficulty!, tags: [String!]!, examples: [ITTaskExample!]!, constraints: [String!]!, approvedTaskId: ID, rejectionReason: String!, createdAt: String!, updatedAt: String! }
 type TaskCandidateList { items: [TaskCandidate!]!, limit: Int!, offset: Int! }
-input TaskCandidateFilter { status: TaskCandidateStatus, sourceId: String, difficulty: ITTaskDifficulty }
+input TaskCandidateFilter { status: TaskCandidateStatus, sourceId: String, difficulty: ITTaskDifficulty, problemListId: ID }
 input TaskCandidateReviewInput { expectedRevision: Int!, topicId: ID, title: String!, statement: String!, difficulty: ITTaskDifficulty!, tags: [String!]!, examples: [ITTaskExampleInput!]!, constraints: [String!]! }
+
+# Problem list — именованный набор задач, собранных из внешнего /problem-list/.
+type ProblemListMember { taskId: ID!, title: String!, difficulty: ITTaskDifficulty!, status: ITTaskStatus! }
+type ProblemList { id: ID!, name: String!, sourceId: String!, sourceUrl: String!, memberCount: Int!, pendingCandidates: Int!, createdAt: String!, updatedAt: String!, members: [ProblemListMember!]! }
+type ProblemListPage { items: [ProblemList!]!, limit: Int!, offset: Int! }
 
 enum TaskCollectionJobStatus { queued running succeeded partial failed }
 enum TaskCollectionSourceStatus { queued running succeeded failed truncated }
@@ -275,7 +280,11 @@ type SearchResults {
 }
 
 type Query {
-  practicePlan(topicIds: [ID!]!, minutes: Int!): PracticePlan!
+  myLearningPlans: [SavedLearningPlan!]!
+  savedLearningPlan(id: ID!): SavedLearningPlan!
+  learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
+  externalTaskSearch(query: String!): [ExternalTaskResult!]!
+  practicePlan(topicIds: [ID!]!, minutes: Int!, sessionCount: Int, goal: String): PracticePlan!
   myPracticeGoal: PracticeGoal
   myPracticeProgress: PracticeProgress!
   practiceProgress(userId: ID!): PracticeProgress
@@ -311,6 +320,8 @@ type Query {
   taskCollectionJob(id: ID!): TaskCollectionJob!
   taskCandidates(filter: TaskCandidateFilter, pagination: PaginationInput): TaskCandidateList!
   taskCandidate(id: ID!): TaskCandidate!
+  problemLists(pagination: PaginationInput): ProblemListPage!
+  problemList(id: ID!): ProblemList!
   mediaFile(id: ID!): MediaFile!
   myMediaFiles(filter: MediaFileFilter, pagination: PaginationInput): MediaFileConnection!
   mediaDownloadUrl(fileId: ID!, variant: String = "original"): MediaDownload!
@@ -318,7 +329,14 @@ type Query {
 }
 
 type Mutation {
-  savePracticeGoal(topicIds: [ID!]!, minutes: Int!): PracticeGoal!
+  saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
+  removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
+  updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!
+  setLearningPlanPublic(id: ID!, revision: Int!, public: Boolean!): SavedLearningPlan!
+  refreshLearningPlan(id: ID!, revision: Int!): SavedLearningPlan!
+  cloneLearningPlan(id: ID!, requestId: ID!): SavedLearningPlan!
+
+  savePracticeGoal(topicIds: [ID!]!, minutes: Int!, sessionCount: Int): PracticeGoal!
   deletePracticeGoal: Boolean!
   setMyPracticeStatsPublic(public: Boolean!): Boolean!
   register(input: RegisterInput!): AuthPayload!
@@ -366,10 +384,42 @@ type Mutation {
 
 # Предварительная подборка практики по выбранным темам и бюджету времени.
 type PracticePlan {
+  aiStatus: String!
   policyVersion: String!
   totalMinutes: Int!
   warnings: [String!]!
   items: [PracticePlanItem!]!
+  requestedSessions: Int!
+  totalPlannedMinutes: Int!
+  sessions: [PracticeSession!]!
+  topicInsights: [PracticeTopicInsight!]!
+}
+
+type PracticeSession {
+  number: Int!
+  totalMinutes: Int!
+  items: [PracticePlanItem!]!
+}
+
+type PracticeTopicRef {
+  id: ID!
+  title: String!
+}
+
+# Наблюдения по текущим версиям задач; не оценка освоения темы.
+type PracticeTopicInsight {
+  topicId: ID!
+  title: String!
+  isTarget: Boolean!
+  acceptedTasks: Int!
+  failedTasks: Int!
+  eligibleTasks: Int!
+  plannedTasks: Int!
+  remainingToReadiness: Int!
+  recommendedDifficulty: String!
+  minimumMinutes: Int!
+  blockedBy: [PracticeTopicRef!]!
+  nextAction: String!
 }
 
 type PracticePlanItem {
@@ -386,6 +436,7 @@ type PracticePlanItem {
 type PracticeGoal {
   topics: [PracticeGoalTopic!]!
   minutes: Int!
+  sessionCount: Int!
   revision: Int!
 }
 
@@ -418,4 +469,31 @@ type PracticeLeaderboardEntry {
   displayName: String!
   score: Int!
   solvedTasks: Int!
+}
+
+
+type LearningMaterial { id: ID!, title: String!, url: String!, action: String!, minutes: Int! }
+type LearningPlan {
+  aiStatus: String!
+  topics: [PracticeTopicRef!]!
+  materials: [LearningMaterial!]!
+  practice: PracticePlan
+  warnings: [String!]!
+}
+type ExternalTaskResult { title: String!, url: String!, rating: Int!, tags: [String!]! }
+
+enum MaterialProgress { TODO IN_PROGRESS DONE }
+type SavedLearningMaterial { id: ID!, title: String!, url: String!, action: String!, minutes: Int!, status: MaterialProgress! }
+type SavedLearningTask { id: ID!, versionId: ID!, title: String!, minutes: Int!, completed: Boolean!, completionVersionId: ID }
+type SavedLearningPlan {
+ id: ID!
+ goal: String!
+ isOwner: Boolean!
+ public: Boolean!
+ revision: Int!
+ minutes: Int!
+ sessionCount: Int!
+ materials: [SavedLearningMaterial!]!
+ tasks: [SavedLearningTask!]!
+ progressAvailable: Boolean!
 }

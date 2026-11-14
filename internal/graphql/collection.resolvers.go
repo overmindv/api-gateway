@@ -155,6 +155,9 @@ func (r *queryResolver) TaskCandidates(ctx context.Context, filter *model.TaskCa
 		if filter.Difficulty != nil {
 			input.Difficulty = filter.Difficulty.String()
 		}
+		if filter.ProblemListID != nil && *filter.ProblemListID != "" {
+			input.ProblemListID = filter.ProblemListID
+		}
 	}
 	items, err := r.Candidates.ListCandidates(ctx, input, actor)
 	if err != nil {
@@ -217,9 +220,9 @@ func candidateModel(item tasks.Candidate) *model.TaskCandidate {
 		ID: item.ID, Status: model.TaskCandidateStatus(item.Status), Revision: item.Revision,
 		ExternalID: item.ExternalID, SourceID: item.SourceID, SourceName: item.SourceName,
 		SourceURL: item.SourceURL, SourcePublishedAt: item.SourcePublishedAt, RetrievedAt: item.RetrievedAt,
-		CollectionJobID: item.CollectionJobID, TopicID: item.TopicID, Title: item.Title,
-		Statement: item.Statement, Difficulty: model.ITTaskDifficulty(item.Difficulty), Tags: item.Tags,
-		Examples: examples, Constraints: item.Constraints, ApprovedTaskID: item.ApprovedTaskID,
+		CollectionJobID: item.CollectionJobID, TopicID: item.TopicID, ProblemListID: item.ProblemListID,
+		Title: item.Title, Statement: item.Statement, Difficulty: model.ITTaskDifficulty(item.Difficulty),
+		Tags: item.Tags, Examples: examples, Constraints: item.Constraints, ApprovedTaskID: item.ApprovedTaskID,
 		RejectionReason: item.RejectionReason, CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt,
 	}
 }

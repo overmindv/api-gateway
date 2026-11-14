@@ -75,11 +75,12 @@ type Task struct {
 }
 
 type CandidateFilter struct {
-	Status     string
-	SourceID   string
-	Difficulty string
-	Limit      int
-	Offset     int
+	Status        string
+	SourceID      string
+	Difficulty    string
+	ProblemListID *string
+	Limit         int
+	Offset        int
 }
 
 type CandidateReview struct {
@@ -105,6 +106,7 @@ type Candidate struct {
 	RetrievedAt       string        `json:"retrieved_at"`
 	CollectionJobID   string        `json:"collection_job_id"`
 	TopicID           *string       `json:"topic_id"`
+	ProblemListID     *string       `json:"problem_list_id"`
 	Title             string        `json:"title"`
 	Statement         string        `json:"statement"`
 	Difficulty        string        `json:"difficulty"`
@@ -154,6 +156,7 @@ type Submission struct {
 	TaskID              string   `json:"task_id"`
 	TaskVersionID       string   `json:"task_version_id"`
 	TaskVersionNumber   int      `json:"task_version_number"`
+	TaskTitle           string   `json:"task_title"`
 	SelectedOptionIDs   []string `json:"selected_option_ids"`
 	CorrectOptionIDs    []string `json:"correct_option_ids"`
 	Correct             bool     `json:"correct"`
@@ -227,6 +230,39 @@ type CodeSubmissionList struct {
 	Items  []CodeSubmission `json:"items"`
 	Limit  int              `json:"limit"`
 	Offset int              `json:"offset"`
+}
+
+// ProblemListSummary описывает список задач в журнале.
+type ProblemListSummary struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	SourceID    string `json:"source_id"`
+	SourceURL   string `json:"source_url"`
+	MemberCount int    `json:"member_count"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
+// ProblemListDetail расширяет список опубликованными членами и числом ожидающих кандидатов.
+type ProblemListDetail struct {
+	ProblemListSummary
+	PendingCandidates int                 `json:"pending_candidates"`
+	Members           []ProblemListMember `json:"members"`
+}
+
+// ProblemListMember описывает опубликованную задачу в составе списка.
+type ProblemListMember struct {
+	TaskID     string `json:"task_id"`
+	Title      string `json:"title"`
+	Difficulty string `json:"difficulty"`
+	Status     string `json:"status"`
+}
+
+// ProblemListList — пагинированный журнал списков задач.
+type ProblemListList struct {
+	Items  []ProblemListSummary `json:"items"`
+	Limit  int                  `json:"limit"`
+	Offset int                  `json:"offset"`
 }
 
 type Error struct {

@@ -92,7 +92,10 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 		return gqlgen.DefaultRecover(ctx, recovered)
 	})
 
-	return server
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		server.ServeHTTP(w, r)
+	})
 }
 
 func Playground() http.Handler {
@@ -103,10 +106,14 @@ func Playground() http.Handler {
 // CollectFields учитывает fragments, directives и слияние полей с одинаковым alias.
 func limitPracticePlanOperation(ctx context.Context, next gqlgen.OperationHandler) gqlgen.ResponseHandler {
 	operation := gqlgen.GetOperationContext(ctx)
-	if operation.Operation.Operation == ast.Query {
+	if operation.Operation.Operation == ast.Query || operation.Operation.Operation == ast.Mutation {
+		root := "Query"
+		if operation.Operation.Operation == ast.Mutation {
+			root = "Mutation"
+		}
 		count := 0
-		for _, field := range gqlgen.CollectFields(operation, operation.Operation.SelectionSet, []string{"Query"}) {
-			if field.Name != "practicePlan" {
+		for _, field := range gqlgen.CollectFields(operation, operation.Operation.SelectionSet, []string{root}) {
+			if field.Name != "practicePlan" && field.Name != "learningPlan" && field.Name != "externalTaskSearch" && field.Name != "savedLearningPlan" && field.Name != "myLearningPlans" && field.Name != "saveLearningPlan" && field.Name != "refreshLearningPlan" && field.Name != "cloneLearningPlan" && field.Name != "updateLearningMaterial" && field.Name != "setLearningPlanPublic" && field.Name != "removeLearningPlanTask" {
 				continue
 			}
 			count++

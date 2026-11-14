@@ -241,6 +241,7 @@ func submissionModel(item tasks.Submission) *model.ITSubmission {
 		TaskID:              item.TaskID,
 		TaskVersionID:       item.TaskVersionID,
 		TaskVersionNumber:   item.TaskVersionNumber,
+		TaskTitle:           item.TaskTitle,
 		SelectedOptionIds:   item.SelectedOptionIDs,
 		CorrectOptionIds:    item.CorrectOptionIDs,
 		Correct:             item.Correct,

@@ -3,7 +3,9 @@ package graphql
 import (
 	"context"
 	"sort"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/overmindv/api-gateway/internal/client/recommendations"
@@ -20,10 +22,20 @@ const (
 )
 
 // PracticePlan собирает разрешённые metadata и собственную историю проверенного actor.
-func (r *queryResolver) PracticePlan(ctx context.Context, topicIDs []string, minutes int) (*model.PracticePlan, error) {
+func (r *queryResolver) PracticePlan(ctx context.Context, topicIDs []string, minutes int, sessionCount *int, goal *string) (*model.PracticePlan, error) {
 	auth, err := middleware.RequireAuth(ctx)
 	if err != nil {
 		return nil, err
+	}
+	goalText := ""
+	if goal != nil {
+		goalText = strings.TrimSpace(*goal)
+	}
+	if !utf8.ValidString(goalText) || utf8.RuneCountInString(goalText) > 1000 {
+		return nil, practiceInvalid()
+	}
+	if sessionCount != nil && (*sessionCount < 1 || *sessionCount > 8) {
+		return nil, practiceInvalid()
 	}
 	if len(topicIDs) < 1 || len(topicIDs) > 5 || minutes < 10 || minutes > 240 {
 		return nil, practiceInvalid()
@@ -42,7 +54,7 @@ func (r *queryResolver) PracticePlan(ctx context.Context, topicIDs []string, min
 		return nil, practiceUnavailable()
 	}
 	// Общий дедлайн ограничивает последовательную пагинацию всех зависимостей.
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 40*time.Second)
 	defer cancel()
 	topics, err := r.practiceTopics(ctx, ids)
 	if err != nil {
@@ -56,7 +68,7 @@ func (r *queryResolver) PracticePlan(ctx context.Context, topicIDs []string, min
 	if err != nil {
 		return nil, err
 	}
-	input := recommendations.Request{TopicIDs: ids, Minutes: minutes, Topics: topics, Tasks: candidates, Evidence: evidence, InputTruncated: truncated || historyTruncated}
+	input := recommendations.Request{Goal: goalText, TopicIDs: ids, Minutes: minutes, SessionCount: practiceSessionCount(sessionCount), Topics: topics, Tasks: candidates, Evidence: evidence, InputTruncated: truncated || historyTruncated}
 	plan, err := r.Recommendations.PracticePlan(ctx, input, auth.UserID)
 	if err != nil {
 		return nil, err
@@ -77,7 +89,37 @@ func (r *queryResolver) PracticePlan(ctx context.Context, topicIDs []string, min
 	for _, item := range plan.Items {
 		items = append(items, &model.PracticePlanItem{TaskID: item.TaskID, TaskVersionID: item.TaskVersionID, TopicID: item.TopicID, Title: item.Title, Difficulty: item.Difficulty, TaskType: item.TaskType, EstimatedMinutes: item.EstimatedMinutes, ReasonCode: item.ReasonCode})
 	}
-	return &model.PracticePlan{PolicyVersion: plan.PolicyVersion, TotalMinutes: plan.TotalMinutes, Warnings: warnings, Items: items}, nil
+	status := plan.AIStatus
+	if status == "" {
+		status = "NOT_REQUESTED"
+	}
+	result := &model.PracticePlan{AiStatus: status, PolicyVersion: plan.PolicyVersion, TotalMinutes: plan.TotalMinutes, Warnings: warnings, Items: items, RequestedSessions: max(1, plan.RequestedSessions), TotalPlannedMinutes: plan.TotalPlannedMinutes, Sessions: []*model.PracticeSession{}, TopicInsights: []*model.PracticeTopicInsight{}}
+	for _, session := range plan.Sessions {
+		mapped := &model.PracticeSession{Number: session.Number, TotalMinutes: session.TotalMinutes, Items: []*model.PracticePlanItem{}}
+		for _, item := range session.Items {
+			mapped.Items = append(mapped.Items, &model.PracticePlanItem{TaskID: item.TaskID, TaskVersionID: item.TaskVersionID, TopicID: item.TopicID, Title: item.Title, Difficulty: item.Difficulty, TaskType: item.TaskType, EstimatedMinutes: item.EstimatedMinutes, ReasonCode: item.ReasonCode})
+		}
+		result.Sessions = append(result.Sessions, mapped)
+	}
+	titles := map[string]string{}
+	for _, topic := range topics {
+		titles[topic.ID] = topic.Title
+	}
+	for _, insight := range plan.TopicInsights {
+		mapped := &model.PracticeTopicInsight{TopicID: insight.TopicID, Title: titles[insight.TopicID], IsTarget: insight.IsTarget, AcceptedTasks: insight.AcceptedTasks, FailedTasks: insight.FailedTasks, EligibleTasks: insight.EligibleTasks, PlannedTasks: insight.PlannedTasks, RemainingToReadiness: insight.RemainingToReadiness, RecommendedDifficulty: insight.RecommendedDifficulty, MinimumMinutes: insight.MinimumMinutes, NextAction: insight.NextAction, BlockedBy: []*model.PracticeTopicRef{}}
+		for _, id := range insight.BlockedBy {
+			mapped.BlockedBy = append(mapped.BlockedBy, &model.PracticeTopicRef{ID: id, Title: titles[id]})
+		}
+		result.TopicInsights = append(result.TopicInsights, mapped)
+	}
+	return result, nil
+}
+
+func practiceSessionCount(count *int) int {
+	if count == nil {
+		return 1
+	}
+	return *count
 }
 
 func practiceInvalid() error     { return &recommendations.Error{Code: "INVALID_ARGUMENT"} }
@@ -128,7 +170,7 @@ func (r *Resolver) practiceTopics(ctx context.Context, selected []string) ([]rec
 		}
 		sort.Strings(prerequisites)
 		graph[id] = prerequisites
-		topics = append(topics, recommendations.Topic{ID: id, PrerequisiteIDs: prerequisites})
+		topics = append(topics, recommendations.Topic{ID: id, Title: topic.Title, PrerequisiteIDs: prerequisites})
 	}
 	states := map[string]int{}
 	var visit func(string) bool

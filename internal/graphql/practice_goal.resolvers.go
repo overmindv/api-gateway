@@ -30,7 +30,7 @@ func (r *queryResolver) MyPracticeGoal(ctx context.Context) (*model.PracticeGoal
 	return r.practiceGoalModel(ctx, *goal)
 }
 
-func (r *mutationResolver) SavePracticeGoal(ctx context.Context, topicIds []string, minutes int) (*model.PracticeGoal, error) {
+func (r *mutationResolver) SavePracticeGoal(ctx context.Context, topicIds []string, minutes int, sessionCount *int) (*model.PracticeGoal, error) {
 	auth, err := middleware.RequireAuth(ctx)
 	if err != nil {
 		return nil, err
@@ -41,6 +41,9 @@ func (r *mutationResolver) SavePracticeGoal(ctx context.Context, topicIds []stri
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
+	if sessionCount != nil && (*sessionCount < 1 || *sessionCount > 8) {
+		return nil, practiceInvalid()
+	}
 	if len(topicIds) < 1 || len(topicIds) > 5 || minutes < 10 || minutes > 240 {
 		return nil, practiceInvalid()
 	}
@@ -58,7 +61,7 @@ func (r *mutationResolver) SavePracticeGoal(ctx context.Context, topicIds []stri
 	if _, err := r.practiceTopics(ctx, ids); err != nil {
 		return nil, err
 	}
-	goal, err := service.SaveGoal(ctx, recommendations.GoalInput{TopicIDs: ids, Minutes: minutes}, auth.UserID)
+	goal, err := service.SaveGoal(ctx, recommendations.GoalInput{TopicIDs: ids, Minutes: minutes, SessionCount: practiceSessionCount(sessionCount)}, auth.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,5 +99,5 @@ func (r *Resolver) practiceGoalModel(ctx context.Context, goal recommendations.G
 		}
 		topics = append(topics, &model.PracticeGoalTopic{ID: topic.ID, Title: topic.Title, Status: topic.Status})
 	}
-	return &model.PracticeGoal{Topics: topics, Minutes: goal.Minutes, Revision: int(goal.Revision)}, nil
+	return &model.PracticeGoal{Topics: topics, Minutes: goal.Minutes, SessionCount: max(1, goal.SessionCount), Revision: int(goal.Revision)}, nil
 }

@@ -92,7 +92,7 @@ func Load() (Config, error) {
 		HTTP: HTTP{
 			Address:         ":" + port,
 			ReadTimeout:     envDuration("HTTP_READ_TIMEOUT", 5*time.Second),
-			WriteTimeout:    envDuration("HTTP_WRITE_TIMEOUT", 15*time.Second),
+			WriteTimeout:    envDuration("HTTP_WRITE_TIMEOUT", 45*time.Second),
 			IdleTimeout:     envDuration("HTTP_IDLE_TIMEOUT", 60*time.Second),
 			ShutdownTimeout: envDuration("SHUTDOWN_TIMEOUT", 10*time.Second),
 			CORSOrigins:     envCSV("CORS_ORIGINS", []string{"http://localhost:5173"}),
@@ -129,7 +129,7 @@ func Load() (Config, error) {
 		Recommendations: Recommendations{
 			URL:     strings.TrimSpace(os.Getenv("RECOMMENDATIONS_URL")),
 			Token:   strings.TrimSpace(os.Getenv("RECOMMENDATIONS_SERVICE_TOKEN")),
-			Timeout: envDuration("RECOMMENDATIONS_TIMEOUT", 5*time.Second),
+			Timeout: envDuration("RECOMMENDATIONS_TIMEOUT", 30*time.Second),
 		},
 		JWT: JWT{
 			Secret:       env("JWT_SECRET", "local-development-secret-change-me"),

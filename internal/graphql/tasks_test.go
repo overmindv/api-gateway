@@ -488,6 +488,7 @@ func sampleUpstreamSubmission() tasks.Submission {
 		TaskID:              "task-id",
 		TaskVersionID:       "version-id",
 		TaskVersionNumber:   1,
+		TaskTitle:           "Saved task title",
 		SelectedOptionIDs:   []string{"option-id"},
 		CorrectOptionIDs:    []string{"option-id"},
 		Correct:             true,
