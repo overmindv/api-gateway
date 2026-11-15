@@ -137,6 +137,7 @@ type ITAdminTaskFilter struct {
 }
 
 type ITCodeSubmission struct {
+	RunMode           ITCodeRunMode            `json:"runMode"`
 	ID                string                   `json:"id"`
 	UserID            string                   `json:"userId"`
 	TaskID            string                   `json:"taskId"`
@@ -158,6 +159,7 @@ type ITCodeSubmission struct {
 }
 
 type ITCodeSubmissionInput struct {
+	RunMode        ITCodeRunMode         `json:"runMode"`
 	TaskVersionID  string                `json:"taskVersionId"`
 	IdempotencyKey string                `json:"idempotencyKey"`
 	Language       ITProgrammingLanguage `json:"language"`
@@ -997,6 +999,61 @@ func (e *FeedKind) UnmarshalJSON(b []byte) error {
 }
 
 func (e FeedKind) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type ITCodeRunMode string
+
+const (
+	ITCodeRunModeSamples ITCodeRunMode = "samples"
+	ITCodeRunModeGraded  ITCodeRunMode = "graded"
+)
+
+var AllITCodeRunMode = []ITCodeRunMode{
+	ITCodeRunModeSamples,
+	ITCodeRunModeGraded,
+}
+
+func (e ITCodeRunMode) IsValid() bool {
+	switch e {
+	case ITCodeRunModeSamples, ITCodeRunModeGraded:
+		return true
+	}
+	return false
+}
+
+func (e ITCodeRunMode) String() string {
+	return string(e)
+}
+
+func (e *ITCodeRunMode) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ITCodeRunMode(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ITCodeRunMode", str)
+	}
+	return nil
+}
+
+func (e ITCodeRunMode) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *ITCodeRunMode) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e ITCodeRunMode) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

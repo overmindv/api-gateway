@@ -174,6 +174,7 @@ type SubmissionList struct {
 }
 
 type CodeSubmissionInput struct {
+	RunMode        string
 	TaskVersionID  string
 	IdempotencyKey string
 	Language       string
@@ -206,6 +207,7 @@ type ExecutionFailure struct {
 }
 
 type CodeSubmission struct {
+	RunMode           string                `json:"run_mode"`
 	ID                string                `json:"id"`
 	UserID            string                `json:"user_id"`
 	TaskID            string                `json:"task_id"`

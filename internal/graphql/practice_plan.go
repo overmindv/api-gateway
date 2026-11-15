@@ -307,7 +307,7 @@ func (r *queryResolver) practiceEvidence(ctx context.Context, actor tasks.Actor)
 		}
 		if offset < practiceHistoryLimit {
 			for _, item := range list.Items {
-				if item.UserID != actor.UserID || item.Status != "completed" || item.Verdict == nil {
+				if item.RunMode != "graded" || item.UserID != actor.UserID || item.Status != "completed" || item.Verdict == nil {
 					continue
 				}
 				switch *item.Verdict {

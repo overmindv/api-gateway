@@ -248,10 +248,18 @@ func hxActor(actor Actor) httpx.Actor {
 // codeSubmissionBody формирует ограниченное multipart-тело для tasks.
 // Решение передаётся ровно одним способом: кодом из консоли (source_code) либо файлом.
 func codeSubmissionBody(input CodeSubmissionInput) (io.Reader, string, error) {
+	if input.RunMode == "" {
+		input.RunMode = "samples"
+	}
+	if input.RunMode != "samples" && input.RunMode != "graded" {
+		return nil, "", &Error{Code: "VALIDATION_ERROR", Message: "invalid run mode", StatusCode: http.StatusBadRequest}
+	}
+
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	fields := map[string]string{
 		"task_version_id": input.TaskVersionID,
+		"run_mode":        input.RunMode,
 		"idempotency_key": input.IdempotencyKey,
 		"language":        input.Language,
 	}

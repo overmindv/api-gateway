@@ -211,15 +211,18 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 			if f.historyCount > 0 {
 				for i := offset; i < offset+limit && i < f.historyCount; i++ {
 					verdict := "accepted"
-					items = append(items, tasks.CodeSubmission{UserID: practiceUser, TaskID: fmt.Sprintf("code-%d", i), TaskVersionID: "version", Status: "completed", Verdict: &verdict, CreatedAt: "2026-11-08T12:00:00Z"})
+					items = append(items, tasks.CodeSubmission{RunMode: "graded", UserID: practiceUser, TaskID: fmt.Sprintf("code-%d", i), TaskVersionID: "version", Status: "completed", Verdict: &verdict, CreatedAt: "2026-11-08T12:00:00Z"})
 				}
 			} else if offset == 0 {
 				for i, verdict := range []string{"accepted", "wrong_answer", "infrastructure_error", "checker_error", "cancelled"} {
 					v := verdict
-					items = append(items, tasks.CodeSubmission{UserID: practiceUser, TaskID: fmt.Sprintf("code-%d", i), TaskVersionID: "version", Status: "completed", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z", SourceFileName: "secret-source", Execution: &tasks.ExecutionPhaseResult{Stdout: "secret-output"}})
+					items = append(items, tasks.CodeSubmission{RunMode: "graded", UserID: practiceUser, TaskID: fmt.Sprintf("code-%d", i), TaskVersionID: "version", Status: "completed", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z", SourceFileName: "secret-source", Execution: &tasks.ExecutionPhaseResult{Stdout: "secret-output"}})
 				}
 				v := "accepted"
-				items = append(items, tasks.CodeSubmission{UserID: practiceUser, TaskID: "queued", TaskVersionID: "version", Status: "queued", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z"})
+				for _, mode := range []string{"samples", ""} {
+					items = append(items, tasks.CodeSubmission{RunMode: mode, UserID: practiceUser, TaskID: "sample-must-not-be-evidence", TaskVersionID: "version", Status: "completed", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z"})
+				}
+				items = append(items, tasks.CodeSubmission{RunMode: "graded", UserID: practiceUser, TaskID: "queued", TaskVersionID: "version", Status: "queued", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z"})
 			}
 			write(tasks.CodeSubmissionList{Items: items, Limit: limit, Offset: offset})
 		default:

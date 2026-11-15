@@ -102,6 +102,7 @@ type ComplexityRoot struct {
 		Failure           func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Language          func(childComplexity int) int
+		RunMode           func(childComplexity int) int
 		SourceFileName    func(childComplexity int) int
 		Status            func(childComplexity int) int
 		TaskID            func(childComplexity int) int
@@ -1064,6 +1065,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ITCodeSubmission.Language(childComplexity), true
+	case "ITCodeSubmission.runMode":
+		if e.complexity.ITCodeSubmission.RunMode == nil {
+			break
+		}
+
+		return e.complexity.ITCodeSubmission.RunMode(childComplexity), true
 	case "ITCodeSubmission.sourceFileName":
 		if e.complexity.ITCodeSubmission.SourceFileName == nil {
 			break
@@ -4493,6 +4500,7 @@ enum ITTaskType { single_choice multiple_choice programming }
 enum ITTaskDifficulty { easy medium hard }
 enum ITSubmissionVerdict { accepted wrong_answer }
 enum ITProgrammingLanguage { python go }
+enum ITCodeRunMode { samples graded }
 enum ITCodeSubmissionStatus { queued completed }
 enum ITExecutionVerdict { accepted wrong_answer compilation_error runtime_error time_limit_exceeded memory_limit_exceeded output_limit_exceeded checker_error infrastructure_error cancelled }
 
@@ -4528,6 +4536,7 @@ type ITExecutionFailure {
 }
 
 type ITCodeSubmission {
+  runMode: ITCodeRunMode!
   id: ID!
   userId: ID!
   taskId: ID!
@@ -4562,6 +4571,7 @@ input ITTaskInput { topicId: ID, title: String!, statement: String!, taskType: I
 input ITSubmissionInput { taskVersionId: ID!, idempotencyKey: ID!, selectedOptionIds: [ID!]! }
 
 input ITCodeSubmissionInput {
+  runMode: ITCodeRunMode! = samples
   taskVersionId: ID!
   idempotencyKey: ID!
   language: ITProgrammingLanguage!
@@ -7070,6 +7080,35 @@ func (ec *executionContext) fieldContext_FeedItem_occurredAt(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _ITCodeSubmission_runMode(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ITCodeSubmission_runMode,
+		func(ctx context.Context) (any, error) {
+			return obj.RunMode, nil
+		},
+		nil,
+		ec.marshalNITCodeRunMode2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeRunMode,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ITCodeSubmission_runMode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ITCodeSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ITCodeRunMode does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ITCodeSubmission_id(ctx context.Context, field graphql.CollectedField, obj *model.ITCodeSubmission) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7660,6 +7699,8 @@ func (ec *executionContext) fieldContext_ITCodeSubmissionList_items(_ context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "runMode":
+				return ec.fieldContext_ITCodeSubmission_runMode(ctx, field)
 			case "id":
 				return ec.fieldContext_ITCodeSubmission_id(ctx, field)
 			case "userId":
@@ -13490,6 +13531,8 @@ func (ec *executionContext) fieldContext_Mutation_submitITTaskCode(ctx context.C
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "runMode":
+				return ec.fieldContext_ITCodeSubmission_runMode(ctx, field)
 			case "id":
 				return ec.fieldContext_ITCodeSubmission_id(ctx, field)
 			case "userId":
@@ -19050,6 +19093,8 @@ func (ec *executionContext) fieldContext_Query_itCodeSubmission(ctx context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "runMode":
+				return ec.fieldContext_ITCodeSubmission_runMode(ctx, field)
 			case "id":
 				return ec.fieldContext_ITCodeSubmission_id(ctx, field)
 			case "userId":
@@ -25986,13 +26031,24 @@ func (ec *executionContext) unmarshalInputITCodeSubmissionInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"taskVersionId", "idempotencyKey", "language", "file", "sourceCode"}
+	if _, present := asMap["runMode"]; !present {
+		asMap["runMode"] = "samples"
+	}
+
+	fieldsInOrder := [...]string{"runMode", "taskVersionId", "idempotencyKey", "language", "file", "sourceCode"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "runMode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runMode"))
+			data, err := ec.unmarshalNITCodeRunMode2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeRunMode(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RunMode = data
 		case "taskVersionId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("taskVersionId"))
 			data, err := ec.unmarshalNID2string(ctx, v)
@@ -27467,6 +27523,11 @@ func (ec *executionContext) _ITCodeSubmission(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ITCodeSubmission")
+		case "runMode":
+			out.Values[i] = ec._ITCodeSubmission_runMode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "id":
 			out.Values[i] = ec._ITCodeSubmission_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -33112,6 +33173,16 @@ func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNITCodeRunMode2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeRunMode(ctx context.Context, v any) (model.ITCodeRunMode, error) {
+	var res model.ITCodeRunMode
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNITCodeRunMode2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeRunMode(ctx context.Context, sel ast.SelectionSet, v model.ITCodeRunMode) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNITCodeSubmission2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐITCodeSubmission(ctx context.Context, sel ast.SelectionSet, v model.ITCodeSubmission) graphql.Marshaler {

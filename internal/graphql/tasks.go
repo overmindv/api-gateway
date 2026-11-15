@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/overmindv/api-gateway/internal/client/tasks"
@@ -135,7 +136,12 @@ func submissionInput(input model.ITSubmissionInput) tasks.SubmissionInput {
 
 // codeSubmissionInput преобразует GraphQL upload либо код из консоли в multipart-клиент tasks.
 func codeSubmissionInput(input model.ITCodeSubmissionInput) tasks.CodeSubmissionInput {
+	mode := input.RunMode.String()
+	if mode == "" {
+		mode = "samples"
+	}
 	dto := tasks.CodeSubmissionInput{
+		RunMode:        mode,
 		TaskVersionID:  input.TaskVersionID,
 		IdempotencyKey: input.IdempotencyKey,
 		Language:       input.Language.String(),
@@ -269,8 +275,21 @@ func submissionListModel(list tasks.SubmissionList) *model.ITSubmissionList {
 
 // codeSubmissionModel преобразует асинхронный результат sandbox в GraphQL-модель.
 func codeSubmissionModel(item tasks.CodeSubmission) *model.ITCodeSubmission {
+	mode := model.ITCodeRunMode(item.RunMode)
+	if mode == "" {
+		mode = model.ITCodeRunModeSamples
+	}
+	// Неизвестный режим закрываем консервативно, без case payload.
+	allowSamples := mode == model.ITCodeRunModeSamples
+	if !mode.IsValid() {
+		mode = model.ITCodeRunModeGraded
+	}
+
 	tests := make([]*model.ITExecutionTestResult, 0, len(item.Tests))
 	for _, test := range item.Tests {
+		if !allowSamples || !publicSampleID(test.TestID) {
+			continue
+		}
 		tests = append(tests, &model.ITExecutionTestResult{
 			TestID:      test.TestID,
 			Verdict:     model.ITExecutionVerdict(test.Verdict),
@@ -288,6 +307,7 @@ func codeSubmissionModel(item tasks.CodeSubmission) *model.ITCodeSubmission {
 	}
 
 	return &model.ITCodeSubmission{
+		RunMode:           mode,
 		ID:                item.ID,
 		UserID:            item.UserID,
 		TaskID:            item.TaskID,
@@ -317,8 +337,8 @@ func executionPhaseModel(item *tasks.ExecutionPhaseResult) *model.ITExecutionPha
 
 	return &model.ITExecutionPhaseResult{
 		ExitCode:    item.ExitCode,
-		Stdout:      item.Stdout,
-		Stderr:      item.Stderr,
+		Stdout:      "",
+		Stderr:      "",
 		DurationMs:  int(item.DurationMS),
 		MemoryBytes: int(item.MemoryBytes),
 	}
@@ -330,10 +350,13 @@ func executionFailureModel(item *tasks.ExecutionFailure) *model.ITExecutionFailu
 		return nil
 	}
 
-	return &model.ITExecutionFailure{
-		Code:    item.Code,
-		Message: item.Message,
+	code := item.Code
+	switch code {
+	case "INFRASTRUCTURE_ERROR", "CHECKER_ERROR", "COMPILATION_ERROR", "RUNTIME_ERROR", "TIME_LIMIT_EXCEEDED", "MEMORY_LIMIT_EXCEEDED", "OUTPUT_LIMIT_EXCEEDED", "WRONG_ANSWER", "CANCELLED":
+	default:
+		code = "INFRASTRUCTURE_ERROR"
 	}
+	return &model.ITExecutionFailure{Code: code, Message: "execution could not be completed successfully"}
 }
 
 // codeSubmissionListModel преобразует историю программных решений.
@@ -348,4 +371,13 @@ func codeSubmissionListModel(list tasks.CodeSubmissionList) *model.ITCodeSubmiss
 		Limit:  list.Limit,
 		Offset: list.Offset,
 	}
+}
+
+// Samples владеет только каноническими открытыми примерами tasks.
+func publicSampleID(id string) bool {
+	if !strings.HasPrefix(id, "open-") {
+		return false
+	}
+	n, err := strconv.Atoi(strings.TrimPrefix(id, "open-"))
+	return err == nil && n >= 1 && n <= 20 && id == "open-"+strconv.Itoa(n)
 }
