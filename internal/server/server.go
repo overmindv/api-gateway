@@ -49,8 +49,10 @@ func NewWithRecommendations(cfg config.HTTP, users users.UserService, catalog en
 	mux := http.NewServeMux()
 	metrics := &graphqldelivery.Metrics{}
 
-	mux.Handle("POST /graphql", graphqldelivery.HandlerWithRecommendationsAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, feedSvc, recommendationsSvc, requestLog, metrics))
-	mux.Handle("GET /playground", graphqldelivery.Playground())
+	mux.Handle("POST /graphql", graphqldelivery.HandlerWithRecommendationsAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, feedSvc, recommendationsSvc, requestLog, metrics, graphqldelivery.HandlerOptions{Public: cfg.Production}))
+	if !cfg.Production {
+		mux.Handle("GET /playground", graphqldelivery.Playground())
+	}
 	mux.HandleFunc("GET /metrics", metrics.Handler)
 
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -95,6 +97,7 @@ func NewWithRecommendations(cfg config.HTTP, users users.UserService, catalog en
 	handler = middleware.SessionCookie(middleware.SessionConfig{Secure: sessionSecure}, handler)
 	handler = middleware.JWT(authenticator, handler)
 	handler = middleware.CORS(cfg.CORSOrigins, handler)
+	handler = middleware.BrowserSecurity(middleware.BrowserSecurityConfig{AllowedOrigins: cfg.CORSOrigins, Production: cfg.Production, TrustedProxies: cfg.TrustedProxies}, handler)
 	handler = middleware.Logging(requestLog, handler, "/health", "/healthz", "/metrics")
 	handler = middleware.RequestIDMiddleware(handler)
 

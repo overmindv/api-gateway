@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"
@@ -23,6 +24,8 @@ type Config struct {
 }
 
 type HTTP struct {
+	Production      bool
+	TrustedProxies  []netip.Prefix
 	Address         string
 	ReadTimeout     time.Duration
 	WriteTimeout    time.Duration
@@ -143,6 +146,9 @@ func Load() (Config, error) {
 		},
 	}
 
+	if err := configureBrowserSecurity(&cfg); err != nil {
+		return Config{}, err
+	}
 	cfg.Users.LoginContextSecret = cfg.JWT.Secret
 
 	if _, err := strconv.ParseUint(port, 10, 16); err != nil {

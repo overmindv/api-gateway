@@ -24,6 +24,9 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
+// HandlerOptions отделяет публичный контур от локальных инструментов.
+type HandlerOptions struct{ Public bool }
+
 const graphqlMultipartLimit = 512 << 10
 
 // Handler создаёт GraphQL handler со всеми внутренними сервисами.
@@ -52,7 +55,7 @@ func HandlerWithFeedAndMetrics(users users.UserService, catalog entities.Catalog
 }
 
 // HandlerWithRecommendationsAndMetrics подключает необязательный preview практики.
-func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, recommendationsSvc recommendations.Service, log *slog.Logger, metrics *Metrics) http.Handler {
+func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, recommendationsSvc recommendations.Service, log *slog.Logger, metrics *Metrics, options ...HandlerOptions) http.Handler {
 	var candidates tasks.CandidateService
 	if service, ok := tasksSvc.(tasks.CandidateService); ok {
 		candidates = service
@@ -80,7 +83,9 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 		MaxMemory:     graphqlMultipartLimit,
 	})
 	server.SetQueryCache(lru.New[*ast.QueryDocument](1000))
-	server.Use(extension.Introspection{})
+	if len(options) == 0 || !options[0].Public {
+		server.Use(extension.Introspection{})
+	}
 	server.Use(extension.AutomaticPersistedQuery{
 		Cache: lru.New[string](100),
 	})

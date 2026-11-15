@@ -93,3 +93,22 @@ proxy квота IP относится к самому proxy; доверие XFF
 с явной моделью доверенных адресов. Users принимает подпись не старше 60 секунд;
 часы сервисов должны быть синхронизированы. Старые users игнорируют заголовки,
 новые users со старым gateway продолжают применять email и peer-IP лимиты.
+
+### Браузерная граница и production
+
+`APP_ENV` принимает `development` (по умолчанию), `test`, `production`.
+В development/test автоматически разрешены HTTP origins localhost, 127.0.0.1 и
+[::1] на порту gateway для локального Playground. В production обязательны `SESSION_COOKIE_SECURE=true` и точные HTTPS origins
+в `CORS_ORIGINS` (без wildcard, пути, query и credentials). `/playground` и schema
+introspection отключены; `__typename` для обычных GraphQL-клиентов сохраняется.
+
+Все `/graphql` запросы с Origin проверяются до разбора JSON/multipart. Cookie без
+Origin запрещена, включая logout. Non-browser клиенты без cookie могут использовать
+Bearer и не передавать Origin. Ответы отказа: `ORIGIN_NOT_ALLOWED` / `HTTPS_REQUIRED`.
+CORS не заменяет проверку авторизации; same-site cookie также не заменяет Origin.
+
+Production требует HTTPS: TLS непосредственно либо `X-Forwarded-Proto: https`
+от peer из явно заданного `TRUSTED_PROXY_CIDRS` (CSV, например `10.0.0.0/24`).
+Proxy должен перезаписывать этот заголовок и быть единственной внешней точкой входа;
+не указывайте общую пользовательскую сеть. Без настроенного proxy HTTP отклоняется.
+Health probes остаются доступны внутри сети. Эти настройки не разворачивают TLS/proxy.
