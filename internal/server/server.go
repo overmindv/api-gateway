@@ -91,7 +91,7 @@ func NewWithRecommendations(cfg config.HTTP, users users.UserService, catalog en
 	mux.HandleFunc("GET /health", healthHandler)
 	mux.HandleFunc("GET /healthz", healthHandler)
 
-	var handler http.Handler = mux
+	handler := middleware.ClientIPMiddleware(mux)
 	handler = middleware.SessionCookie(middleware.SessionConfig{Secure: sessionSecure}, handler)
 	handler = middleware.JWT(authenticator, handler)
 	handler = middleware.CORS(cfg.CORSOrigins, handler)

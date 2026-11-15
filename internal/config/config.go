@@ -33,9 +33,10 @@ type HTTP struct {
 }
 
 type Users struct {
-	GraphQLURL string
-	HealthURL  string
-	Timeout    time.Duration
+	LoginContextSecret string
+	GraphQLURL         string
+	HealthURL          string
+	Timeout            time.Duration
 }
 type Entities struct {
 	URL     string
@@ -141,6 +142,8 @@ func Load() (Config, error) {
 			Secure: envBool("SESSION_COOKIE_SECURE", true),
 		},
 	}
+
+	cfg.Users.LoginContextSecret = cfg.JWT.Secret
 
 	if _, err := strconv.ParseUint(port, 10, 16); err != nil {
 		return Config{}, fmt.Errorf("PORT must be a valid TCP port: %w", err)

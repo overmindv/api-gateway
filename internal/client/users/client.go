@@ -19,20 +19,22 @@ const userFields = `id email username firstName lastName birthDate phone avatarF
 const publicUserFields = `id username firstName lastName avatarFileId isAdmin createdAt`
 
 type Client struct {
-	url       string
-	healthURL string
-	timeout   time.Duration
-	http      *http.Client
-	log       *slog.Logger
+	loginContextSecret string
+	url                string
+	healthURL          string
+	timeout            time.Duration
+	http               *http.Client
+	log                *slog.Logger
 }
 
 func New(cfg config.Users, log *slog.Logger) *Client {
 	return &Client{
-		url:       cfg.GraphQLURL,
-		healthURL: cfg.HealthURL,
-		timeout:   cfg.Timeout,
-		http:      &http.Client{},
-		log:       log,
+		loginContextSecret: cfg.LoginContextSecret,
+		url:                cfg.GraphQLURL,
+		healthURL:          cfg.HealthURL,
+		timeout:            cfg.Timeout,
+		http:               &http.Client{},
+		log:                log,
 	}
 }
 
@@ -298,6 +300,9 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	}
 
 	request.Header.Set("Content-Type", "application/json")
+	if operation == "Login" {
+		c.signClientIP(request)
+	}
 	if requestID := middleware.RequestID(ctx); requestID != "" {
 		request.Header.Set(middleware.RequestIDHeader, requestID)
 	}
