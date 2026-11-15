@@ -25,7 +25,10 @@ import (
 )
 
 // HandlerOptions отделяет публичный контур от локальных инструментов.
-type HandlerOptions struct{ Public bool }
+type HandlerOptions struct {
+	Public         bool
+	RequestTimeout time.Duration
+}
 
 const graphqlMultipartLimit = 512 << 10
 
@@ -60,7 +63,7 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 	if service, ok := tasksSvc.(tasks.CandidateService); ok {
 		candidates = service
 	}
-	server := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{
+	server := handler.New(costSchema{generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{
 		Users:           users,
 		Catalog:         catalog,
 		Tasks:           tasksSvc,
@@ -71,17 +74,16 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 		Recommendations: recommendationsSvc,
 		Log:             log,
 		Metrics:         metrics,
-	}}))
-	server.AddTransport(transport.Websocket{
-		KeepAlivePingInterval: 10 * time.Second,
-	})
+	}})})
 	server.AddTransport(transport.Options{})
-	server.AddTransport(transport.GET{})
 	server.AddTransport(transport.POST{})
 	server.AddTransport(transport.MultipartForm{
 		MaxUploadSize: graphqlMultipartLimit,
 		MaxMemory:     graphqlMultipartLimit,
 	})
+	server.SetParserTokenLimit(10000)
+	server.Use(operationLimits{})
+	server.Use(extension.FixedComplexityLimit(queryComplexityLimit))
 	server.SetQueryCache(lru.New[*ast.QueryDocument](1000))
 	if len(options) == 0 || !options[0].Public {
 		server.Use(extension.Introspection{})
@@ -97,10 +99,11 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 		return gqlgen.DefaultRecover(ctx, recovered)
 	})
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", "no-store")
-		server.ServeHTTP(w, r)
-	})
+	timeout := 30 * time.Second
+	if len(options) > 0 && options[0].RequestTimeout > 0 {
+		timeout = options[0].RequestTimeout
+	}
+	return boundedRequest(server, timeout)
 }
 
 func Playground() http.Handler {

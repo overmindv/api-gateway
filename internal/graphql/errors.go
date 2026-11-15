@@ -22,6 +22,10 @@ func ErrorPresenter(log *slog.Logger) gqlgen.ErrorPresenterFunc {
 		presented := gqlgen.DefaultErrorPresenter(ctx, err)
 		code, message := errorCodeAndMessage(err)
 		if code == "GRAPHQL_ERROR" {
+			if original, ok := presented.Extensions["code"].(string); ok && (original == "COMPLEXITY_LIMIT_EXCEEDED" || original == "OPERATION_LIMIT_EXCEEDED") {
+				presented.Message = message
+				return presented
+			}
 			presented.Message = message
 			if presented.Extensions == nil {
 				presented.Extensions = map[string]any{}
@@ -47,6 +51,9 @@ func ErrorPresenter(log *slog.Logger) gqlgen.ErrorPresenterFunc {
 }
 
 func errorCodeAndMessage(err error) (string, string) {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "DEADLINE_EXCEEDED", "Не удалось выполнить действие."
+	}
 	if errors.Is(err, apperror.ErrUnauthenticated) {
 		return "UNAUTHENTICATED", "Не удалось выполнить действие."
 	}

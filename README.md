@@ -112,3 +112,18 @@ Production требует HTTPS: TLS непосредственно либо `X-
 Proxy должен перезаписывать этот заголовок и быть единственной внешней точкой входа;
 не указывайте общую пользовательскую сеть. Без настроенного proxy HTTP отклоняется.
 Health probes остаются доступны внутри сети. Эти настройки не разворачивают TLS/proxy.
+
+### Бюджет GraphQL
+
+Перед fan-out применяются gqlgen complexity <= 25000 с весом запрошенной
+pagination и списков, глубина <= 16, не более 1000 раскрытых AST-элементов,
+100 aliases и 20 корневых полей. Fragment spreads учитываются при каждом
+раскрытии. Parser ограничен 10000 tokens. Неиспользуемые ветви с directives
+также расходуют бюджет. Обычная страница истории из 100 решений поддерживается.
+
+JSON body ограничен 1 MiB, multipart — 512 KiB, включая chunked; JSON batch
+запрещён. Context deadline запроса — 30 секунд, HTTP read timeout ограничивает
+чтение тела; внутренние HTTP-клиенты получают отмену. Публичный endpoint только
+POST, подписок/WebSocket нет. Ошибки не содержат текста исходника или запроса:
+`COMPLEXITY_LIMIT_EXCEEDED`, `OPERATION_LIMIT_EXCEEDED`, `REQUEST_TOO_LARGE`,
+`BATCH_NOT_ALLOWED`, `DEADLINE_EXCEEDED`.
