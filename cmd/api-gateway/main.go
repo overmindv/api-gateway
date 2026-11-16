@@ -48,6 +48,7 @@ func main() {
 		recommendationsService = recommendations.New(cfg.Recommendations.URL, cfg.Recommendations.Token, cfg.Recommendations.Timeout, requestLog)
 	}
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
+	authenticator.SetSessionVerifier(usersService)
 	httpServer := server.NewWithRecommendations(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, mediaService, feedService, recommendationsService, usersService, authenticator, cfg.Session.Secure, log, requestLog)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

@@ -6,10 +6,12 @@ type requestIDKey struct{}
 type authKey struct{}
 
 type AuthInfo struct {
-	UserID string
-	Token  string
-	Roles  []string
-	Err    error
+	authority *JWTAuthenticator
+	sessionID string
+	UserID    string
+	Token     string
+	Roles     []string
+	Err       error
 }
 
 func WithRequestID(ctx context.Context, requestID string) context.Context {

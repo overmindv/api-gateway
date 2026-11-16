@@ -91,6 +91,12 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 	server.Use(extension.AutomaticPersistedQuery{
 		Cache: lru.New[string](100),
 	})
+	server.AroundFields(func(ctx context.Context, next gqlgen.Resolver) (any, error) {
+		if gqlgen.GetOperationContext(ctx).Operation.Operation == ast.Mutation && gqlgen.GetFieldContext(ctx).Object == "Mutation" {
+			ctx = middleware.RefreshAuth(ctx)
+		}
+		return next(ctx)
+	})
 	server.AroundOperations(limitPracticePlanOperation)
 	server.SetErrorPresenter(ErrorPresenter(log))
 	server.SetRecoverFunc(func(ctx context.Context, recovered any) error {

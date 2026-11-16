@@ -127,3 +127,11 @@ JSON body ограничен 1 MiB, multipart — 512 KiB, включая chunke
 POST, подписок/WebSocket нет. Ошибки не содержат текста исходника или запроса:
 `COMPLEXITY_LIMIT_EXCEEDED`, `OPERATION_LIMIT_EXCEEDED`, `REQUEST_TOO_LARGE`,
 `BATCH_NOT_ALLOWED`, `DEADLINE_EXCEEDED`.
+
+## Проверка сессий (OVM-101)
+
+Gateway проверяет сессию через внутренние POST `/internal/session/check` и
+`/internal/session/revoke` Users (OVM-265). Успешный check кешируется максимум
+5 секунд/1024 записи; каждое корневое поле mutation и admin guard проверяются
+без кеша. Недоступность Users запрещает защищённую операцию. Актуальные роли
+Users заменяют claims и ADMIN_USER_IDS. Logout отзывает сессию и очищает cookie.

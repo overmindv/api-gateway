@@ -51,6 +51,9 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 // Logout is the resolver for the logout field.
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 	middleware.ClearSessionToken(ctx)
+	if err := middleware.RevokeAuth(ctx); err != nil {
+		return false, err
+	}
 
 	return true, nil
 }

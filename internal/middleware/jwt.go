@@ -13,6 +13,8 @@ import (
 
 type JWTAuthenticator struct {
 	secret       []byte
+	verifier     SessionVerifier
+	cache        *sessionCache
 	issuer       string
 	adminUserIDs map[string]struct{}
 	now          func() time.Time
@@ -66,14 +68,15 @@ func (a *JWTAuthenticator) Parse(header string) (AuthInfo, error) {
 	}
 
 	return AuthInfo{
-		UserID: parsedClaims.Subject,
-		Token:  parts[1],
-		Roles:  roles,
+		UserID:    parsedClaims.Subject,
+		sessionID: parsedClaims.ID,
+		Token:     parts[1],
+		Roles:     roles,
 	}, nil
 }
 
 func RequireAdmin(ctx context.Context) (AuthInfo, error) {
-	info, err := RequireAuth(ctx)
+	info, err := RequireAuth(RefreshAuth(ctx))
 	if err != nil {
 		return AuthInfo{}, err
 	}
@@ -100,7 +103,7 @@ func JWT(authenticator *JWTAuthenticator, next http.Handler) http.Handler {
 			return
 		}
 
-		info, err := authenticator.Parse(header)
+		info, err := authenticator.ParseContext(r.Context(), header)
 		if err != nil {
 			info.Err = err
 		}
