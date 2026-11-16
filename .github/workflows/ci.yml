@@ -63,3 +63,35 @@ jobs:
   #   with:
   #     target_repo: api-gateway
 
+
+  schema:
+    name: GraphQL contract
+    needs: [lint, test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: make schema-test generate-check
+      - name: Compare with base schema
+        env:
+          BASE_COMMIT: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          test -n "$BASE_COMMIT"
+          git show "$BASE_COMMIT:api/graphql/schema.graphqls" > "$RUNNER_TEMP/base.graphqls"
+          make schema-check BASE_SCHEMA="$RUNNER_TEMP/base.graphqls"
+      - run: make schema-artifact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: graphql-schema-${{ github.sha }}
+          path: dist/graphql-schema/
+          if-no-files-found: error
+          retention-days: 90

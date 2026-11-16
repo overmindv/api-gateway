@@ -41,3 +41,20 @@ $(GQLGEN):
 
 $(GOLANGCI_LINT):
 	GOBIN="$(LOCAL_BIN)" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4
+
+.PHONY: generate-check schema-test schema-artifact schema-check
+# Включает ручные resolver interfaces: drift нельзя скрыть за узким pathspec.
+generate-check: generate
+	git diff --exit-code -- internal/graphql go.mod go.sum
+	@test -z "$$(git status --porcelain -- internal/graphql go.mod go.sum)" || (echo 'generated files drifted'; exit 1)
+
+schema-test:
+	npm test
+
+schema-artifact:
+	node scripts/schema-artifact.mjs export dist/graphql-schema
+
+# BASE_SCHEMA — SDL предыдущего согласованного commit.
+schema-check:
+	@test -n "$(BASE_SCHEMA)" || (echo 'BASE_SCHEMA is required'; exit 1)
+	node scripts/schema-diff.mjs "$(BASE_SCHEMA)" api/graphql/schema.graphqls

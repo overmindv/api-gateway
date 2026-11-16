@@ -6,3 +6,5 @@
 .code-review-graph/
 .codegraph/
 .claude/
+node_modules/
+dist/

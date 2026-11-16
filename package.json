@@ -1,0 +1,7 @@
+{
+  "name": "overmindv-gateway-contract-checks",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test scripts/*.test.mjs" },
+  "devDependencies": { "graphql": "16.11.0" }
+}
