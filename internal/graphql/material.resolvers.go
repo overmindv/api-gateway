@@ -56,6 +56,27 @@ func (r *queryResolver) MaterialRevisions(ctx context.Context, id string, limit 
 	return materialHistoryModel(page), nil
 }
 
+func (r *queryResolver) PublishedMaterial(ctx context.Context, id string) (*model.Material, error) {
+	client, actor, err := r.materialService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err = materialID(id)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.GetPublished(ctx, actor, &pb.GetContentItemRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+	item := result.GetItem()
+	if item.GetStatus() != "published" || item.GetPublishedRevisionId() == "" ||
+		item.GetCurrentRevision().GetId() != item.GetPublishedRevisionId() {
+		return nil, &contentclient.Error{Code: "NOT_FOUND"}
+	}
+	return materialModel(item), nil
+}
+
 func (r *mutationResolver) CreateMaterialDraft(ctx context.Context, input model.CreateMaterialDraftInput) (*model.Material, error) {
 	client, actor, err := r.materialService(ctx)
 	if err != nil {

@@ -64,6 +64,17 @@ func (materialRPCFixture) GetContentItem(ctx context.Context, req *pb.GetContent
 	return &pb.GetContentItemResponse{Item: materialFixture("published", published)}, nil
 }
 
+func (materialRPCFixture) GetPublishedContentItem(_ context.Context, req *pb.GetContentItemRequest) (*pb.GetContentItemResponse, error) {
+	if req.Id == materialMissingID {
+		return nil, status.Error(codes.NotFound, "private upstream details")
+	}
+	revision := materialRevisionFixture(materialPublishedID, "Public text")
+	if req.Id == materialSlowID {
+		revision.Id = materialDraftID
+	}
+	return &pb.GetContentItemResponse{Item: materialFixture("published", revision)}, nil
+}
+
 func (materialRPCFixture) ListContentRevisionHistory(ctx context.Context, req *pb.ListContentRevisionHistoryRequest) (*pb.ListContentRevisionHistoryResponse, error) {
 	if materialRPCActor(ctx) != materialOwner {
 		return nil, status.Error(codes.NotFound, "private upstream details")
@@ -208,6 +219,8 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 	run("", get, `"code":"UNAUTHENTICATED"`)
 	run(materialReader, get, "Public text")
 	run(materialOwner, get, "Private draft")
+	run(materialOwner, fmt.Sprintf(`{ publishedMaterial(id:%q) { revision { source } } }`, materialFixtureID), "Public text")
+	run(materialOwner, fmt.Sprintf(`{ publishedMaterial(id:%q) { revision { source } } }`, materialSlowID), `"code":"NOT_FOUND"`)
 	run(materialReader, fmt.Sprintf(`{ material(id:%q) { id } __typename }`, materialMissingID),
 		`"code":"NOT_FOUND"`, `"material":null`, `"__typename":"Query"`)
 	run(materialReader, `{ materials(limit:2) { items { id } nextCursor } }`, `"nextCursor":"next-page"`)
