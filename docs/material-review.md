@@ -31,6 +31,11 @@
 материал и вызвать `rebaseMaterialChange` с новым `baseRevisionId`. После
 этого правка проходит ревью заново.
 
+`hasUnresolvedDiscussions` в `materialReviewStatus` относится ко всему
+предложению. `null` означает, что Content не передал признак. Ошибка
+`UNRESOLVED_DISCUSSIONS` при слиянии означает, что обсуждение еще открыто.
+Перед обновлением Gateway обнови Content и примени миграцию индекса.
+
 ## Откат и модерация
 
 `restoreMaterialRevision` восстанавливает прежнее содержание новой

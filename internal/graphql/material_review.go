@@ -178,7 +178,7 @@ func materialReviewStatusModel(result *pb.GetReviewRevisionStatusResponse) *mode
 	return &model.MaterialReviewStatus{
 		RevisionID: result.RevisionId, Current: result.Current, Decisions: decisions, Assignments: assignments,
 		Outcome: model.MaterialReviewOutcome(result.Outcome), WaitReason: materialOptional(result.WaitReason),
-		TopicID: materialOptional(result.TopicId),
+		TopicID: materialOptional(result.TopicId), HasUnresolvedDiscussions: result.HasUnresolvedDiscussions,
 	}
 }
 

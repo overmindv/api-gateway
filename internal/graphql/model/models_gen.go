@@ -514,13 +514,14 @@ type MaterialReviewReplyPage struct {
 }
 
 type MaterialReviewStatus struct {
-	RevisionID  string                      `json:"revisionId"`
-	Current     bool                        `json:"current"`
-	Decisions   []*MaterialReviewDecision   `json:"decisions"`
-	Assignments []*MaterialReviewAssignment `json:"assignments"`
-	Outcome     MaterialReviewOutcome       `json:"outcome"`
-	WaitReason  *string                     `json:"waitReason,omitempty"`
-	TopicID     *string                     `json:"topicId,omitempty"`
+	RevisionID               string                      `json:"revisionId"`
+	Current                  bool                        `json:"current"`
+	Decisions                []*MaterialReviewDecision   `json:"decisions"`
+	Assignments              []*MaterialReviewAssignment `json:"assignments"`
+	Outcome                  MaterialReviewOutcome       `json:"outcome"`
+	WaitReason               *string                     `json:"waitReason,omitempty"`
+	TopicID                  *string                     `json:"topicId,omitempty"`
+	HasUnresolvedDiscussions *bool                       `json:"hasUnresolvedDiscussions,omitempty"`
 }
 
 type MaterialReviewThread struct {

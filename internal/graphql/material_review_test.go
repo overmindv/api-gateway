@@ -34,8 +34,9 @@ const (
 
 type materialReviewRPC struct {
 	pb.UnimplementedContentServiceServer
-	merged    atomic.Bool
-	moderated atomic.Int32
+	merged     atomic.Bool
+	moderated  atomic.Int32
+	unresolved *bool
 }
 
 func reviewProposalFixture() *pb.ChangeProposal {
@@ -101,6 +102,7 @@ func (s *materialReviewRPC) GetReviewRevisionStatus(_ context.Context, req *pb.G
 	return &pb.GetReviewRevisionStatusResponse{
 		RevisionId: req.RevisionId, Current: true, Outcome: "waiting_candidates",
 		WaitReason: "tiebreak_reviewer", Assignments: []*pb.ReviewAssignment{{ReviewerId: materialOwner, Slot: 1}},
+		HasUnresolvedDiscussions: s.unresolved,
 	}, nil
 }
 
@@ -163,6 +165,9 @@ func (s *materialReviewRPC) SetReviewThreadResolved(_ context.Context, req *pb.S
 func (s *materialReviewRPC) MergeChangeProposal(_ context.Context, req *pb.MergeChangeProposalRequest) (*pb.MergeChangeProposalResponse, error) {
 	if req.ExpectedHeadId != materialDraftID {
 		return nil, status.Error(codes.Aborted, "internal stale-head details")
+	}
+	if s.unresolved != nil && *s.unresolved {
+		return nil, status.Error(codes.FailedPrecondition, "UNRESOLVED_DISCUSSIONS")
 	}
 	if !s.merged.CompareAndSwap(false, true) {
 		return nil, status.Error(codes.Aborted, "MERGE_CONFLICT")
@@ -319,6 +324,19 @@ func TestMaterialReviewThroughGRPC(t *testing.T) {
 	}
 	assertReviewPayload(t, a, `"publishedRevisionId":"`+materialPublishedID+`"`)
 	assertReviewPayload(t, b, `"code":"MERGE_CONFLICT"`)
+}
+
+func TestMaterialReviewDiscussionStatus(t *testing.T) {
+	query := fmt.Sprintf(`{ materialReviewStatus(proposalId:%q,revisionId:%q) { hasUnresolvedDiscussions } }`, changeProposalID, materialDraftID)
+	token := reviewToken(t, materialOwner)
+	legacy := reviewGateway(t, &materialReviewRPC{}, &reviewSessions{}, "")
+	assertReviewPayload(t, reviewQuery(t.Context(), legacy, token, query), `"hasUnresolvedDiscussions":null`)
+
+	unresolved := true
+	current := reviewGateway(t, &materialReviewRPC{unresolved: &unresolved}, &reviewSessions{}, "")
+	assertReviewPayload(t, reviewQuery(t.Context(), current, token, query), `"hasUnresolvedDiscussions":true`)
+	merge := fmt.Sprintf(`mutation { mergeMaterialChange(proposalId:%q,expectedHeadId:%q) { publishedRevisionId } }`, changeProposalID, materialDraftID)
+	assertReviewPayload(t, reviewQuery(t.Context(), current, token, merge), `"code":"UNRESOLVED_DISCUSSIONS"`)
 }
 
 func TestMaterialModerationChecksRolesBeforeUsingSeparateToken(t *testing.T) {

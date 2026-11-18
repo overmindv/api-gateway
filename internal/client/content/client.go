@@ -111,6 +111,9 @@ func rpcError(err error) error {
 		code = "ALREADY_EXISTS"
 	case codes.FailedPrecondition:
 		code = "FAILED_PRECONDITION"
+		if status.Convert(err).Message() == "UNRESOLVED_DISCUSSIONS" {
+			code = "UNRESOLVED_DISCUSSIONS"
+		}
 	case codes.ResourceExhausted:
 		code = "RESOURCE_EXHAUSTED"
 	case codes.DeadlineExceeded:

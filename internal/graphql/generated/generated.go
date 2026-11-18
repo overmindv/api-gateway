@@ -368,13 +368,14 @@ type ComplexityRoot struct {
 	}
 
 	MaterialReviewStatus struct {
-		Assignments func(childComplexity int) int
-		Current     func(childComplexity int) int
-		Decisions   func(childComplexity int) int
-		Outcome     func(childComplexity int) int
-		RevisionID  func(childComplexity int) int
-		TopicID     func(childComplexity int) int
-		WaitReason  func(childComplexity int) int
+		Assignments              func(childComplexity int) int
+		Current                  func(childComplexity int) int
+		Decisions                func(childComplexity int) int
+		HasUnresolvedDiscussions func(childComplexity int) int
+		Outcome                  func(childComplexity int) int
+		RevisionID               func(childComplexity int) int
+		TopicID                  func(childComplexity int) int
+		WaitReason               func(childComplexity int) int
 	}
 
 	MaterialReviewThread struct {
@@ -2383,6 +2384,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.MaterialReviewStatus.Decisions(childComplexity), true
+	case "MaterialReviewStatus.hasUnresolvedDiscussions":
+		if e.complexity.MaterialReviewStatus.HasUnresolvedDiscussions == nil {
+			break
+		}
+
+		return e.complexity.MaterialReviewStatus.HasUnresolvedDiscussions(childComplexity), true
 	case "MaterialReviewStatus.outcome":
 		if e.complexity.MaterialReviewStatus.Outcome == nil {
 			break
@@ -6056,6 +6063,7 @@ type MaterialReviewStatus {
   outcome: MaterialReviewOutcome!
   waitReason: String
   topicId: ID
+  hasUnresolvedDiscussions: Boolean
 }
 type MaterialReviewThread {
   id: ID!
@@ -14750,6 +14758,35 @@ func (ec *executionContext) fieldContext_MaterialReviewStatus_topicId(_ context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialReviewStatus_hasUnresolvedDiscussions(ctx context.Context, field graphql.CollectedField, obj *model.MaterialReviewStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialReviewStatus_hasUnresolvedDiscussions,
+		func(ctx context.Context) (any, error) {
+			return obj.HasUnresolvedDiscussions, nil
+		},
+		nil,
+		ec.marshalOBoolean2ᚖbool,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialReviewStatus_hasUnresolvedDiscussions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialReviewStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -23780,6 +23817,8 @@ func (ec *executionContext) fieldContext_Query_materialReviewStatus(ctx context.
 				return ec.fieldContext_MaterialReviewStatus_waitReason(ctx, field)
 			case "topicId":
 				return ec.fieldContext_MaterialReviewStatus_topicId(ctx, field)
+			case "hasUnresolvedDiscussions":
+				return ec.fieldContext_MaterialReviewStatus_hasUnresolvedDiscussions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MaterialReviewStatus", field.Name)
 		},
@@ -36936,6 +36975,8 @@ func (ec *executionContext) _MaterialReviewStatus(ctx context.Context, sel ast.S
 			out.Values[i] = ec._MaterialReviewStatus_waitReason(ctx, field, obj)
 		case "topicId":
 			out.Values[i] = ec._MaterialReviewStatus_topicId(ctx, field, obj)
+		case "hasUnresolvedDiscussions":
+			out.Values[i] = ec._MaterialReviewStatus_hasUnresolvedDiscussions(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
