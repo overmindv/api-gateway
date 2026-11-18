@@ -65,7 +65,7 @@ func (r *queryResolver) PublishedMaterial(ctx context.Context, id string) (*mode
 	if err != nil {
 		return nil, err
 	}
-	result, err := client.GetPublished(ctx, actor, &pb.GetContentItemRequest{Id: id})
+	result, err := client.GetPublished(ctx, actor, &pb.GetPublishedContentItemRequest{Id: id})
 	if err != nil {
 		return nil, err
 	}

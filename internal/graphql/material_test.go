@@ -64,7 +64,7 @@ func (materialRPCFixture) GetContentItem(ctx context.Context, req *pb.GetContent
 	return &pb.GetContentItemResponse{Item: materialFixture("published", published)}, nil
 }
 
-func (materialRPCFixture) GetPublishedContentItem(_ context.Context, req *pb.GetContentItemRequest) (*pb.GetContentItemResponse, error) {
+func (materialRPCFixture) GetPublishedContentItem(_ context.Context, req *pb.GetPublishedContentItemRequest) (*pb.GetPublishedContentItemResponse, error) {
 	if req.Id == materialMissingID {
 		return nil, status.Error(codes.NotFound, "private upstream details")
 	}
@@ -72,7 +72,7 @@ func (materialRPCFixture) GetPublishedContentItem(_ context.Context, req *pb.Get
 	if req.Id == materialSlowID {
 		revision.Id = materialDraftID
 	}
-	return &pb.GetContentItemResponse{Item: materialFixture("published", revision)}, nil
+	return &pb.GetPublishedContentItemResponse{Item: materialFixture("published", revision)}, nil
 }
 
 func (materialRPCFixture) ListContentRevisionHistory(ctx context.Context, req *pb.ListContentRevisionHistoryRequest) (*pb.ListContentRevisionHistoryResponse, error) {

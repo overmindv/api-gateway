@@ -6,7 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.81
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
-	github.com/overmindv/content v0.0.0-20261118192132-9e37e7bfe59a
+	github.com/overmindv/content v0.0.0-20261118194349-2bf39efa7334
 	github.com/vektah/gqlparser/v2 v2.5.30
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.11
