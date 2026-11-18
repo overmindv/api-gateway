@@ -109,6 +109,21 @@ func (materialRPCFixture) CreateContentRevision(ctx context.Context, req *pb.Cre
 	return &pb.CreateContentRevisionResponse{Revision: materialRevisionFixture(materialDraftID, req.Source)}, nil
 }
 
+func (f materialRPCFixture) SaveContentDraft(ctx context.Context, req *pb.SaveContentDraftRequest) (*pb.SaveContentDraftResponse, error) {
+	if req.GetRevision().GetSource() == "Old server" {
+		return nil, status.Error(codes.Unimplemented, "method unavailable")
+	}
+	draft := req.GetDraftMetadata()
+	if draft.GetTitle() != "New title" || len(draft.GetTopicIds()) != 1 || draft.GetTopicIds()[0] != materialFixtureID {
+		return nil, status.Error(codes.InvalidArgument, "incorrect draft metadata")
+	}
+	result, err := f.CreateContentRevision(ctx, req.GetRevision())
+	if err != nil {
+		return nil, err
+	}
+	return &pb.SaveContentDraftResponse{Revision: result.GetRevision()}, nil
+}
+
 func (materialRPCFixture) PublishContentItem(ctx context.Context, req *pb.PublishContentItemRequest) (*pb.PublishContentItemResponse, error) {
 	if materialRPCActor(ctx) != materialOwner {
 		return nil, status.Error(codes.NotFound, "private upstream details")
@@ -235,6 +250,12 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialPublishedID, "Keep", ""), `"code":"REVISION_CONFLICT"`)
 	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Clear", ",attachments:[]"), `"source":"Clear"`)
 	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Keep", ""), `"source":"Keep"`)
+	draftFields := fmt.Sprintf(",attachments:[],metadata:{title:\"  New title  \",topicIds:[%q]}", materialFixtureID)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Clear", draftFields), `"source":"Clear"`)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialPublishedID, "Clear", draftFields), `"code":"REVISION_CONFLICT"`)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Old server", draftFields), `"code":"SERVICE_UNAVAILABLE"`)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Keep", `,metadata:{title:"Valid",topicIds:["bad-id"]}`),
+		`"code":"INVALID_ARGUMENT"`)
 	publish := fmt.Sprintf(`mutation { publishMaterial(id:%q, expectedRevisionId:%q) { status } }`, materialFixtureID, materialDraftID)
 	run(materialReader, publish, `"code":"NOT_FOUND"`)
 	run(materialOwner, publish, `"status":"published"`)

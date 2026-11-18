@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -130,6 +131,21 @@ func validDraftText(source, message string) bool {
 	return len(source) <= 128<<10 && len(message) <= 1024
 }
 
+func materialDraftMetadata(input *model.MaterialDraftMetadataInput) (*pb.DraftMetadata, error) {
+	if input == nil {
+		return nil, nil
+	}
+	title := strings.TrimSpace(input.Title)
+	if title == "" || len(input.Title) > 256 || strings.IndexByte(title, 0) >= 0 || len(input.TopicIds) > 8 {
+		return nil, invalidMaterialInput()
+	}
+	topics, err := materialTopicIDs(input.TopicIds)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.DraftMetadata{Title: title, TopicIds: topics}, nil
+}
+
 func materialAttachments(input []*model.MaterialAttachmentInput) ([]*pb.CreateContentAsset, error) {
 	if input == nil {
 		return nil, nil
@@ -163,17 +179,25 @@ func materialLearningInput(input *model.MaterialLearningInput) (*pb.ContentLearn
 			return nil, invalidMaterialInput()
 		}
 	}
-	topics := make([]string, 0, len(input.TopicIds))
-	for _, raw := range input.TopicIds {
+	topics, err := materialTopicIDs(input.TopicIds)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.ContentLearningMetadata{
+		TopicIds: topics, LearningOutcomes: input.LearningOutcomes, EstimatedMinutes: int32(input.EstimatedMinutes),
+	}, nil
+}
+
+func materialTopicIDs(input []string) ([]string, error) {
+	topics := make([]string, 0, len(input))
+	for _, raw := range input {
 		id, err := materialID(raw)
 		if err != nil {
 			return nil, err
 		}
 		topics = append(topics, id)
 	}
-	return &pb.ContentLearningMetadata{
-		TopicIds: topics, LearningOutcomes: input.LearningOutcomes, EstimatedMinutes: int32(input.EstimatedMinutes),
-	}, nil
+	return topics, nil
 }
 
 func materialModel(item *pb.ContentItem) *model.Material {

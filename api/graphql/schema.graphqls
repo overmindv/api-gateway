@@ -370,6 +370,10 @@ input CreateMaterialDraftInput {
   attachments: [MaterialAttachmentInput!]
   learning: MaterialLearningInput
 }
+input MaterialDraftMetadataInput {
+  title: String!
+  topicIds: [ID!]!
+}
 input SaveMaterialDraftInput {
   materialId: ID!
   expectedRevisionId: ID!
@@ -377,6 +381,7 @@ input SaveMaterialDraftInput {
   source: String!
   message: String! = ""
   attachments: [MaterialAttachmentInput!]
+  metadata: MaterialDraftMetadataInput
 }
 
 type Query {

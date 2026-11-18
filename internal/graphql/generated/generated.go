@@ -4735,6 +4735,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputMaterialAttachmentInput,
 		ec.unmarshalInputMaterialCatalogFilter,
+		ec.unmarshalInputMaterialDraftMetadataInput,
 		ec.unmarshalInputMaterialLearningInput,
 		ec.unmarshalInputMediaFileFilter,
 		ec.unmarshalInputPaginationInput,
@@ -5218,6 +5219,10 @@ input CreateMaterialDraftInput {
   attachments: [MaterialAttachmentInput!]
   learning: MaterialLearningInput
 }
+input MaterialDraftMetadataInput {
+  title: String!
+  topicIds: [ID!]!
+}
 input SaveMaterialDraftInput {
   materialId: ID!
   expectedRevisionId: ID!
@@ -5225,6 +5230,7 @@ input SaveMaterialDraftInput {
   source: String!
   message: String! = ""
   attachments: [MaterialAttachmentInput!]
+  metadata: MaterialDraftMetadataInput
 }
 
 type Query {
@@ -29164,6 +29170,40 @@ func (ec *executionContext) unmarshalInputMaterialCatalogFilter(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMaterialDraftMetadataInput(ctx context.Context, obj any) (model.MaterialDraftMetadataInput, error) {
+	var it model.MaterialDraftMetadataInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"title", "topicIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "topicIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicIds"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TopicIds = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMaterialLearningInput(ctx context.Context, obj any) (model.MaterialLearningInput, error) {
 	var it model.MaterialLearningInput
 	asMap := map[string]any{}
@@ -29376,7 +29416,7 @@ func (ec *executionContext) unmarshalInputSaveMaterialDraftInput(ctx context.Con
 		asMap["message"] = ""
 	}
 
-	fieldsInOrder := [...]string{"materialId", "expectedRevisionId", "format", "source", "message", "attachments"}
+	fieldsInOrder := [...]string{"materialId", "expectedRevisionId", "format", "source", "message", "attachments", "metadata"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29425,6 +29465,13 @@ func (ec *executionContext) unmarshalInputSaveMaterialDraftInput(ctx context.Con
 				return it, err
 			}
 			it.Attachments = data
+		case "metadata":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
+			data, err := ec.unmarshalOMaterialDraftMetadataInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialDraftMetadataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Metadata = data
 		}
 	}
 
@@ -39819,6 +39866,14 @@ func (ec *executionContext) marshalOMaterialCatalogPage2ᚖgithubᚗcomᚋovermi
 		return graphql.Null
 	}
 	return ec._MaterialCatalogPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMaterialDraftMetadataInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialDraftMetadataInput(ctx context.Context, v any) (*model.MaterialDraftMetadataInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMaterialDraftMetadataInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOMaterialLearning2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialLearning(ctx context.Context, sel ast.SelectionSet, v *model.MaterialLearning) graphql.Marshaler {

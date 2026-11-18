@@ -399,6 +399,11 @@ type MaterialCatalogPage struct {
 	NextCursor *string                 `json:"nextCursor,omitempty"`
 }
 
+type MaterialDraftMetadataInput struct {
+	Title    string   `json:"title"`
+	TopicIds []string `json:"topicIds"`
+}
+
 type MaterialLearning struct {
 	TopicIds         []string `json:"topicIds"`
 	EstimatedMinutes int      `json:"estimatedMinutes"`
@@ -661,12 +666,13 @@ type RegisterInput struct {
 }
 
 type SaveMaterialDraftInput struct {
-	MaterialID         string                     `json:"materialId"`
-	ExpectedRevisionID string                     `json:"expectedRevisionId"`
-	Format             MaterialFormat             `json:"format"`
-	Source             string                     `json:"source"`
-	Message            string                     `json:"message"`
-	Attachments        []*MaterialAttachmentInput `json:"attachments,omitempty"`
+	MaterialID         string                      `json:"materialId"`
+	ExpectedRevisionID string                      `json:"expectedRevisionId"`
+	Format             MaterialFormat              `json:"format"`
+	Source             string                      `json:"source"`
+	Message            string                      `json:"message"`
+	Attachments        []*MaterialAttachmentInput  `json:"attachments,omitempty"`
+	Metadata           *MaterialDraftMetadataInput `json:"metadata,omitempty"`
 }
 
 type SavedLearningMaterial struct {
