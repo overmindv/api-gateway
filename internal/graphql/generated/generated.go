@@ -657,17 +657,23 @@ type ComplexityRoot struct {
 	}
 
 	Topic struct {
-		CourseID      func(childComplexity int) int
-		CreatedAt     func(childComplexity int) int
-		Description   func(childComplexity int) int
-		Difficulty    func(childComplexity int) int
-		ID            func(childComplexity int) int
-		OrderIndex    func(childComplexity int) int
-		ParentTopicID func(childComplexity int) int
-		Slug          func(childComplexity int) int
-		Status        func(childComplexity int) int
-		Title         func(childComplexity int) int
-		UpdatedAt     func(childComplexity int) int
+		CourseID         func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		Description      func(childComplexity int) int
+		Difficulty       func(childComplexity int) int
+		ID               func(childComplexity int) int
+		LearningMetadata func(childComplexity int) int
+		OrderIndex       func(childComplexity int) int
+		ParentTopicID    func(childComplexity int) int
+		Slug             func(childComplexity int) int
+		Status           func(childComplexity int) int
+		Title            func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+	}
+
+	TopicLearningMetadata struct {
+		EstimatedMinutes func(childComplexity int) int
+		Outcomes         func(childComplexity int) int
 	}
 
 	TopicPrerequisite struct {
@@ -4020,6 +4026,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Topic.ID(childComplexity), true
+	case "Topic.learningMetadata":
+		if e.complexity.Topic.LearningMetadata == nil {
+			break
+		}
+
+		return e.complexity.Topic.LearningMetadata(childComplexity), true
 	case "Topic.orderIndex":
 		if e.complexity.Topic.OrderIndex == nil {
 			break
@@ -4056,6 +4068,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Topic.UpdatedAt(childComplexity), true
+
+	case "TopicLearningMetadata.estimatedMinutes":
+		if e.complexity.TopicLearningMetadata.EstimatedMinutes == nil {
+			break
+		}
+
+		return e.complexity.TopicLearningMetadata.EstimatedMinutes(childComplexity), true
+	case "TopicLearningMetadata.outcomes":
+		if e.complexity.TopicLearningMetadata.Outcomes == nil {
+			break
+		}
+
+		return e.complexity.TopicLearningMetadata.Outcomes(childComplexity), true
 
 	case "TopicPrerequisite.createdAt":
 		if e.complexity.TopicPrerequisite.CreatedAt == nil {
@@ -4279,6 +4304,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputStartTaskCollectionInput,
 		ec.unmarshalInputTaskCandidateFilter,
 		ec.unmarshalInputTaskCandidateReviewInput,
+		ec.unmarshalInputTopicLearningMetadataInput,
 		ec.unmarshalInputTopicPrerequisiteInput,
 		ec.unmarshalInputUpdateCourseInput,
 		ec.unmarshalInputUpdateProgramInput,
@@ -4477,7 +4503,8 @@ enum TopicDifficulty { intro basic medium hard advanced }
 type University { id: ID!, name: String!, shortName: String!, city: String!, country: String!, websiteUrl: String!, logoFileId: ID, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
 type Program { id: ID!, universityId: ID, name: String!, shortName: String!, faculty: String!, degreeLevel: DegreeLevel!, startYear: Int, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
 type Course { id: ID!, programId: ID, name: String!, slug: String!, description: String!, semester: Int, yearNumber: Int, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
-type Topic { id: ID!, courseId: ID, parentTopicId: ID, title: String!, slug: String!, description: String!, orderIndex: Int!, difficulty: TopicDifficulty!, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
+type Topic { id: ID!, courseId: ID, parentTopicId: ID, title: String!, slug: String!, description: String!, orderIndex: Int!, difficulty: TopicDifficulty!, status: CatalogStatus!, createdAt: String!, updatedAt: String!, learningMetadata: TopicLearningMetadata }
+type TopicLearningMetadata { estimatedMinutes: Int, outcomes: [String!]! }
 type TopicTreeNode { topic: Topic!, children: [TopicTreeNode!]! }
 type TopicPrerequisite { topicId: ID!, prerequisiteTopicId: ID!, createdAt: String! }
 type CatalogValidationResult { valid: Boolean! }
@@ -4490,8 +4517,9 @@ input CreateProgramInput { universityId: ID, name: String!, shortName: String = 
 input UpdateProgramInput { universityId: ID, clearUniversity: Boolean = false, name: String!, shortName: String = "", faculty: String = "", degreeLevel: DegreeLevel = other, startYear: Int }
 input CreateCourseInput { programId: ID, name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int, status: CatalogStatus = draft }
 input UpdateCourseInput { programId: ID, clearProgram: Boolean = false, name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int }
-input CreateTopicInput { courseId: ID, parentTopicId: ID, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic, status: CatalogStatus = draft }
-input UpdateTopicInput { courseId: ID, clearCourse: Boolean = false, parentTopicId: ID, clearParentTopic: Boolean = false, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic }
+input TopicLearningMetadataInput { estimatedMinutes: Int, outcomes: [String!]! = [] }
+input CreateTopicInput { courseId: ID, parentTopicId: ID, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic, status: CatalogStatus = draft, learningMetadata: TopicLearningMetadataInput }
+input UpdateTopicInput { courseId: ID, clearCourse: Boolean = false, parentTopicId: ID, clearParentTopic: Boolean = false, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic, learningMetadata: TopicLearningMetadataInput }
 input TopicPrerequisiteInput { topicId: ID!, prerequisiteTopicId: ID! }
 input CatalogBindingInput { universityId: ID, programId: ID, courseId: ID, topicId: ID }
 
@@ -12890,6 +12918,8 @@ func (ec *executionContext) fieldContext_Mutation_createTopic(ctx context.Contex
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Topic_updatedAt(ctx, field)
+			case "learningMetadata":
+				return ec.fieldContext_Topic_learningMetadata(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -12955,6 +12985,8 @@ func (ec *executionContext) fieldContext_Mutation_updateTopic(ctx context.Contex
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Topic_updatedAt(ctx, field)
+			case "learningMetadata":
+				return ec.fieldContext_Topic_learningMetadata(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -13061,6 +13093,8 @@ func (ec *executionContext) fieldContext_Mutation_changeTopicStatus(ctx context.
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Topic_updatedAt(ctx, field)
+			case "learningMetadata":
+				return ec.fieldContext_Topic_learningMetadata(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -18476,6 +18510,8 @@ func (ec *executionContext) fieldContext_Query_topics(ctx context.Context, field
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Topic_updatedAt(ctx, field)
+			case "learningMetadata":
+				return ec.fieldContext_Topic_learningMetadata(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -18541,6 +18577,8 @@ func (ec *executionContext) fieldContext_Query_topic(ctx context.Context, field 
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Topic_updatedAt(ctx, field)
+			case "learningMetadata":
+				return ec.fieldContext_Topic_learningMetadata(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -20800,6 +20838,8 @@ func (ec *executionContext) fieldContext_SearchResults_topics(_ context.Context,
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Topic_updatedAt(ctx, field)
+			case "learningMetadata":
+				return ec.fieldContext_Topic_learningMetadata(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -23035,6 +23075,99 @@ func (ec *executionContext) fieldContext_Topic_updatedAt(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Topic_learningMetadata(ctx context.Context, field graphql.CollectedField, obj *model.Topic) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Topic_learningMetadata,
+		func(ctx context.Context) (any, error) {
+			return obj.LearningMetadata, nil
+		},
+		nil,
+		ec.marshalOTopicLearningMetadata2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐTopicLearningMetadata,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Topic_learningMetadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Topic",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "estimatedMinutes":
+				return ec.fieldContext_TopicLearningMetadata_estimatedMinutes(ctx, field)
+			case "outcomes":
+				return ec.fieldContext_TopicLearningMetadata_outcomes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TopicLearningMetadata", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TopicLearningMetadata_estimatedMinutes(ctx context.Context, field graphql.CollectedField, obj *model.TopicLearningMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TopicLearningMetadata_estimatedMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.EstimatedMinutes, nil
+		},
+		nil,
+		ec.marshalOInt2ᚖint,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_TopicLearningMetadata_estimatedMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TopicLearningMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TopicLearningMetadata_outcomes(ctx context.Context, field graphql.CollectedField, obj *model.TopicLearningMetadata) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TopicLearningMetadata_outcomes,
+		func(ctx context.Context) (any, error) {
+			return obj.Outcomes, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TopicLearningMetadata_outcomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TopicLearningMetadata",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TopicPrerequisite_topicId(ctx context.Context, field graphql.CollectedField, obj *model.TopicPrerequisite) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -23168,6 +23301,8 @@ func (ec *executionContext) fieldContext_TopicTreeNode_topic(_ context.Context, 
 				return ec.fieldContext_Topic_createdAt(ctx, field)
 			case "updatedAt":
 				return ec.fieldContext_Topic_updatedAt(ctx, field)
+			case "learningMetadata":
+				return ec.fieldContext_Topic_learningMetadata(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Topic", field.Name)
 		},
@@ -25822,7 +25957,7 @@ func (ec *executionContext) unmarshalInputCreateTopicInput(ctx context.Context, 
 		asMap["status"] = "draft"
 	}
 
-	fieldsInOrder := [...]string{"courseId", "parentTopicId", "title", "slug", "description", "orderIndex", "difficulty", "status"}
+	fieldsInOrder := [...]string{"courseId", "parentTopicId", "title", "slug", "description", "orderIndex", "difficulty", "status", "learningMetadata"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25885,6 +26020,13 @@ func (ec *executionContext) unmarshalInputCreateTopicInput(ctx context.Context, 
 				return it, err
 			}
 			it.Status = data
+		case "learningMetadata":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("learningMetadata"))
+			data, err := ec.unmarshalOTopicLearningMetadataInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐTopicLearningMetadataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LearningMetadata = data
 		}
 	}
 
@@ -26731,6 +26873,44 @@ func (ec *executionContext) unmarshalInputTaskCandidateReviewInput(ctx context.C
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTopicLearningMetadataInput(ctx context.Context, obj any) (model.TopicLearningMetadataInput, error) {
+	var it model.TopicLearningMetadataInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["outcomes"]; !present {
+		asMap["outcomes"] = []any{}
+	}
+
+	fieldsInOrder := [...]string{"estimatedMinutes", "outcomes"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "estimatedMinutes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("estimatedMinutes"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EstimatedMinutes = data
+		case "outcomes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("outcomes"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Outcomes = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTopicPrerequisiteInput(ctx context.Context, obj any) (model.TopicPrerequisiteInput, error) {
 	var it model.TopicPrerequisiteInput
 	asMap := map[string]any{}
@@ -26952,7 +27132,7 @@ func (ec *executionContext) unmarshalInputUpdateTopicInput(ctx context.Context, 
 		asMap["difficulty"] = "basic"
 	}
 
-	fieldsInOrder := [...]string{"courseId", "clearCourse", "parentTopicId", "clearParentTopic", "title", "slug", "description", "orderIndex", "difficulty"}
+	fieldsInOrder := [...]string{"courseId", "clearCourse", "parentTopicId", "clearParentTopic", "title", "slug", "description", "orderIndex", "difficulty", "learningMetadata"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -27022,6 +27202,13 @@ func (ec *executionContext) unmarshalInputUpdateTopicInput(ctx context.Context, 
 				return it, err
 			}
 			it.Difficulty = data
+		case "learningMetadata":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("learningMetadata"))
+			data, err := ec.unmarshalOTopicLearningMetadataInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐTopicLearningMetadataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LearningMetadata = data
 		}
 	}
 
@@ -32164,6 +32351,49 @@ func (ec *executionContext) _Topic(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "learningMetadata":
+			out.Values[i] = ec._Topic_learningMetadata(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var topicLearningMetadataImplementors = []string{"TopicLearningMetadata"}
+
+func (ec *executionContext) _TopicLearningMetadata(ctx context.Context, sel ast.SelectionSet, obj *model.TopicLearningMetadata) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, topicLearningMetadataImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TopicLearningMetadata")
+		case "estimatedMinutes":
+			out.Values[i] = ec._TopicLearningMetadata_estimatedMinutes(ctx, field, obj)
+		case "outcomes":
+			out.Values[i] = ec._TopicLearningMetadata_outcomes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36255,6 +36485,21 @@ func (ec *executionContext) marshalOTopicDifficulty2ᚖgithubᚗcomᚋovermindv�
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOTopicLearningMetadata2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐTopicLearningMetadata(ctx context.Context, sel ast.SelectionSet, v *model.TopicLearningMetadata) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TopicLearningMetadata(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOTopicLearningMetadataInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐTopicLearningMetadataInput(ctx context.Context, v any) (*model.TopicLearningMetadataInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputTopicLearningMetadataInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v any) (*graphql.Upload, error) {

@@ -93,7 +93,8 @@ enum TopicDifficulty { intro basic medium hard advanced }
 type University { id: ID!, name: String!, shortName: String!, city: String!, country: String!, websiteUrl: String!, logoFileId: ID, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
 type Program { id: ID!, universityId: ID, name: String!, shortName: String!, faculty: String!, degreeLevel: DegreeLevel!, startYear: Int, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
 type Course { id: ID!, programId: ID, name: String!, slug: String!, description: String!, semester: Int, yearNumber: Int, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
-type Topic { id: ID!, courseId: ID, parentTopicId: ID, title: String!, slug: String!, description: String!, orderIndex: Int!, difficulty: TopicDifficulty!, status: CatalogStatus!, createdAt: String!, updatedAt: String! }
+type Topic { id: ID!, courseId: ID, parentTopicId: ID, title: String!, slug: String!, description: String!, orderIndex: Int!, difficulty: TopicDifficulty!, status: CatalogStatus!, createdAt: String!, updatedAt: String!, learningMetadata: TopicLearningMetadata }
+type TopicLearningMetadata { estimatedMinutes: Int, outcomes: [String!]! }
 type TopicTreeNode { topic: Topic!, children: [TopicTreeNode!]! }
 type TopicPrerequisite { topicId: ID!, prerequisiteTopicId: ID!, createdAt: String! }
 type CatalogValidationResult { valid: Boolean! }
@@ -106,8 +107,9 @@ input CreateProgramInput { universityId: ID, name: String!, shortName: String = 
 input UpdateProgramInput { universityId: ID, clearUniversity: Boolean = false, name: String!, shortName: String = "", faculty: String = "", degreeLevel: DegreeLevel = other, startYear: Int }
 input CreateCourseInput { programId: ID, name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int, status: CatalogStatus = draft }
 input UpdateCourseInput { programId: ID, clearProgram: Boolean = false, name: String!, slug: String = "", description: String = "", semester: Int, yearNumber: Int }
-input CreateTopicInput { courseId: ID, parentTopicId: ID, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic, status: CatalogStatus = draft }
-input UpdateTopicInput { courseId: ID, clearCourse: Boolean = false, parentTopicId: ID, clearParentTopic: Boolean = false, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic }
+input TopicLearningMetadataInput { estimatedMinutes: Int, outcomes: [String!]! = [] }
+input CreateTopicInput { courseId: ID, parentTopicId: ID, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic, status: CatalogStatus = draft, learningMetadata: TopicLearningMetadataInput }
+input UpdateTopicInput { courseId: ID, clearCourse: Boolean = false, parentTopicId: ID, clearParentTopic: Boolean = false, title: String!, slug: String = "", description: String = "", orderIndex: Int = 0, difficulty: TopicDifficulty = basic, learningMetadata: TopicLearningMetadataInput }
 input TopicPrerequisiteInput { topicId: ID!, prerequisiteTopicId: ID! }
 input CatalogBindingInput { universityId: ID, programId: ID, courseId: ID, topicId: ID }
 

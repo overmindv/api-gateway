@@ -86,14 +86,15 @@ type CreateProgramInput struct {
 }
 
 type CreateTopicInput struct {
-	CourseID      *string          `json:"courseId,omitempty"`
-	ParentTopicID *string          `json:"parentTopicId,omitempty"`
-	Title         string           `json:"title"`
-	Slug          *string          `json:"slug,omitempty"`
-	Description   *string          `json:"description,omitempty"`
-	OrderIndex    *int             `json:"orderIndex,omitempty"`
-	Difficulty    *TopicDifficulty `json:"difficulty,omitempty"`
-	Status        *CatalogStatus   `json:"status,omitempty"`
+	CourseID         *string                     `json:"courseId,omitempty"`
+	ParentTopicID    *string                     `json:"parentTopicId,omitempty"`
+	Title            string                      `json:"title"`
+	Slug             *string                     `json:"slug,omitempty"`
+	Description      *string                     `json:"description,omitempty"`
+	OrderIndex       *int                        `json:"orderIndex,omitempty"`
+	Difficulty       *TopicDifficulty            `json:"difficulty,omitempty"`
+	Status           *CatalogStatus              `json:"status,omitempty"`
+	LearningMetadata *TopicLearningMetadataInput `json:"learningMetadata,omitempty"`
 }
 
 type CreateUniversityInput struct {
@@ -701,17 +702,28 @@ type TaskCollectionSources struct {
 }
 
 type Topic struct {
-	ID            string          `json:"id"`
-	CourseID      *string         `json:"courseId,omitempty"`
-	ParentTopicID *string         `json:"parentTopicId,omitempty"`
-	Title         string          `json:"title"`
-	Slug          string          `json:"slug"`
-	Description   string          `json:"description"`
-	OrderIndex    int             `json:"orderIndex"`
-	Difficulty    TopicDifficulty `json:"difficulty"`
-	Status        CatalogStatus   `json:"status"`
-	CreatedAt     string          `json:"createdAt"`
-	UpdatedAt     string          `json:"updatedAt"`
+	ID               string                 `json:"id"`
+	CourseID         *string                `json:"courseId,omitempty"`
+	ParentTopicID    *string                `json:"parentTopicId,omitempty"`
+	Title            string                 `json:"title"`
+	Slug             string                 `json:"slug"`
+	Description      string                 `json:"description"`
+	OrderIndex       int                    `json:"orderIndex"`
+	Difficulty       TopicDifficulty        `json:"difficulty"`
+	Status           CatalogStatus          `json:"status"`
+	CreatedAt        string                 `json:"createdAt"`
+	UpdatedAt        string                 `json:"updatedAt"`
+	LearningMetadata *TopicLearningMetadata `json:"learningMetadata,omitempty"`
+}
+
+type TopicLearningMetadata struct {
+	EstimatedMinutes *int     `json:"estimatedMinutes,omitempty"`
+	Outcomes         []string `json:"outcomes"`
+}
+
+type TopicLearningMetadataInput struct {
+	EstimatedMinutes *int     `json:"estimatedMinutes,omitempty"`
+	Outcomes         []string `json:"outcomes"`
 }
 
 type TopicPrerequisite struct {
@@ -764,15 +776,16 @@ type UpdateProgramInput struct {
 }
 
 type UpdateTopicInput struct {
-	CourseID         *string          `json:"courseId,omitempty"`
-	ClearCourse      *bool            `json:"clearCourse,omitempty"`
-	ParentTopicID    *string          `json:"parentTopicId,omitempty"`
-	ClearParentTopic *bool            `json:"clearParentTopic,omitempty"`
-	Title            string           `json:"title"`
-	Slug             *string          `json:"slug,omitempty"`
-	Description      *string          `json:"description,omitempty"`
-	OrderIndex       *int             `json:"orderIndex,omitempty"`
-	Difficulty       *TopicDifficulty `json:"difficulty,omitempty"`
+	CourseID         *string                     `json:"courseId,omitempty"`
+	ClearCourse      *bool                       `json:"clearCourse,omitempty"`
+	ParentTopicID    *string                     `json:"parentTopicId,omitempty"`
+	ClearParentTopic *bool                       `json:"clearParentTopic,omitempty"`
+	Title            string                      `json:"title"`
+	Slug             *string                     `json:"slug,omitempty"`
+	Description      *string                     `json:"description,omitempty"`
+	OrderIndex       *int                        `json:"orderIndex,omitempty"`
+	Difficulty       *TopicDifficulty            `json:"difficulty,omitempty"`
+	LearningMetadata *TopicLearningMetadataInput `json:"learningMetadata,omitempty"`
 }
 
 type UpdateUniversityInput struct {
