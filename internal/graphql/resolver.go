@@ -3,6 +3,7 @@ package graphql
 import (
 	"log/slog"
 
+	contentclient "github.com/overmindv/api-gateway/internal/client/content"
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
@@ -13,6 +14,7 @@ import (
 )
 
 type Resolver struct {
+	Content         contentclient.Service
 	Recommendations recommendations.Service
 	Users           users.UserService
 	Catalog         entities.CatalogService

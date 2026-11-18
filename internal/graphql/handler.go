@@ -12,6 +12,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	contentclient "github.com/overmindv/api-gateway/internal/client/content"
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
@@ -28,6 +29,7 @@ import (
 type HandlerOptions struct {
 	Public         bool
 	RequestTimeout time.Duration
+	Content        contentclient.Service
 }
 
 const graphqlMultipartLimit = 512 << 10
@@ -59,11 +61,16 @@ func HandlerWithFeedAndMetrics(users users.UserService, catalog entities.Catalog
 
 // HandlerWithRecommendationsAndMetrics подключает необязательный preview практики.
 func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entities.CatalogService, tasksSvc tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, recommendationsSvc recommendations.Service, log *slog.Logger, metrics *Metrics, options ...HandlerOptions) http.Handler {
+	var opts HandlerOptions
+	if len(options) != 0 {
+		opts = options[0]
+	}
 	var candidates tasks.CandidateService
 	if service, ok := tasksSvc.(tasks.CandidateService); ok {
 		candidates = service
 	}
 	server := handler.New(costSchema{generated.NewExecutableSchema(generated.Config{Resolvers: &Resolver{
+		Content:         opts.Content,
 		Users:           users,
 		Catalog:         catalog,
 		Tasks:           tasksSvc,
@@ -85,7 +92,7 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 	server.Use(operationLimits{})
 	server.Use(extension.FixedComplexityLimit(queryComplexityLimit))
 	server.SetQueryCache(lru.New[*ast.QueryDocument](1000))
-	if len(options) == 0 || !options[0].Public {
+	if !opts.Public {
 		server.Use(extension.Introspection{})
 	}
 	server.Use(extension.AutomaticPersistedQuery{
@@ -106,8 +113,8 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 	})
 
 	timeout := 30 * time.Second
-	if len(options) > 0 && options[0].RequestTimeout > 0 {
-		timeout = options[0].RequestTimeout
+	if opts.RequestTimeout > 0 {
+		timeout = opts.RequestTimeout
 	}
 	return boundedRequest(server, timeout)
 }

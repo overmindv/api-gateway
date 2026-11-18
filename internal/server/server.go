@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 
+	contentclient "github.com/overmindv/api-gateway/internal/client/content"
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
@@ -45,11 +46,15 @@ func NewWithFeed(cfg config.HTTP, users users.UserService, catalog entities.Cata
 }
 
 // NewWithRecommendations подключает необязательный сервис рекомендаций к gateway.
-func NewWithRecommendations(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, recommendationsSvc recommendations.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, sessionSecure bool, log *slog.Logger, requestLog *slog.Logger) *Server {
+func NewWithRecommendations(cfg config.HTTP, users users.UserService, catalog entities.CatalogService, tasks tasks.Service, taskHunter taskhunter.Service, mediaSvc media.Service, feedSvc feed.FeedService, recommendationsSvc recommendations.Service, usersHealth healthChecker, authenticator *middleware.JWTAuthenticator, sessionSecure bool, log *slog.Logger, requestLog *slog.Logger, contentServices ...contentclient.Service) *Server {
 	mux := http.NewServeMux()
 	metrics := &graphqldelivery.Metrics{}
+	options := graphqldelivery.HandlerOptions{Public: cfg.Production}
+	if len(contentServices) != 0 {
+		options.Content = contentServices[0]
+	}
 
-	mux.Handle("POST /graphql", graphqldelivery.HandlerWithRecommendationsAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, feedSvc, recommendationsSvc, requestLog, metrics, graphqldelivery.HandlerOptions{Public: cfg.Production}))
+	mux.Handle("POST /graphql", graphqldelivery.HandlerWithRecommendationsAndMetrics(users, catalog, tasks, taskHunter, mediaSvc, feedSvc, recommendationsSvc, requestLog, metrics, options))
 	if !cfg.Production {
 		mux.Handle("GET /playground", graphqldelivery.Playground())
 	}

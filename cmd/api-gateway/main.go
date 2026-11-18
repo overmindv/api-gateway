@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	contentclient "github.com/overmindv/api-gateway/internal/client/content"
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/feed"
 	"github.com/overmindv/api-gateway/internal/client/media"
@@ -47,9 +48,19 @@ func main() {
 	if cfg.Recommendations.URL != "" {
 		recommendationsService = recommendations.New(cfg.Recommendations.URL, cfg.Recommendations.Token, cfg.Recommendations.Timeout, requestLog)
 	}
+	var contentService contentclient.Service
+	if cfg.Content.Address != "" {
+		client, err := contentclient.New(cfg.Content)
+		if err != nil {
+			log.Error("initialize content client", "error", err)
+			os.Exit(1)
+		}
+		defer func() { _ = client.Close() }()
+		contentService = client
+	}
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
 	authenticator.SetSessionVerifier(usersService)
-	httpServer := server.NewWithRecommendations(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, mediaService, feedService, recommendationsService, usersService, authenticator, cfg.Session.Secure, log, requestLog)
+	httpServer := server.NewWithRecommendations(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, mediaService, feedService, recommendationsService, usersService, authenticator, cfg.Session.Secure, log, requestLog, contentService)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

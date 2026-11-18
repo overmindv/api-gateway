@@ -282,7 +282,107 @@ type SearchResults {
   tasks: [ITTaskSummary!]!
 }
 
+enum MaterialStatus { draft published archived }
+enum MaterialType { article note summary theory }
+enum MaterialFormat { markdown typst }
+enum MaterialAssetKind { image attachment pdf archive }
+
+type MaterialLearning {
+  topicIds: [ID!]!
+  estimatedMinutes: Int!
+  learningOutcomes: [String!]!
+}
+type MaterialCatalogEntry {
+  id: ID!
+  title: String!
+  slug: String!
+  status: MaterialStatus!
+  authorId: ID
+  revisionId: ID
+  createdAt: String!
+  learning: MaterialLearning
+}
+type MaterialCatalogPage { items: [MaterialCatalogEntry!]!, nextCursor: String }
+type MaterialRevisionSummary {
+  id: ID!
+  number: Int!
+  format: MaterialFormat!
+  message: String!
+  authorId: ID
+  createdAt: String!
+  restoredFromRevisionId: ID
+}
+type MaterialRevisionPage { items: [MaterialRevisionSummary!]!, nextBeforeRevision: Int }
+type MaterialRevision {
+  id: ID!
+  number: Int!
+  format: MaterialFormat!
+  source: String!
+  message: String!
+  authorId: ID
+  createdAt: String!
+  restoredFromRevisionId: ID
+}
+type MaterialAttachment {
+  fileId: ID!
+  kind: MaterialAssetKind!
+  title: String!
+  position: Int!
+}
+type Material {
+  id: ID!
+  type: MaterialType!
+  status: MaterialStatus!
+  title: String!
+  slug: String!
+  description: String!
+  authorId: ID
+  revision: MaterialRevision
+  publishedRevisionId: ID
+  publishedAt: String
+  updatedAt: String!
+  tags: [String!]!
+  attachments: [MaterialAttachment!]!
+  learning: MaterialLearning
+}
+
+input MaterialCatalogFilter { topicId: ID, authorId: ID, status: MaterialStatus }
+input MaterialLearningInput {
+  topicIds: [ID!]! = []
+  estimatedMinutes: Int! = 0
+  learningOutcomes: [String!]! = []
+}
+input MaterialAttachmentInput {
+  fileId: ID!
+  kind: MaterialAssetKind!
+  title: String! = ""
+  position: Int! = 0
+}
+input CreateMaterialDraftInput {
+  type: MaterialType!
+  title: String!
+  slug: String!
+  description: String! = ""
+  format: MaterialFormat! = markdown
+  source: String!
+  message: String! = ""
+  tags: [String!]! = []
+  attachments: [MaterialAttachmentInput!]
+  learning: MaterialLearningInput
+}
+input SaveMaterialDraftInput {
+  materialId: ID!
+  expectedRevisionId: ID!
+  format: MaterialFormat! = markdown
+  source: String!
+  message: String! = ""
+  attachments: [MaterialAttachmentInput!]
+}
+
 type Query {
+  materials(filter: MaterialCatalogFilter, limit: Int! = 20, cursor: String): MaterialCatalogPage
+  material(id: ID!): Material
+  materialRevisions(id: ID!, limit: Int! = 20, beforeRevision: Int): MaterialRevisionPage
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
   learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
@@ -332,6 +432,9 @@ type Query {
 }
 
 type Mutation {
+  createMaterialDraft(input: CreateMaterialDraftInput!): Material
+  saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
+  publishMaterial(id: ID!, expectedRevisionId: ID!): Material
   saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
   removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
   updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!

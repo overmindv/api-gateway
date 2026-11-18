@@ -7,6 +7,7 @@ import (
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/overmindv/api-gateway/internal/apperror"
+	contentclient "github.com/overmindv/api-gateway/internal/client/content"
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	mediaclient "github.com/overmindv/api-gateway/internal/client/media"
 	"github.com/overmindv/api-gateway/internal/client/recommendations"
@@ -68,6 +69,10 @@ func errorCodeAndMessage(err error) (string, string) {
 	var recommendationError *recommendations.Error
 	if errors.As(err, &recommendationError) {
 		return recommendationError.Code, "Не удалось выполнить действие."
+	}
+	var contentError *contentclient.Error
+	if errors.As(err, &contentError) {
+		return contentError.Code, "Не удалось выполнить действие."
 	}
 
 	var upstreamError *users.Error
