@@ -129,16 +129,22 @@ func materialFixture(state string, revision *pb.ContentRevision) *pb.ContentItem
 
 func startMaterialRPC(t testing.TB, interceptor grpc.UnaryServerInterceptor, timeout time.Duration) *contentclient.Client {
 	t.Helper()
+	return startContentFixture(t, materialRPCFixture{}, interceptor, timeout, "")
+}
+
+func startContentFixture(t testing.TB, service pb.ContentServiceServer, interceptor grpc.UnaryServerInterceptor, timeout time.Duration, moderationToken string) *contentclient.Client {
+	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	server := grpc.NewServer(grpc.UnaryInterceptor(interceptor))
-	pb.RegisterContentServiceServer(server, materialRPCFixture{})
+	pb.RegisterContentServiceServer(server, service)
 	go func() { _ = server.Serve(listener) }()
 	t.Cleanup(server.Stop)
 	client, err := contentclient.New(config.Content{
-		Address: listener.Addr().String(), ServiceToken: materialFixtureToken, Timeout: timeout, Insecure: true,
+		Address: listener.Addr().String(), ServiceToken: materialFixtureToken, Timeout: timeout,
+		ModerationToken: moderationToken, Insecure: true,
 	})
 	if err != nil {
 		t.Fatal(err)

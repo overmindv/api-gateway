@@ -33,3 +33,5 @@
 `CONTENT_GRPC_TIMEOUT` по умолчанию 3 с, максимум 10 с. Gateway проверяет
 сертификат TLS. Для локального Compose, где Content слушает без TLS,
 используй `CONTENT_GRPC_INSECURE=true`. В production эта настройка запрещена.
+
+[Предложения правок, ревью и модерация](material-review.md)

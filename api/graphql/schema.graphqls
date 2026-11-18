@@ -379,10 +379,140 @@ input SaveMaterialDraftInput {
   attachments: [MaterialAttachmentInput!]
 }
 
+enum MaterialChangeStatus { open closed merged }
+enum MaterialReviewDecisionKind { approve request_changes }
+enum MaterialReviewOutcome { waiting_candidates pending approved changes_requested }
+enum MaterialModerationAction { hide restore }
+
+type MaterialChangeProposal {
+  id: ID!
+  materialId: ID!
+  baseRevisionId: ID!
+  authorId: ID!
+  status: MaterialChangeStatus!
+  head: MaterialChangeRevision!
+  createdAt: String!
+  closedAt: String
+  baseOutdated: Boolean!
+  mergedRevisionId: ID
+}
+type MaterialChangeRevision {
+  id: ID!
+  parentRevisionId: ID
+  ordinal: Int!
+  source: String!
+  message: String!
+  createdAt: String!
+  attachments: [MaterialAttachment!]!
+}
+type MaterialChangeHistoryEntry {
+  id: ID!
+  parentRevisionId: ID
+  baseRevisionId: ID!
+  ordinal: Int!
+  authorId: ID!
+  message: String!
+  createdAt: String!
+}
+type MaterialChangeHistoryPage { items: [MaterialChangeHistoryEntry!]!, nextBeforeOrdinal: Int }
+type MaterialChangeDiff {
+  baseRevisionId: ID!
+  revisionId: ID!
+  unifiedDiff: String!
+  truncated: Boolean!
+}
+type MaterialReviewDecision {
+  reviewerId: ID!
+  decision: MaterialReviewDecisionKind!
+  reason: String!
+  createdAt: String!
+  legacy: Boolean!
+}
+type MaterialReviewAssignment { reviewerId: ID!, slot: Int! }
+type MaterialReviewStatus {
+  revisionId: ID!
+  current: Boolean!
+  decisions: [MaterialReviewDecision!]!
+  assignments: [MaterialReviewAssignment!]!
+  outcome: MaterialReviewOutcome!
+  waitReason: String
+  topicId: ID
+}
+type MaterialReviewThread {
+  id: ID!
+  revisionId: ID!
+  lineNumber: Int!
+  authorId: ID!
+  body: String!
+  createdAt: String!
+  resolved: Boolean!
+  resolvedAt: String
+  resolvedBy: ID
+}
+type MaterialReviewReply {
+  id: ID!
+  authorId: ID!
+  body: String!
+  createdAt: String!
+}
+type MaterialReviewThreadPage { items: [MaterialReviewThread!]!, nextAfterId: ID }
+type MaterialReviewReplyPage { items: [MaterialReviewReply!]!, nextAfterId: ID }
+type MaterialMergeResult { materialId: ID!, publishedRevisionId: ID! }
+type MaterialModerationState { materialId: ID!, publishedRevisionId: ID!, version: String!, hidden: Boolean! }
+
+input OpenMaterialChangeInput {
+  materialId: ID!
+  baseRevisionId: ID!
+  source: String!
+  message: String! = ""
+  attachments: [MaterialAttachmentInput!]
+}
+input AppendMaterialChangeInput {
+  proposalId: ID!
+  expectedHeadId: ID!
+  source: String!
+  message: String! = ""
+  attachments: [MaterialAttachmentInput!]
+}
+input RebaseMaterialChangeInput {
+  proposalId: ID!
+  expectedHeadId: ID!
+  baseRevisionId: ID!
+  source: String!
+  message: String! = ""
+  attachments: [MaterialAttachmentInput!]
+}
+input SubmitMaterialReviewInput {
+  proposalId: ID!
+  revisionId: ID!
+  decision: MaterialReviewDecisionKind!
+  reason: String! = ""
+}
+input CreateMaterialReviewThreadInput {
+  proposalId: ID!
+  revisionId: ID!
+  lineNumber: Int! = 0
+  body: String!
+}
+input SetMaterialModerationInput {
+  materialId: ID!
+  expectedPublishedRevisionId: ID!
+  expectedVersion: String!
+  action: MaterialModerationAction!
+  reason: String!
+}
+
 type Query {
   materials(filter: MaterialCatalogFilter, limit: Int! = 20, cursor: String): MaterialCatalogPage
   material(id: ID!): Material
   materialRevisions(id: ID!, limit: Int! = 20, beforeRevision: Int): MaterialRevisionPage
+  materialChangeProposal(id: ID!): MaterialChangeProposal
+  materialChangeHistory(proposalId: ID!, limit: Int! = 20, beforeOrdinal: Int): MaterialChangeHistoryPage
+  materialChangeDiff(proposalId: ID!, revisionId: ID): MaterialChangeDiff
+  materialReviewStatus(proposalId: ID!, revisionId: ID): MaterialReviewStatus
+  materialReviewThreads(proposalId: ID!, limit: Int! = 20, afterId: ID): MaterialReviewThreadPage
+  materialReviewReplies(proposalId: ID!, threadId: ID!, limit: Int! = 20, afterId: ID): MaterialReviewReplyPage
+  materialModeration(id: ID!): MaterialModerationState
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
   learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
@@ -435,6 +565,17 @@ type Mutation {
   createMaterialDraft(input: CreateMaterialDraftInput!): Material
   saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
   publishMaterial(id: ID!, expectedRevisionId: ID!): Material
+  openMaterialChange(input: OpenMaterialChangeInput!): MaterialChangeProposal
+  appendMaterialChange(input: AppendMaterialChangeInput!): MaterialChangeProposal
+  rebaseMaterialChange(input: RebaseMaterialChangeInput!): MaterialChangeProposal
+  closeMaterialChange(proposalId: ID!): MaterialChangeProposal
+  mergeMaterialChange(proposalId: ID!, expectedHeadId: ID!): MaterialMergeResult
+  submitMaterialReview(input: SubmitMaterialReviewInput!): MaterialReviewDecision
+  createMaterialReviewThread(input: CreateMaterialReviewThreadInput!): MaterialReviewThread
+  replyToMaterialReviewThread(proposalId: ID!, threadId: ID!, body: String!): MaterialReviewReply
+  setMaterialReviewThreadResolved(proposalId: ID!, threadId: ID!, resolved: Boolean!): MaterialReviewThread
+  restoreMaterialRevision(materialId: ID!, expectedPublishedRevisionId: ID!, sourceRevisionId: ID!): MaterialRevision
+  setMaterialModeration(input: SetMaterialModerationInput!): MaterialModerationState
   saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
   removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
   updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!

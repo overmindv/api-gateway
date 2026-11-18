@@ -10,6 +10,7 @@ func TestContentConfig(t *testing.T) {
 	t.Setenv("CONTENT_GRPC_SERVICE_TOKEN", "")
 	t.Setenv("CONTENT_GRPC_INSECURE", "")
 	t.Setenv("CONTENT_GRPC_TIMEOUT", "")
+	t.Setenv("CONTENT_GRPC_MODERATION_TOKEN", "")
 	if disabled, err := loadContent(false); err != nil || disabled.Address != "" {
 		t.Errorf("content should be optional: %v", err)
 	}
@@ -36,5 +37,25 @@ func TestContentConfig(t *testing.T) {
 	t.Setenv("CONTENT_GRPC_ADDR", "https://content:9090")
 	if _, err := loadContent(false); err == nil {
 		t.Error("invalid gRPC address accepted")
+	}
+}
+
+func TestContentModerationConfig(t *testing.T) {
+	t.Setenv("CONTENT_GRPC_ADDR", "")
+	t.Setenv("CONTENT_GRPC_SERVICE_TOKEN", "")
+	t.Setenv("CONTENT_GRPC_MODERATION_TOKEN", "fixture-moderation-service-credential")
+	t.Setenv("CONTENT_GRPC_INSECURE", "")
+	t.Setenv("CONTENT_GRPC_TIMEOUT", "")
+	if _, err := loadContent(false); err == nil {
+		t.Error("moderation without Content address was accepted")
+	}
+	t.Setenv("CONTENT_GRPC_ADDR", "content:9090")
+	t.Setenv("CONTENT_GRPC_SERVICE_TOKEN", "fixture-moderation-service-credential")
+	if _, err := loadContent(false); err == nil {
+		t.Error("reused service credential was accepted")
+	}
+	t.Setenv("CONTENT_GRPC_SERVICE_TOKEN", "fixture-material-service-credential")
+	if cfg, err := loadContent(false); err != nil || cfg.ModerationToken == cfg.ServiceToken {
+		t.Errorf("distinct credentials rejected: %v", err)
 	}
 }

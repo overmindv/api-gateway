@@ -23,6 +23,7 @@ type Actor struct {
 }
 
 type Service interface {
+	ReviewService
 	List(context.Context, Actor, *pb.ListContentCatalogRequest) (*pb.ListContentCatalogResponse, error)
 	Get(context.Context, Actor, *pb.GetContentItemRequest) (*pb.GetContentItemResponse, error)
 	Revisions(context.Context, Actor, *pb.ListContentRevisionHistoryRequest) (*pb.ListContentRevisionHistoryResponse, error)
@@ -38,10 +39,11 @@ func (e *Error) Error() string { return e.Code }
 const messageLimit = 512 << 10
 
 type Client struct {
-	conn    *grpc.ClientConn
-	rpc     pb.ContentServiceClient
-	token   string
-	timeout time.Duration
+	conn            *grpc.ClientConn
+	rpc             pb.ContentServiceClient
+	token           string
+	moderationToken string
+	timeout         time.Duration
 }
 
 func New(cfg config.Content) (*Client, error) {
@@ -54,23 +56,34 @@ func New(cfg config.Content) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{conn: conn, rpc: pb.NewContentServiceClient(conn), token: cfg.ServiceToken, timeout: cfg.Timeout}, nil
+	return &Client{
+		conn: conn, rpc: pb.NewContentServiceClient(conn), token: cfg.ServiceToken,
+		moderationToken: cfg.ModerationToken, timeout: cfg.Timeout,
+	}, nil
 }
 
 func (c *Client) Close() error { return c.conn.Close() }
 
 func call[Req, Resp any](ctx context.Context, c *Client, actor Actor, req *Req,
 	rpc func(context.Context, *Req, ...grpc.CallOption) (*Resp, error)) (*Resp, error) {
+	return callWithToken(ctx, c.token, c.timeout, actor, req, rpc)
+}
+
+func callWithToken[Req, Resp any](ctx context.Context, token string, timeout time.Duration, actor Actor, req *Req,
+	rpc func(context.Context, *Req, ...grpc.CallOption) (*Resp, error)) (*Resp, error) {
+	if token == "" {
+		return nil, &Error{Code: "SERVICE_UNAVAILABLE"}
+	}
 	id, err := uuid.Parse(actor.UserID)
 	if err != nil || id == uuid.Nil || len(actor.UserID) != 36 {
 		return nil, &Error{Code: "UNAUTHENTICATED"}
 	}
-	md := metadata.Pairs("authorization", "Bearer "+c.token, "x-user-id", id.String())
+	md := metadata.Pairs("authorization", "Bearer "+token, "x-user-id", id.String())
 	if len(actor.RequestID) <= 128 && actor.RequestID != "" &&
 		strings.IndexFunc(actor.RequestID, func(r rune) bool { return r < 32 || r >= 127 }) < 0 {
 		md.Set("x-request-id", actor.RequestID)
 	}
-	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(ctx, md), c.timeout)
+	ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(ctx, md), timeout)
 	defer cancel()
 	result, err := rpc(ctx, req)
 	if err != nil {
@@ -90,6 +103,9 @@ func rpcError(err error) error {
 		code = "INVALID_ARGUMENT"
 	case codes.Aborted:
 		code = "REVISION_CONFLICT"
+		if status.Convert(err).Message() == "MERGE_CONFLICT" {
+			code = "MERGE_CONFLICT"
+		}
 	case codes.AlreadyExists:
 		code = "ALREADY_EXISTS"
 	case codes.FailedPrecondition:

@@ -13,8 +13,14 @@ const queryComplexityLimit = 25000
 type costSchema struct{ gqlgen.ExecutableSchema }
 
 func (s costSchema) Complexity(_ context.Context, object, field string, child int, args map[string]any) (int, bool) {
-	if object == "MaterialRevision" && field == "source" {
+	switch {
+	case (object == "MaterialRevision" || object == "MaterialChangeRevision") && field == "source":
 		return 4000 + child, true
+	case object == "MaterialChangeDiff" && field == "unifiedDiff":
+		return 1000 + child, true
+	case (object == "MaterialReviewThread" || object == "MaterialReviewReply") && field == "body",
+		object == "MaterialReviewDecision" && field == "reason":
+		return 80 + child, true
 	}
 	definition := s.Schema().Types[object]
 	if definition == nil {
