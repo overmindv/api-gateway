@@ -80,6 +80,24 @@ func RequireAdmin(ctx context.Context) (AuthInfo, error) {
 	if err != nil {
 		return AuthInfo{}, err
 	}
+	return requireAdminRole(info)
+}
+
+func RequireVerifiedAdmin(ctx context.Context) (AuthInfo, error) {
+	info, err := RequireAuth(ctx)
+	if err != nil {
+		return AuthInfo{}, err
+	}
+	if info.authority == nil {
+		return AuthInfo{}, apperror.ErrUnauthenticated
+	}
+	if !info.freshSession {
+		return RequireAdmin(ctx)
+	}
+	return requireAdminRole(info)
+}
+
+func requireAdminRole(info AuthInfo) (AuthInfo, error) {
 	for _, role := range info.Roles {
 		if strings.EqualFold(role, "admin") || strings.EqualFold(role, "superuser") {
 			return info, nil

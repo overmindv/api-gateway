@@ -88,6 +88,7 @@ func RefreshAuth(ctx context.Context) context.Context {
 	}
 	info, err := info.authority.checkSession(ctx, info, true)
 	info.Err = err
+	info.freshSession = err == nil
 	return ContextWithAuth(ctx, info)
 }
 
