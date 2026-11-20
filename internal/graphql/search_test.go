@@ -17,19 +17,20 @@ type searchCatalogStub struct {
 
 func (s *searchCatalogStub) ListUniversities(_ context.Context, opts entities.ListOptions) ([]entities.University, error) {
 	s.uniOptions = opts
-	return []entities.University{{ID: "uni-1", Name: "НИУ ВШЭ", ShortName: "ВШЭ", City: "Москва", Country: "Россия", Status: "active"}}, nil
+
+	return []entities.University{{ID: "uni-1", Name: "НИУ ВШЭ", ShortName: "ВШЭ", City: "Москва", Country: "Россия", Status: statusActive}}, nil
 }
 
 func (s *searchCatalogStub) ListPrograms(_ context.Context, _ string, _ entities.ListOptions) ([]entities.Program, error) {
-	return []entities.Program{{ID: "prog-1", Name: "Прикладная математика", Status: "active"}}, nil
+	return []entities.Program{{ID: "prog-1", Name: "Прикладная математика", Status: statusActive}}, nil
 }
 
 func (s *searchCatalogStub) ListCourses(_ context.Context, _ string, _ entities.ListOptions) ([]entities.Course, error) {
-	return []entities.Course{{ID: "course-1", Name: "Алгоритмы", Status: "active"}}, nil
+	return []entities.Course{{ID: "course-1", Name: "Алгоритмы", Status: statusActive}}, nil
 }
 
 func (s *searchCatalogStub) ListTopics(_ context.Context, _ string, _ entities.ListOptions) ([]entities.Topic, error) {
-	return []entities.Topic{{ID: "topic-1", Title: "Динамика", Status: "active"}}, nil
+	return []entities.Topic{{ID: "topic-1", Title: "Динамика", Status: statusActive}}, nil
 }
 
 type searchTasksStub struct {
@@ -39,6 +40,7 @@ type searchTasksStub struct {
 
 func (s *searchTasksStub) ListPublished(_ context.Context, filter tasks.TaskFilter) (tasks.TaskList, error) {
 	s.lastSearch = filter.Search
+
 	return tasks.TaskList{Items: []tasks.TaskSummary{{ID: "task-1", Status: "published", Title: "Два указателя", TaskType: "programming"}}}, nil
 }
 
@@ -52,7 +54,7 @@ func TestSearchFansOutToAllKinds(t *testing.T) {
 		Log:     slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}}
 
-	result, err := resolver.Search(context.Background(), "алгоритмы", 5)
+	result, err := resolver.Search(context.Background(), testCatalogSearch, 5)
 	if err != nil {
 		t.Fatalf("Search: %v", err)
 	}
@@ -73,10 +75,10 @@ func TestSearchFansOutToAllKinds(t *testing.T) {
 		t.Fatalf("tasks = %#v", result.Tasks)
 	}
 
-	if catalog.uniOptions.Search != "алгоритмы" || catalog.uniOptions.Status != "active" {
+	if catalog.uniOptions.Search != testCatalogSearch || catalog.uniOptions.Status != statusActive {
 		t.Fatalf("catalog options = %#v", catalog.uniOptions)
 	}
-	if tasksStub.lastSearch != "алгоритмы" {
+	if tasksStub.lastSearch != testCatalogSearch {
 		t.Fatalf("task search = %q", tasksStub.lastSearch)
 	}
 }

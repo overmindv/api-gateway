@@ -11,7 +11,7 @@ import (
 
 // optionsForQuery собирает параметры поиска для каталога: только активные элементы.
 func optionsForQuery(query string, limit int) entities.ListOptions {
-	return entities.ListOptions{Search: query, Status: "active", Limit: limit}
+	return entities.ListOptions{Search: query, Status: statusActive, Limit: limit}
 }
 
 // Search — единый поиск по каталогу и опубликованным задачам. Результаты собраны по видам.
@@ -39,6 +39,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		items, err := r.Catalog.ListUniversities(ctx, optionsForQuery(query, limit))
 		if err != nil {
 			r.Log.With("kind", "universities", "err", err).Error("search failed for kind")
+
 			return
 		}
 		result.Universities = collectMap(items, universityModel)
@@ -50,6 +51,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		items, err := r.Catalog.ListPrograms(ctx, "", optionsForQuery(query, limit))
 		if err != nil {
 			r.Log.With("kind", "programs", "err", err).Error("search failed for kind")
+
 			return
 		}
 		result.Programs = collectMap(items, programModel)
@@ -59,6 +61,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		items, err := r.Catalog.ListCourses(ctx, "", optionsForQuery(query, limit))
 		if err != nil {
 			r.Log.With("kind", "courses", "err", err).Error("search failed for kind")
+
 			return
 		}
 		result.Courses = collectMap(items, courseModel)
@@ -68,6 +71,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		items, err := r.Catalog.ListTopics(ctx, "", optionsForQuery(query, limit))
 		if err != nil {
 			r.Log.With("kind", "topics", "err", err).Error("search failed for kind")
+
 			return
 		}
 		result.Topics = collectMap(items, topicModel)
@@ -77,6 +81,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		list, err := r.Tasks.ListPublished(ctx, tasks.TaskFilter{Search: query, Limit: limit})
 		if err != nil {
 			r.Log.With("kind", "tasks", "err", err).Error("search failed for kind")
+
 			return
 		}
 		result.Tasks = taskListModel(list).Items
