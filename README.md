@@ -55,6 +55,12 @@ make build
 
 GraphQL endpoint при локальном запуске стека: `http://localhost:8081/graphql`.
 
+### Доступ к каталогу
+
+`ENTITIES_GATEWAY_TOKEN` задается одинаковым для Gateway и Entities.
+Gateway передает его вместе с проверенными правами администратора. Гости
+и студенты читают опубликованный каталог без этого токена.
+
 ## Подборка практики
 
 `practicePlan(topicIds: [ID!]!, minutes: Int!): PracticePlan!` доступен только

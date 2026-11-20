@@ -38,7 +38,7 @@ func main() {
 	defer closeRequestLog()
 
 	usersService := users.New(cfg.Users, requestLog)
-	entitiesService := entities.New(cfg.Entities.URL, cfg.Entities.Timeout, requestLog)
+	entitiesService := entities.NewWithGatewayToken(cfg.Entities.URL, cfg.Entities.GatewayToken, cfg.Entities.Timeout, requestLog)
 	tasksService := tasks.New(cfg.Tasks.URL, cfg.Tasks.Timeout, requestLog)
 	taskHunterService := taskhunter.New(cfg.TaskHunter.URL, cfg.TaskHunter.Token, cfg.TaskHunter.Timeout, requestLog)
 	mediaService := media.New(cfg.Media.URL, cfg.Media.Token, cfg.Media.Timeout, requestLog)

@@ -5,10 +5,13 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/overmindv/api-gateway/internal/client/httpx"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type CatalogService interface {
@@ -45,19 +48,35 @@ type CatalogService interface {
 }
 
 type Client struct {
-	http *http.Client
-	hx   *httpx.Client
+	http       *http.Client
+	hx         *httpx.Client
+	privileged *httpx.Client
 }
 
 func New(baseURL string, timeout time.Duration, log *slog.Logger) *Client {
-	httpClient := &http.Client{Timeout: timeout}
+	return NewWithGatewayToken(baseURL, "", timeout, log)
+}
 
-	return &Client{
-		http: httpClient,
-		hx: httpx.New("entities", baseURL, httpClient, log, func(_ int) error {
-			return &Error{}
-		}),
+func NewWithGatewayToken(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client {
+	httpClient := &http.Client{
+		Timeout: timeout,
+		CheckRedirect: func(*http.Request, []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
+	newError := func(_ int) error { return &Error{} }
+	client := &Client{
+		http: httpClient,
+		hx:   httpx.New("entities", baseURL, httpClient, log, newError),
+	}
+	if token != "" {
+		client.privileged = httpx.New("entities", baseURL, httpClient, log, newError, httpx.Header{
+			Name:  "Authorization",
+			Value: "Bearer " + token,
+		})
+	}
+
+	return client
 }
 
 func (c *Client) ListUniversities(ctx context.Context, options ListOptions) ([]University, error) {
@@ -196,7 +215,35 @@ func (c *Client) Health(ctx context.Context) error {
 
 // request выполняет типизированный запрос к entities.
 func request[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor) (T, error) {
-	return httpx.DoJSON[T](c.hx, ctx, method, path, input, hxActor(actor))
+	client := c.hx
+	if c.privileged != nil {
+		if actor.UserID == "" {
+			actor = catalogReadActor(ctx)
+		}
+		if actor.UserID != "" {
+			client = c.privileged
+		}
+	}
+
+	return httpx.DoJSON[T](client, ctx, method, path, input, hxActor(actor))
+}
+
+func catalogReadActor(ctx context.Context) Actor {
+	info, ok := middleware.Auth(ctx)
+	if !ok || !slices.ContainsFunc(info.Roles, func(role string) bool {
+		return strings.EqualFold(role, "admin") || strings.EqualFold(role, "superuser")
+	}) {
+		return Actor{}
+	}
+	admin, err := middleware.RequireAdmin(ctx)
+	if err != nil {
+		return Actor{}
+	}
+
+	return Actor{
+		UserID: admin.UserID,
+		Roles:  admin.Roles,
+	}
 }
 
 // hxActor приводит Actor клиента к httpx.Actor для проброса заголовков.

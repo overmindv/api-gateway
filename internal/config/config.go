@@ -42,8 +42,9 @@ type Users struct {
 	Timeout            time.Duration
 }
 type Entities struct {
-	URL     string
-	Timeout time.Duration
+	URL          string
+	Timeout      time.Duration
+	GatewayToken string
 }
 
 type Tasks struct {
@@ -108,8 +109,9 @@ func Load() (Config, error) {
 			Timeout:    envDuration("USERS_TIMEOUT", 5*time.Second),
 		},
 		Entities: Entities{
-			URL:     env("ENTITIES_URL", "http://localhost:8082"),
-			Timeout: envDuration("ENTITIES_TIMEOUT", 5*time.Second),
+			URL:          env("ENTITIES_URL", "http://localhost:8082"),
+			Timeout:      envDuration("ENTITIES_TIMEOUT", 5*time.Second),
+			GatewayToken: os.Getenv("ENTITIES_GATEWAY_TOKEN"),
 		},
 		Tasks: Tasks{
 			URL:     env("TASKS_URL", "http://localhost:8083"),
@@ -173,6 +175,10 @@ func Load() (Config, error) {
 	}
 	if cfg.Entities.Timeout <= 0 {
 		return Config{}, fmt.Errorf("ENTITIES_TIMEOUT must be positive")
+	}
+	if token := cfg.Entities.GatewayToken; token != "" && (len(token) < 32 || len(token) > 512 ||
+		strings.ContainsFunc(token, func(r rune) bool { return r < 0x21 || r > 0x7e })) {
+		return Config{}, fmt.Errorf("ENTITIES_GATEWAY_TOKEN must contain 32-512 printable ASCII characters without spaces")
 	}
 	parsedTasksURL, err := url.Parse(cfg.Tasks.URL)
 	if err != nil || parsedTasksURL.Host == "" || (parsedTasksURL.Scheme != "http" && parsedTasksURL.Scheme != "https") {
