@@ -46,10 +46,12 @@ func (operationLimits) MutateOperationContext(_ context.Context, op *gqlgen.Oper
 				}
 			}
 		}
+
 		return true
 	}
 	if !walk(op.Operation.SelectionSet, 0) {
-		return &gqlerror.Error{Message: "Не удалось выполнить действие.", Extensions: map[string]any{"code": "OPERATION_LIMIT_EXCEEDED"}}
+		return &gqlerror.Error{Message: genericActionMessage, Extensions: map[string]any{"code": "OPERATION_LIMIT_EXCEEDED"}}
 	}
+
 	return nil
 }

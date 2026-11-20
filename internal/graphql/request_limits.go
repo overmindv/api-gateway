@@ -17,6 +17,7 @@ func boundedRequest(next http.Handler, timeout time.Duration) http.Handler {
 	if timeout <= 0 {
 		timeout = 30 * time.Second
 	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)
@@ -31,14 +32,17 @@ func boundedRequest(next http.Handler, timeout time.Duration) http.Handler {
 			body, err := io.ReadAll(io.LimitReader(r.Body, limit+1))
 			if err != nil {
 				requestLimitError(w, http.StatusBadRequest, "INVALID_REQUEST")
+
 				return
 			}
 			if int64(len(body)) > limit {
 				requestLimitError(w, http.StatusRequestEntityTooLarge, "REQUEST_TOO_LARGE")
+
 				return
 			}
 			if mediaType == "application/json" && bytes.HasPrefix(bytes.TrimSpace(body), []byte("[")) {
 				requestLimitError(w, http.StatusBadRequest, "BATCH_NOT_ALLOWED")
+
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewReader(body))
@@ -50,5 +54,5 @@ func boundedRequest(next http.Handler, timeout time.Duration) http.Handler {
 func requestLimitError(w http.ResponseWriter, status int, code string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]any{"errors": []any{map[string]any{"message": "Не удалось выполнить действие.", "extensions": map[string]string{"code": code}}}})
+	_ = json.NewEncoder(w).Encode(map[string]any{"errors": []any{map[string]any{"message": genericActionMessage, "extensions": map[string]string{"code": code}}}})
 }

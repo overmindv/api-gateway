@@ -28,6 +28,7 @@ func (s costSchema) Complexity(_ context.Context, object, field string, child in
 				size = n
 			}
 		}
+
 		return weightedCost(child, size), true
 	}
 	if f.Arguments.ForName("limit") != nil {
@@ -35,6 +36,7 @@ func (s costSchema) Complexity(_ context.Context, object, field string, child in
 		if n, err := gqlgen.UnmarshalInt(args["limit"]); err == nil && n > 0 {
 			size = n
 		}
+
 		return weightedCost(child, size), true
 	}
 	if object == "TopicTreeNode" && field == "children" {
@@ -51,11 +53,13 @@ func (s costSchema) Complexity(_ context.Context, object, field string, child in
 			return 1 + child, true
 		}
 		size := 20
-		if object == "Query" {
+		if object == objectQuery {
 			size = 100
 		}
+
 		return weightedCost(child, size), true
 	}
+
 	return 1 + child, true
 }
 
@@ -69,5 +73,6 @@ func weightedCost(child, size int) int {
 	if size > queryComplexityLimit/child {
 		return queryComplexityLimit + 1
 	}
+
 	return 1 + size*child
 }

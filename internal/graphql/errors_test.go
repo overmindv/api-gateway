@@ -10,6 +10,8 @@ import (
 )
 
 func TestErrorCodeAndMessage(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		err  error
@@ -37,6 +39,8 @@ func TestErrorCodeAndMessage(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			code, _ := errorCodeAndMessage(test.err)
 			if code != test.code {
 				t.Fatalf("code = %q", code)
