@@ -15,6 +15,8 @@ import (
 )
 
 func TestPracticePlanUsesServiceTokenAndMinimalContract(t *testing.T) {
+	t.Parallel()
+
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" || r.URL.Path != "/v1/practice-plan" {
 			t.Errorf("unexpected request %s %s", r.Method, r.URL)
@@ -57,7 +59,10 @@ func TestPracticePlanUsesServiceTokenAndMinimalContract(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // subtests совместно проверяют один log sink и redirect counter
 func TestPracticePlanHidesUpstreamDetailsAndRejectsRedirect(t *testing.T) {
+	t.Parallel()
+
 	var logs strings.Builder
 	targetCalls := 0
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { targetCalls++; w.WriteHeader(200) }))
