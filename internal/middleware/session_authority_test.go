@@ -18,11 +18,14 @@ type sessionAuthorityFake struct {
 
 func (f *sessionAuthorityFake) CheckSession(context.Context, string) (SessionState, error) {
 	f.calls++
+
 	return SessionState{UserID: "user", SessionID: "session", Roles: f.roles}, f.err
 }
 func (f *sessionAuthorityFake) RevokeSession(context.Context, string) error { return f.err }
 
 func TestSessionAuthorityFreshAndBounded(t *testing.T) {
+	t.Parallel()
+
 	now := time.Now()
 	a := NewJWTAuthenticator("secret", "users", []string{"user"})
 	a.now = func() time.Time { return now }
@@ -39,7 +42,7 @@ func TestSessionAuthorityFreshAndBounded(t *testing.T) {
 	}
 	f.err = errors.New("offline")
 	ctx := RefreshAuth(ContextWithAuth(context.Background(), info))
-	if _, err := RequireAuth(ctx); err == nil {
+	if _, authErr := RequireAuth(ctx); authErr == nil {
 		t.Fatal("mutation outage allowed")
 	}
 	now = now.Add(6 * time.Second)
@@ -49,6 +52,8 @@ func TestSessionAuthorityFreshAndBounded(t *testing.T) {
 }
 
 func TestSessionCacheBoundAndLogout(t *testing.T) {
+	t.Parallel()
+
 	a := NewJWTAuthenticator("secret", "users")
 	f := &sessionAuthorityFake{roles: []string{"user"}}
 	a.SetSessionVerifier(f)

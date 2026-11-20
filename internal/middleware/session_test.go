@@ -11,6 +11,8 @@ import (
 
 // TestSessionCookieSetsHttpOnlyCookie проверяет выдачу httpOnly session cookie.
 func TestSessionCookieSetsHttpOnlyCookie(t *testing.T) {
+	t.Parallel()
+
 	handler := SessionCookie(SessionConfig{Secure: true}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		SetSessionToken(r.Context(), "jwt-value", time.Hour)
 		w.Header().Set("Content-Type", "application/json")
@@ -42,6 +44,8 @@ func TestSessionCookieSetsHttpOnlyCookie(t *testing.T) {
 
 // TestSessionCookieClearsExistingCookie проверяет удаление cookie при ClearSessionToken.
 func TestSessionCookieClearsExistingCookie(t *testing.T) {
+	t.Parallel()
+
 	handler := SessionCookie(SessionConfig{Secure: true}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ClearSessionToken(r.Context())
 		_, _ = w.Write([]byte(`{"ok":true}`))
@@ -63,6 +67,8 @@ func TestSessionCookieClearsExistingCookie(t *testing.T) {
 
 // TestJWTMiddlewareReadsTokenFromCookie проверяет, что JWT middleware принимает сессию из cookie.
 func TestJWTMiddlewareReadsTokenFromCookie(t *testing.T) {
+	t.Parallel()
+
 	now := time.Date(2026, 9, 11, 12, 0, 0, 0, time.UTC)
 	authenticator := NewJWTAuthenticator("secret", "users")
 	authenticator.now = func() time.Time { return now }

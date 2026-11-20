@@ -45,6 +45,7 @@ func (a *JWTAuthenticator) ParseContext(ctx context.Context, header string) (Aut
 		return info, err
 	}
 	info.authority = a
+
 	return a.checkSession(ctx, info, false)
 }
 
@@ -56,6 +57,7 @@ func (a *JWTAuthenticator) checkSession(ctx context.Context, info AuthInfo, fres
 	a.cache.mu.Unlock()
 	if !fresh && ok && now.Before(entry.expires) {
 		info.Roles = append([]string(nil), entry.state.Roles...)
+
 		return info, nil
 	}
 	state, err := a.verifier.CheckSession(ctx, info.Token)
@@ -67,6 +69,7 @@ func (a *JWTAuthenticator) checkSession(ctx context.Context, info AuthInfo, fres
 	if err != nil {
 		delete(a.cache.values, key)
 		info.Err = err
+
 		return info, err
 	}
 	if len(a.cache.values) >= 1024 {
@@ -77,6 +80,7 @@ func (a *JWTAuthenticator) checkSession(ctx context.Context, info AuthInfo, fres
 	a.cache.values[key] = sessionEntry{state: state, expires: now.Add(5 * time.Second)}
 	info.Roles = append([]string(nil), state.Roles...)
 	info.Err = nil
+
 	return info, nil
 }
 
@@ -88,6 +92,7 @@ func RefreshAuth(ctx context.Context) context.Context {
 	}
 	info, err := info.authority.checkSession(ctx, info, true)
 	info.Err = err
+
 	return ContextWithAuth(ctx, info)
 }
 
@@ -101,5 +106,6 @@ func RevokeAuth(ctx context.Context) error {
 	info.authority.cache.mu.Lock()
 	delete(info.authority.cache.values, key)
 	info.authority.cache.mu.Unlock()
+
 	return info.authority.verifier.RevokeSession(ctx, info.Token)
 }
