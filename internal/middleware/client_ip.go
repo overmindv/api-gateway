@@ -12,6 +12,7 @@ type clientIPKey struct{}
 // ClientIP возвращает только IP транспортного peer; XFF и пользовательские заголовки игнорируются.
 func ClientIP(ctx context.Context) string {
 	value, _ := ctx.Value(clientIPKey{}).(string)
+
 	return value
 }
 

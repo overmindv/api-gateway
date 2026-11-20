@@ -10,6 +10,8 @@ import (
 )
 
 func TestBrowserSecurityOrigins(t *testing.T) {
+	t.Parallel()
+
 	for _, contentType := range []string{"application/json", "multipart/form-data; boundary=test"} {
 		for _, tc := range []struct {
 			name, origin string
@@ -24,6 +26,8 @@ func TestBrowserSecurityOrigins(t *testing.T) {
 			{"non-browser", "", false, true},
 		} {
 			t.Run(contentType+tc.name, func(t *testing.T) {
+				t.Parallel()
+
 				called := false
 				h := BrowserSecurity(BrowserSecurityConfig{AllowedOrigins: []string{"https://learn.example"}}, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { called = true; w.WriteHeader(204) }))
 				r := httptest.NewRequest("POST", "/graphql", strings.NewReader("test"))
@@ -46,6 +50,8 @@ func TestBrowserSecurityOrigins(t *testing.T) {
 }
 
 func TestBrowserSecurityHTTPS(t *testing.T) {
+	t.Parallel()
+
 	for _, tc := range []struct {
 		name, peer, forwarded string
 		tls, allowed          bool
@@ -57,6 +63,8 @@ func TestBrowserSecurityHTTPS(t *testing.T) {
 		{"ambiguous proxy", "10.0.0.2:10", "https,http", false, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			called := false
 			h := BrowserSecurity(BrowserSecurityConfig{Production: true, TrustedProxies: []netip.Prefix{netip.MustParsePrefix("10.0.0.0/24")}}, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { called = true; w.WriteHeader(204) }))
 			r := httptest.NewRequest("POST", "/graphql", nil)
