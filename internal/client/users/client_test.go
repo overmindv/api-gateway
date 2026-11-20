@@ -15,6 +15,8 @@ import (
 )
 
 func TestClientMapsResponseAndForwardsProtectedHeaders(t *testing.T) {
+	t.Parallel()
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer jwt" {
 			t.Fatalf("authorization = %q", r.Header.Get("Authorization"))
@@ -44,6 +46,8 @@ func TestClientMapsResponseAndForwardsProtectedHeaders(t *testing.T) {
 }
 
 func TestClientMapsGraphQLError(t *testing.T) {
+	t.Parallel()
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"errors":[{"message":"already exists","extensions":{"code":"ALREADY_EXISTS"}}],"data":null}`))
 	}))
@@ -63,6 +67,8 @@ func TestClientMapsGraphQLError(t *testing.T) {
 }
 
 func TestClientHealth(t *testing.T) {
+	t.Parallel()
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) }))
 	defer server.Close()
 

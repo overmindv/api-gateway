@@ -15,6 +15,11 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
+const (
+	codeInternalServerError = "INTERNAL_SERVER_ERROR"
+	codeBadGateway          = "BAD_GATEWAY"
+)
+
 const userFields = `id email username firstName lastName birthDate phone avatarFileId roles isAdmin isSuperuser createdAt updatedAt`
 const publicUserFields = `id username firstName lastName avatarFileId isAdmin createdAt`
 
@@ -50,7 +55,7 @@ func (c *Client) Register(ctx context.Context, input RegisterInput) (*AuthPayloa
 
 	if data.Register == nil {
 		return nil, &Error{
-			Code:    "BAD_GATEWAY",
+			Code:    codeBadGateway,
 			Message: "users returned an empty registration response",
 		}
 	}
@@ -70,7 +75,7 @@ func (c *Client) Login(ctx context.Context, input LoginInput) (*AuthPayload, err
 
 	if data.Login == nil {
 		return nil, &Error{
-			Code:    "BAD_GATEWAY",
+			Code:    codeBadGateway,
 			Message: "users returned an empty login response",
 		}
 	}
@@ -90,7 +95,7 @@ func (c *Client) GetUser(ctx context.Context, id string) (*User, error) {
 
 	if data.User == nil {
 		return nil, &Error{
-			Code:    "BAD_GATEWAY",
+			Code:    codeBadGateway,
 			Message: "users returned an empty user response",
 		}
 	}
@@ -110,7 +115,7 @@ func (c *Client) GetUserByUsername(ctx context.Context, username string) (*User,
 
 	if data.UserByUsername == nil {
 		return nil, &Error{
-			Code:    "BAD_GATEWAY",
+			Code:    codeBadGateway,
 			Message: "users returned an empty user response",
 		}
 	}
@@ -140,7 +145,7 @@ func (c *Client) UpdateUser(ctx context.Context, id string, input UpdateUserInpu
 
 	if data.UpdateUser == nil {
 		return nil, &Error{
-			Code:    "BAD_GATEWAY",
+			Code:    codeBadGateway,
 			Message: "users returned an empty update response",
 		}
 	}
@@ -158,7 +163,7 @@ func (c *Client) SetMyAvatar(ctx context.Context, fileID *string) (*User, error)
 		return nil, err
 	}
 	if data.User == nil {
-		return nil, &Error{Code: "BAD_GATEWAY", Message: "users returned an empty avatar response"}
+		return nil, &Error{Code: codeBadGateway, Message: "users returned an empty avatar response"}
 	}
 
 	return data.User, nil
@@ -212,7 +217,7 @@ func (c *Client) SetUserAdmin(ctx context.Context, id string, admin bool) (*User
 
 	if data.SetUserAdmin == nil {
 		return nil, &Error{
-			Code:    "BAD_GATEWAY",
+			Code:    codeBadGateway,
 			Message: "users returned an empty admin response",
 		}
 	}
@@ -232,7 +237,7 @@ func (c *Client) SetUserAdminByUsername(ctx context.Context, username string, ad
 
 	if data.SetUserAdminByUsername == nil {
 		return nil, &Error{
-			Code:    "BAD_GATEWAY",
+			Code:    codeBadGateway,
 			Message: "users returned an empty admin response",
 		}
 	}
@@ -286,7 +291,8 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 
 	body, err := json.Marshal(requestEnvelope{Query: query, Variables: variables})
 	if err != nil {
-		code = "INTERNAL_SERVER_ERROR"
+		code = codeInternalServerError
+
 		return fmt.Errorf("encode users request: %w", err)
 	}
 
@@ -295,7 +301,8 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 
 	request, err := http.NewRequestWithContext(callCtx, http.MethodPost, c.url, bytes.NewReader(body))
 	if err != nil {
-		code = "INTERNAL_SERVER_ERROR"
+		code = codeInternalServerError
+
 		return fmt.Errorf("create users request: %w", err)
 	}
 
@@ -311,6 +318,7 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 		info, authErr := middleware.RequireAuth(ctx)
 		if authErr != nil {
 			code = "UNAUTHENTICATED"
+
 			return authErr
 		}
 		request.Header.Set("Authorization", "Bearer "+info.Token)
@@ -320,39 +328,46 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(callCtx.Err(), context.DeadlineExceeded) {
 			code = "DEADLINE_EXCEEDED"
+
 			return &Error{Code: code, Message: "users request timed out"}
 		}
 
 		code = "SERVICE_UNAVAILABLE"
+
 		return &Error{Code: code, Message: "users is unavailable"}
 	}
 
 	defer func() { _ = response.Body.Close() }()
 	responseBody, err := io.ReadAll(io.LimitReader(response.Body, 2<<20))
 	if err != nil {
-		code = "BAD_GATEWAY"
+		code = codeBadGateway
+
 		return &Error{Code: code, Message: "cannot read users response"}
 	}
 
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		code = "BAD_GATEWAY"
+		code = codeBadGateway
+
 		return &Error{Code: code, Message: fmt.Sprintf("users returned HTTP %d", response.StatusCode)}
 	}
 
 	var envelope responseEnvelope
 	if err := json.Unmarshal(responseBody, &envelope); err != nil {
-		code = "BAD_GATEWAY"
+		code = codeBadGateway
+
 		return &Error{Code: code, Message: "users returned invalid JSON"}
 	}
 
 	if len(envelope.Errors) > 0 {
 		message := envelope.Errors[0].Message
 		code = extensionCode(envelope.Errors[0].Extensions)
+
 		return &Error{Code: code, Message: message}
 	}
 
 	if err := json.Unmarshal(envelope.Data, target); err != nil {
-		code = "BAD_GATEWAY"
+		code = codeBadGateway
+
 		return &Error{Code: code, Message: "users returned invalid data"}
 	}
 
@@ -364,5 +379,5 @@ func extensionCode(extensions map[string]any) string {
 		return value
 	}
 
-	return "BAD_GATEWAY"
+	return codeBadGateway
 }
