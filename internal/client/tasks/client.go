@@ -16,6 +16,8 @@ import (
 	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
+const runModeSamples = "samples"
+
 const maxCodeSourceSize = 256 << 10
 
 type Service interface {
@@ -249,9 +251,9 @@ func hxActor(actor Actor) httpx.Actor {
 // Решение передаётся ровно одним способом: кодом из консоли (source_code) либо файлом.
 func codeSubmissionBody(input CodeSubmissionInput) (io.Reader, string, error) {
 	if input.RunMode == "" {
-		input.RunMode = "samples"
+		input.RunMode = runModeSamples
 	}
-	if input.RunMode != "samples" && input.RunMode != "graded" {
+	if input.RunMode != runModeSamples && input.RunMode != "graded" {
 		return nil, "", &Error{Code: "VALIDATION_ERROR", Message: "invalid run mode", StatusCode: http.StatusBadRequest}
 	}
 
