@@ -15,6 +15,7 @@ import (
 func (c *Client) CheckSession(ctx context.Context, token string) (middleware.SessionState, error) {
 	var state middleware.SessionState
 	err := c.sessionCall(ctx, "check", token, &state)
+
 	return state, err
 }
 
@@ -43,7 +44,7 @@ func (c *Client) sessionCall(ctx context.Context, action, token string, state *m
 	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	resp, err := client.Do(req)
 	if err != nil {
-		return &Error{Code: "BAD_GATEWAY", Message: "session check unavailable"}
+		return &Error{Code: codeBadGateway, Message: "session check unavailable"}
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode == http.StatusUnauthorized {
@@ -54,7 +55,7 @@ func (c *Client) sessionCall(ctx context.Context, action, token string, state *m
 		expected = http.StatusNoContent
 	}
 	if resp.StatusCode != expected {
-		return &Error{Code: "BAD_GATEWAY", Message: "session check unavailable"}
+		return &Error{Code: codeBadGateway, Message: "session check unavailable"}
 	}
 	if state == nil {
 		return nil
@@ -66,5 +67,6 @@ func (c *Client) sessionCall(ctx context.Context, action, token string, state *m
 	if err = json.Unmarshal(data, state); err != nil {
 		return fmt.Errorf("invalid session response")
 	}
+
 	return nil
 }
