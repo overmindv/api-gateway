@@ -140,8 +140,8 @@ func (r *Resolver) resolveAvatars(ctx context.Context, ids []string) map[string]
 		return result
 	}
 	for _, file := range files {
-		small := firstURL(file, "w128", "w320", "original")
-		medium := firstURL(file, "w768", "w320", "original")
+		small := firstURL(file, "w128", "w320", "w768")
+		medium := firstURL(file, "w768", "w320", "w128")
 		if small != "" && medium != "" {
 			result[file.FileID] = &model.UserAvatar{
 				FileID:    file.FileID,
