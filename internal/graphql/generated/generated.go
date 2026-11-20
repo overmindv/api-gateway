@@ -4639,6 +4639,7 @@ enum FeedKind {
   topic_created
   topic_activated
   task_published
+  material_published
 }
 
 type FeedItem {

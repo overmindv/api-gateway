@@ -947,6 +947,7 @@ const (
 	FeedKindTopicCreated        FeedKind = "topic_created"
 	FeedKindTopicActivated      FeedKind = "topic_activated"
 	FeedKindTaskPublished       FeedKind = "task_published"
+	FeedKindMaterialPublished   FeedKind = "material_published"
 )
 
 var AllFeedKind = []FeedKind{
@@ -959,11 +960,12 @@ var AllFeedKind = []FeedKind{
 	FeedKindTopicCreated,
 	FeedKindTopicActivated,
 	FeedKindTaskPublished,
+	FeedKindMaterialPublished,
 }
 
 func (e FeedKind) IsValid() bool {
 	switch e {
-	case FeedKindUniversityCreated, FeedKindUniversityActivated, FeedKindProgramCreated, FeedKindProgramActivated, FeedKindCourseCreated, FeedKindCourseActivated, FeedKindTopicCreated, FeedKindTopicActivated, FeedKindTaskPublished:
+	case FeedKindUniversityCreated, FeedKindUniversityActivated, FeedKindProgramCreated, FeedKindProgramActivated, FeedKindCourseCreated, FeedKindCourseActivated, FeedKindTopicCreated, FeedKindTopicActivated, FeedKindTaskPublished, FeedKindMaterialPublished:
 		return true
 	}
 	return false

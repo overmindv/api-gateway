@@ -6,7 +6,7 @@ import (
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 )
 
-// Feed возвращает публичную ленту активностей (каталог + задачи) по убыванию времени.
+// Feed возвращает публичную ленту по убыванию времени.
 func (r *queryResolver) Feed(ctx context.Context, pagination *model.PaginationInput) (*model.FeedConnection, error) {
 	limit, offset := 50, 0
 	if pagination != nil {
@@ -60,6 +60,8 @@ func feedKind(kind string) (model.FeedKind, bool) {
 		return model.FeedKindTopicActivated, true
 	case "task.published":
 		return model.FeedKindTaskPublished, true
+	case "material.published":
+		return model.FeedKindMaterialPublished, true
 	default:
 		return "", false
 	}
