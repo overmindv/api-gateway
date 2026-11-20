@@ -21,6 +21,8 @@ import (
 )
 
 func TestPracticePlanRejectsForgedActorWithoutJWT(t *testing.T) {
+	t.Parallel()
+
 	handler := Handler(nil, nil, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	req := httptest.NewRequest("POST", "/graphql", strings.NewReader(`{"query":"{ practicePlan(topicIds: [\"00000000-0000-4000-8000-000000000001\"], minutes: 60) { totalMinutes } }"}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -40,7 +42,7 @@ const practiceTask = "00000000-0000-4000-8000-000000000004"
 const practiceVersion = "00000000-0000-4000-8000-000000000005"
 
 func practiceContext() context.Context {
-	return middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: practiceUser, Token: "private-user-jwt", Roles: []string{"user"}})
+	return middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: practiceUser, Token: "private-" + strings.Repeat("user-jwt", 1), Roles: []string{testSearch}})
 }
 
 type practiceFixture struct {
@@ -69,6 +71,7 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 		if r.URL.Path == f.failPath {
 			w.WriteHeader(503)
 			_, _ = io.WriteString(w, `{"code":"FAILURE","message":"private database details"}`)
+
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -79,7 +82,7 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 		}
 		switch {
 		case r.URL.Path == "/v1/practice-goal":
-			if r.Header.Get("X-User-ID") != practiceUser || r.Header.Get("Authorization") != "Bearer service-token" {
+			if r.Header.Get("X-User-ID") != practiceUser || r.Header.Get("Authorization") != testServiceAuth {
 				t.Error("unverified goal actor or token")
 			}
 			switch r.Method {
@@ -106,19 +109,19 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 				w.WriteHeader(204)
 			}
 		case r.URL.Path == "/v1/topics":
-			write([]entities.Topic{{ID: practiceTopic, Title: "Python", Status: "active"}})
+			write([]entities.Topic{{ID: practiceTopic, Title: "Python", Status: statusActive}})
 		case r.URL.Path == "/v1/learning-outline":
 			var in recommendations.OutlineRequest
 			if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 				t.Error(err)
 			}
-			if in.Goal != "Junior AI" || r.Header.Get("X-User-ID") != practiceUser {
+			if in.Goal != testGoal || r.Header.Get("X-User-ID") != practiceUser {
 				t.Error("outline goal/actor")
 			}
-			write(recommendations.Outline{AIStatus: "GENERATED", TopicIDs: []string{practiceTopic}, Materials: []recommendations.Material{{ID: "python", Title: "Python", URL: "https://docs.python.org/3/tutorial/", Minutes: 25}}})
-		case r.URL.Path == "/v1/practice-plan":
+			write(recommendations.Outline{AIStatus: "GENERATED", TopicIDs: []string{practiceTopic}, Materials: []recommendations.Material{{ID: pythonLanguage, Title: "Python", URL: "https://docs.python.org/3/tutorial/", Minutes: 25}}})
+		case r.URL.Path == practicePlanPath:
 			f.recommendationCalls++
-			if r.Header.Get("X-User-ID") != practiceUser || r.Header.Get("Authorization") != "Bearer service-token" {
+			if r.Header.Get("X-User-ID") != practiceUser || r.Header.Get("Authorization") != testServiceAuth {
 				t.Error("unverified recommendation actor or token")
 			}
 			data, _ := io.ReadAll(r.Body)
@@ -154,11 +157,12 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 				if f.missingTopic {
 					w.WriteHeader(404)
 					write(map[string]string{"code": "TOPIC_NOT_FOUND", "message": "Not found"})
+
 					return
 				}
-				status := "active"
+				status := statusActive
 				if f.inactive {
-					status = "draft"
+					status = catalogStatusDraft
 				}
 				write(entities.Topic{ID: id, Title: "Topic", Status: status})
 			}
@@ -179,10 +183,10 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 					items = append(items, tasks.TaskSummary{ID: fmt.Sprintf("task-%s-%d", topic, i), TaskVersionID: "version", TopicID: &topic, Status: "published", TaskType: "single_choice", Difficulty: "easy", Title: "Public"})
 				}
 			} else if offset == 0 && topic == practiceTopic {
-				items = append(items, tasks.TaskSummary{ID: practiceTask, TaskVersionID: practiceVersion, TopicID: &topic, Status: "published", TaskType: "single_choice", Difficulty: "easy", Title: "Public"}, tasks.TaskSummary{ID: "draft", TaskVersionID: "version", TopicID: &topic, Status: "draft"})
+				items = append(items, tasks.TaskSummary{ID: practiceTask, TaskVersionID: practiceVersion, TopicID: &topic, Status: "published", TaskType: "single_choice", Difficulty: "easy", Title: "Public"}, tasks.TaskSummary{ID: catalogStatusDraft, TaskVersionID: "version", TopicID: &topic, Status: catalogStatusDraft})
 			}
 			write(tasks.TaskList{Items: items, Limit: limit, Offset: offset})
-		case r.URL.Path == "/v1/me/submissions":
+		case r.URL.Path == submissionsPath:
 			if r.Header.Get("X-User-ID") != practiceUser || r.URL.Query().Get("task_id") != "" {
 				t.Error("history must belong to verified user across tasks")
 			}
@@ -191,13 +195,13 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 			items := []tasks.Submission{}
 			if f.historyCount > 0 {
 				for i := offset; i < offset+limit && i < f.historyCount; i++ {
-					items = append(items, tasks.Submission{UserID: practiceUser, TaskID: fmt.Sprintf("choice-%d", i), TaskVersionID: "version", Correct: true, Verdict: "accepted", CreatedAt: "2026-11-08T12:00:00Z"})
+					items = append(items, tasks.Submission{UserID: practiceUser, TaskID: fmt.Sprintf("choice-%d", i), TaskVersionID: "version", Correct: true, Verdict: verdictAccepted, CreatedAt: "2026-11-08T12:00:00Z"})
 				}
 			} else if offset == 0 {
 				items = []tasks.Submission{
 					{UserID: practiceUser, TaskID: practiceTask, TaskVersionID: practiceVersion, Correct: false, Verdict: "wrong_answer", CreatedAt: "2026-11-08T12:00:00Z", CorrectOptionIDs: []string{"secret-answer"}},
-					{UserID: practiceUser, TaskID: practiceTask, TaskVersionID: practiceVersion, Correct: true, Verdict: "accepted", CreatedAt: "2026-11-07T12:00:00Z"},
-					{UserID: "other-user", TaskID: "foreign", TaskVersionID: "version", Correct: true, Verdict: "accepted", CreatedAt: "2026-11-08T12:00:00Z"},
+					{UserID: practiceUser, TaskID: practiceTask, TaskVersionID: practiceVersion, Correct: true, Verdict: verdictAccepted, CreatedAt: "2026-11-07T12:00:00Z"},
+					{UserID: "other-user", TaskID: "foreign", TaskVersionID: "version", Correct: true, Verdict: verdictAccepted, CreatedAt: "2026-11-08T12:00:00Z"},
 				}
 			}
 			write(tasks.SubmissionList{Items: items, Limit: limit, Offset: offset})
@@ -210,19 +214,19 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 			items := []tasks.CodeSubmission{}
 			if f.historyCount > 0 {
 				for i := offset; i < offset+limit && i < f.historyCount; i++ {
-					verdict := "accepted"
-					items = append(items, tasks.CodeSubmission{RunMode: "graded", UserID: practiceUser, TaskID: fmt.Sprintf("code-%d", i), TaskVersionID: "version", Status: "completed", Verdict: &verdict, CreatedAt: "2026-11-08T12:00:00Z"})
+					verdict := verdictAccepted
+					items = append(items, tasks.CodeSubmission{RunMode: runModeGraded, UserID: practiceUser, TaskID: fmt.Sprintf("code-%d", i), TaskVersionID: "version", Status: "completed", Verdict: &verdict, CreatedAt: "2026-11-08T12:00:00Z"})
 				}
 			} else if offset == 0 {
-				for i, verdict := range []string{"accepted", "wrong_answer", "infrastructure_error", "checker_error", "cancelled"} {
+				for i, verdict := range []string{verdictAccepted, "wrong_answer", "infrastructure_error", "checker_error", "canceled"} {
 					v := verdict
-					items = append(items, tasks.CodeSubmission{RunMode: "graded", UserID: practiceUser, TaskID: fmt.Sprintf("code-%d", i), TaskVersionID: "version", Status: "completed", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z", SourceFileName: "secret-source", Execution: &tasks.ExecutionPhaseResult{Stdout: "secret-output"}})
+					items = append(items, tasks.CodeSubmission{RunMode: runModeGraded, UserID: practiceUser, TaskID: fmt.Sprintf("code-%d", i), TaskVersionID: "version", Status: "completed", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z", SourceFileName: "secret-source", Execution: &tasks.ExecutionPhaseResult{Stdout: "secret-output"}})
 				}
-				v := "accepted"
+				v := verdictAccepted
 				for _, mode := range []string{"samples", ""} {
 					items = append(items, tasks.CodeSubmission{RunMode: mode, UserID: practiceUser, TaskID: "sample-must-not-be-evidence", TaskVersionID: "version", Status: "completed", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z"})
 				}
-				items = append(items, tasks.CodeSubmission{RunMode: "graded", UserID: practiceUser, TaskID: "queued", TaskVersionID: "version", Status: "queued", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z"})
+				items = append(items, tasks.CodeSubmission{RunMode: runModeGraded, UserID: practiceUser, TaskID: "queued", TaskVersionID: "version", Status: "queued", Verdict: &v, CreatedAt: "2026-11-08T12:00:00Z"})
 			}
 			write(tasks.CodeSubmissionList{Items: items, Limit: limit, Offset: offset})
 		default:
@@ -232,10 +236,13 @@ func (f *practiceFixture) resolver(t *testing.T) *queryResolver {
 	}))
 	t.Cleanup(upstream.Close)
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
 	return &queryResolver{&Resolver{Catalog: entities.New(upstream.URL, time.Second, log), Tasks: tasks.New(upstream.URL, time.Second, log), Recommendations: recommendations.New(upstream.URL, "service-token", time.Second, log)}}
 }
 
 func TestSavedPracticeGoalLifecycle(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{}
 	r := f.resolver(t)
 	ctx := practiceContext()
@@ -263,17 +270,21 @@ func TestSavedPracticeGoalLifecycle(t *testing.T) {
 }
 
 func TestSavedPracticeGoalValidatesBeforeStorage(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{}
 	r := f.resolver(t)
 	mutation := &mutationResolver{r.Resolver}
 	_, err := mutation.SavePracticeGoal(practiceContext(), []string{practiceTopic, practiceTopic}, 60, nil)
 	code, _ := errorCodeAndMessage(err)
-	if code != "INVALID_ARGUMENT" || f.calls != 0 {
+	if code != codeInvalidArgument || f.calls != 0 {
 		t.Fatalf("invalid goal reached upstream: %s calls=%d", code, f.calls)
 	}
 }
 
 func TestSavedPracticeGoalShowsDeletedTopicForRepair(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{missingTopic: true, goal: &recommendations.Goal{TopicIDs: []string{practiceTopic}, Minutes: 60, Revision: 1}}
 	r := f.resolver(t)
 	goal, err := r.MyPracticeGoal(practiceContext())
@@ -283,6 +294,8 @@ func TestSavedPracticeGoalShowsDeletedTopicForRepair(t *testing.T) {
 }
 
 func TestPracticePlanCollectsSafePublishedMetadataAndOwnFinalEvidence(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{}
 	r := f.resolver(t)
 	plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
@@ -299,7 +312,7 @@ func TestPracticePlanCollectsSafePublishedMetadataAndOwnFinalEvidence(t *testing
 		t.Fatalf("expected accepted choice, accepted code, wrong answer code; got %+v", f.input.Evidence)
 	}
 	for _, e := range f.input.Evidence {
-		if e.TaskID == practiceTask && e.Verdict != "accepted" {
+		if e.TaskID == practiceTask && e.Verdict != verdictAccepted {
 			t.Fatal("accepted attempt lost during deduplication")
 		}
 	}
@@ -309,6 +322,8 @@ func TestPracticePlanCollectsSafePublishedMetadataAndOwnFinalEvidence(t *testing
 }
 
 func TestPracticePlanValidatesBeforeOutboundCalls(t *testing.T) {
+	t.Parallel()
+
 	for _, tc := range []struct {
 		name    string
 		ids     []string
@@ -317,11 +332,13 @@ func TestPracticePlanValidatesBeforeOutboundCalls(t *testing.T) {
 		{"no topics", nil, 60}, {"invalid ID", []string{"bad"}, 60}, {"nil UUID", []string{"00000000-0000-0000-0000-000000000000"}, 60}, {"duplicate", []string{practiceTopic, practiceTopic}, 60}, {"too many", []string{practiceTopic, practiceBase, practiceUser, practiceTask, practiceVersion, practiceTopic}, 60}, {"short", []string{practiceTopic}, 9}, {"long", []string{practiceTopic}, 241},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			f := &practiceFixture{}
 			r := f.resolver(t)
 			_, err := r.PracticePlan(practiceContext(), tc.ids, tc.minutes, nil, nil)
 			code, _ := errorCodeAndMessage(err)
-			if code != "INVALID_ARGUMENT" || f.calls != 0 {
+			if code != codeInvalidArgument || f.calls != 0 {
 				t.Fatalf("code=%s calls=%d", code, f.calls)
 			}
 		})
@@ -329,16 +346,20 @@ func TestPracticePlanValidatesBeforeOutboundCalls(t *testing.T) {
 }
 
 func TestPracticePlanDependencyFailureDoesNotBecomeColdStart(t *testing.T) {
-	for _, path := range []string{"/v1/topics/" + practiceTopic, "/v1/topics/" + practiceTopic + "/prerequisites", "/v1/tasks", "/v1/me/submissions", "/v1/me/code-submissions", "/v1/practice-plan"} {
+	t.Parallel()
+
+	for _, path := range []string{"/v1/topics/" + practiceTopic, "/v1/topics/" + practiceTopic + "/prerequisites", "/v1/tasks", submissionsPath, "/v1/me/code-submissions", practicePlanPath} {
 		t.Run(path, func(t *testing.T) {
+			t.Parallel()
+
 			f := &practiceFixture{failPath: path}
 			r := f.resolver(t)
 			plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
 			code, message := errorCodeAndMessage(err)
-			if code != "SERVICE_UNAVAILABLE" || plan != nil || strings.Contains(message, "private") {
+			if code != codeServiceUnavailable || plan != nil || strings.Contains(message, "private") {
 				t.Fatalf("unsafe dependency result: plan=%+v code=%s message=%s", plan, code, message)
 			}
-			if path != "/v1/practice-plan" && f.recommendationCalls != 0 {
+			if path != practicePlanPath && f.recommendationCalls != 0 {
 				t.Fatal("dependency failure used as empty history")
 			}
 		})
@@ -346,17 +367,21 @@ func TestPracticePlanDependencyFailureDoesNotBecomeColdStart(t *testing.T) {
 }
 
 func TestPracticePlanRejectsInactiveCyclicOrIncompleteGraph(t *testing.T) {
+	t.Parallel()
+
 	for _, f := range []*practiceFixture{{inactive: true}, {cycle: true}, {manyTopics: true}} {
 		r := f.resolver(t)
 		_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
 		code, _ := errorCodeAndMessage(err)
-		if code != "INVALID_ARGUMENT" || f.recommendationCalls != 0 {
+		if code != codeInvalidArgument || f.recommendationCalls != 0 {
 			t.Fatalf("unsafe graph forwarded: code=%s calls=%d", code, f.recommendationCalls)
 		}
 	}
 }
 
 func TestPracticePlanPaginatesAllTopicsAndCapsEachHistory(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{taskCount: 1200, historyCount: 1001}
 	r := f.resolver(t)
 	plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic, practiceBase}, 240, nil, nil)
@@ -375,6 +400,8 @@ func TestPracticePlanPaginatesAllTopicsAndCapsEachHistory(t *testing.T) {
 }
 
 func TestPracticePlanExactHistoryBoundIsNotTruncated(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{historyCount: 1000}
 	r := f.resolver(t)
 	_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
@@ -387,20 +414,24 @@ func TestPracticePlanExactHistoryBoundIsNotTruncated(t *testing.T) {
 }
 
 func TestPracticePlanDisabled(t *testing.T) {
+	t.Parallel()
+
 	r := &queryResolver{&Resolver{}}
 	_, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, nil)
 	code, _ := errorCodeAndMessage(err)
-	if code != "SERVICE_UNAVAILABLE" {
+	if code != codeServiceUnavailable {
 		t.Fatalf("got %s", code)
 	}
 }
 
 func TestPracticeAITextIsBoundedAndForwarded(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{}
 	r := f.resolver(t)
 	goal := "  Junior AI  "
 	plan, err := r.PracticePlan(practiceContext(), []string{practiceTopic}, 60, nil, &goal)
-	if err != nil || plan == nil || f.input.Goal != "Junior AI" {
+	if err != nil || plan == nil || f.input.Goal != testGoal {
 		t.Fatalf("goal forwarding: %v, %q", err, f.input.Goal)
 	}
 	calls := f.calls

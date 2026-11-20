@@ -36,6 +36,7 @@ func (r *queryResolver) MyPracticeProgress(ctx context.Context) (*model.Practice
 	if err != nil {
 		return nil, err
 	}
+
 	return progressModel(result), nil
 }
 
@@ -56,10 +57,11 @@ func (r *queryResolver) PracticeProgress(ctx context.Context, userID string) (*m
 	defer cancel()
 	actor := tasks.Actor{UserID: auth.UserID, Roles: auth.Roles}
 	if id.String() == auth.UserID {
-		mine, err := service.MyProgress(ctx, actor)
-		if err != nil {
-			return nil, err
+		mine, progressErr := service.MyProgress(ctx, actor)
+		if progressErr != nil {
+			return nil, progressErr
 		}
+
 		return progressModel(mine), nil
 	}
 	if r.Resolver.Users == nil {
@@ -68,9 +70,10 @@ func (r *queryResolver) PracticeProgress(ctx context.Context, userID string) (*m
 	profile, err := r.Resolver.Users.GetPublicUser(ctx, id.String())
 	if err != nil {
 		var upstream *users.Error
-		if errors.As(err, &upstream) && upstream.Code == "NOT_FOUND" {
+		if errors.As(err, &upstream) && upstream.Code == codeNotFound {
 			return nil, nil
 		}
+
 		return nil, progressUnavailable()
 	}
 	if profile == nil {
@@ -80,6 +83,7 @@ func (r *queryResolver) PracticeProgress(ctx context.Context, userID string) (*m
 	if err != nil || result == nil {
 		return nil, err
 	}
+
 	return progressModel(*result), nil
 }
 
@@ -94,6 +98,7 @@ func (r *mutationResolver) SetMyPracticeStatsPublic(ctx context.Context, public 
 	}
 	ctx, cancel := context.WithTimeout(ctx, progressDeadline)
 	defer cancel()
+
 	return service.SetMyProgressPublic(ctx, public, tasks.Actor{UserID: auth.UserID, Roles: auth.Roles})
 }
 
@@ -142,15 +147,17 @@ func (r *queryResolver) PracticeLeaderboard(ctx context.Context, courseID *strin
 			if len(candidates) == 0 {
 				return result, nil
 			}
+
 			return nil, progressUnavailable()
 		}
 		for _, candidate := range candidates {
 			profile, err := r.Resolver.Users.GetPublicUser(ctx, candidate.UserID)
 			if err != nil {
 				var upstream *users.Error
-				if errors.As(err, &upstream) && upstream.Code == "NOT_FOUND" {
+				if errors.As(err, &upstream) && upstream.Code == codeNotFound {
 					continue
 				}
+
 				return nil, progressUnavailable()
 			}
 			if profile == nil {
@@ -176,6 +183,7 @@ func (r *queryResolver) PracticeLeaderboard(ctx context.Context, courseID *strin
 			return result, nil
 		}
 	}
+
 	return nil, progressUnavailable()
 }
 
@@ -197,6 +205,7 @@ func (r *Resolver) progressCourseTopics(ctx context.Context, courseID string) ([
 			if len(page) == 0 {
 				return ids, nil
 			}
+
 			return nil, progressUnavailable()
 		}
 		for _, topic := range page {
@@ -213,6 +222,7 @@ func (r *Resolver) progressCourseTopics(ctx context.Context, courseID string) ([
 			return ids, nil
 		}
 	}
+
 	return nil, progressUnavailable()
 }
 
@@ -225,6 +235,7 @@ func progressModel(input tasks.Progress) *model.PracticeProgress {
 	for _, item := range input.ByDifficulty {
 		difficulties = append(difficulties, &model.PracticeProgressDifficulty{Difficulty: item.Difficulty, Solved: item.Solved})
 	}
+
 	return &model.PracticeProgress{
 		UserID: input.UserID, Public: input.Public, Attempts: input.Attempts,
 		AcceptedAttempts: input.AcceptedAttempts, SolvedTasks: input.SolvedTasks,

@@ -43,8 +43,8 @@ func (r *queryResolver) PracticePlan(ctx context.Context, topicIDs []string, min
 	ids := make([]string, 0, len(topicIDs))
 	seen := make(map[string]bool, len(topicIDs))
 	for _, value := range topicIDs {
-		id, err := uuid.Parse(value)
-		if err != nil || id == uuid.Nil || seen[id.String()] {
+		id, parseErr := uuid.Parse(value)
+		if parseErr != nil || id == uuid.Nil || seen[id.String()] {
 			return nil, practiceInvalid()
 		}
 		seen[id.String()] = true
@@ -77,12 +77,12 @@ func (r *queryResolver) PracticePlan(ctx context.Context, topicIDs []string, min
 	if input.InputTruncated {
 		found := false
 		for _, warning := range warnings {
-			if warning == "PARTIAL_DATA" {
+			if warning == warningPartialData {
 				found = true
 			}
 		}
 		if !found {
-			warnings = append(warnings, "PARTIAL_DATA")
+			warnings = append(warnings, warningPartialData)
 		}
 	}
 	items := make([]*model.PracticePlanItem, 0, len(plan.Items))
@@ -112,6 +112,7 @@ func (r *queryResolver) PracticePlan(ctx context.Context, topicIDs []string, min
 		}
 		result.TopicInsights = append(result.TopicInsights, mapped)
 	}
+
 	return result, nil
 }
 
@@ -119,6 +120,7 @@ func practiceSessionCount(count *int) int {
 	if count == nil {
 		return 1
 	}
+
 	return *count
 }
 
@@ -140,7 +142,7 @@ func (r *Resolver) practiceTopics(ctx context.Context, selected []string) ([]rec
 		if err != nil {
 			return nil, practiceUnavailable()
 		}
-		if topic.ID != id || topic.Status != "active" {
+		if topic.ID != id || topic.Status != statusActive {
 			return nil, practiceInvalid()
 		}
 		links, err := r.Catalog.ListPrerequisites(ctx, id)
@@ -188,6 +190,7 @@ func (r *Resolver) practiceTopics(ctx context.Context, selected []string) ([]rec
 			}
 		}
 		states[id] = 2
+
 		return true
 	}
 	for _, id := range selected {
@@ -195,6 +198,7 @@ func (r *Resolver) practiceTopics(ctx context.Context, selected []string) ([]rec
 			return nil, practiceInvalid()
 		}
 	}
+
 	return topics, nil
 }
 
@@ -233,7 +237,7 @@ func (r *queryResolver) practiceCandidates(ctx context.Context, topics []recomme
 			scanned += len(list.Items)
 			p.done = len(list.Items) < limit
 			for _, task := range list.Items {
-				if task.Status != "published" || task.TopicID == nil || *task.TopicID != p.id || seen[task.ID] {
+				if task.Status != statusPublished || task.TopicID == nil || *task.TopicID != p.id || seen[task.ID] {
 					continue
 				}
 				seen[task.ID] = true
@@ -257,6 +261,7 @@ func (r *queryResolver) practiceCandidates(ctx context.Context, topics []recomme
 			return candidates, true, nil
 		}
 	}
+
 	return candidates, false, nil
 }
 
@@ -266,10 +271,10 @@ func (r *queryResolver) practiceEvidence(ctx context.Context, actor tasks.Actor)
 	add := func(item recommendations.Evidence) {
 		key := item.TaskID + "/" + item.TaskVersionID
 		previous, ok := evidence[key]
-		if ok && previous.Verdict == "accepted" && item.Verdict != "accepted" {
+		if ok && previous.Verdict == verdictAccepted && item.Verdict != verdictAccepted {
 			return
 		}
-		if ok && (item.Verdict != "accepted" || previous.Verdict == "accepted") {
+		if ok && (item.Verdict != verdictAccepted || previous.Verdict == verdictAccepted) {
 			previousTime, _ := time.Parse(time.RFC3339Nano, previous.OccurredAt)
 			itemTime, _ := time.Parse(time.RFC3339Nano, item.OccurredAt)
 			if !itemTime.After(previousTime) {
@@ -288,30 +293,31 @@ func (r *queryResolver) practiceEvidence(ctx context.Context, actor tasks.Actor)
 				if item.UserID != actor.UserID {
 					continue
 				}
-				verdict := "wrong_answer"
+				verdict := verdictWrongAnswer
 				if item.Correct {
-					verdict = "accepted"
+					verdict = verdictAccepted
 				}
 				add(recommendations.Evidence{TaskID: item.TaskID, TaskVersionID: item.TaskVersionID, Verdict: verdict, OccurredAt: item.CreatedAt})
 			}
 		}
+
 		return len(list.Items), nil
 	})
 	if err != nil {
 		return nil, false, err
 	}
 	codeTruncated, err := practiceHistory(func(limit, offset int) (int, error) {
-		list, err := r.Tasks.ListMyCodeSubmissions(ctx, nil, limit, offset, actor)
-		if err != nil {
-			return 0, err
+		list, listErr := r.Tasks.ListMyCodeSubmissions(ctx, nil, limit, offset, actor)
+		if listErr != nil {
+			return 0, listErr
 		}
 		if offset < practiceHistoryLimit {
 			for _, item := range list.Items {
-				if item.RunMode != "graded" || item.UserID != actor.UserID || item.Status != "completed" || item.Verdict == nil {
+				if item.RunMode != runModeGraded || item.UserID != actor.UserID || item.Status != "completed" || item.Verdict == nil {
 					continue
 				}
 				switch *item.Verdict {
-				case "accepted", "wrong_answer", "compilation_error", "runtime_error", "time_limit_exceeded", "memory_limit_exceeded", "output_limit_exceeded":
+				case verdictAccepted, verdictWrongAnswer, "compilation_error", "runtime_error", "time_limit_exceeded", "memory_limit_exceeded", "output_limit_exceeded":
 					occurredAt := item.CreatedAt
 					if item.CompletedAt != nil {
 						occurredAt = *item.CompletedAt
@@ -320,6 +326,7 @@ func (r *queryResolver) practiceEvidence(ctx context.Context, actor tasks.Actor)
 				}
 			}
 		}
+
 		return len(list.Items), nil
 	})
 	if err != nil {
@@ -334,6 +341,7 @@ func (r *queryResolver) practiceEvidence(ctx context.Context, actor tasks.Actor)
 	for _, key := range keys {
 		result = append(result, evidence[key])
 	}
+
 	return result, choiceTruncated || codeTruncated, nil
 }
 
@@ -354,5 +362,6 @@ func practiceHistory(fetch func(limit, offset int) (int, error)) (bool, error) {
 	if err != nil || count > 1 {
 		return false, practiceUnavailable()
 	}
+
 	return count > 0, nil
 }
