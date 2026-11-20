@@ -21,16 +21,23 @@ func (s *authorityStub) CheckSession(context.Context, string) (middleware.Sessio
 	if s.revoked {
 		return middleware.SessionState{}, errors.New("revoked")
 	}
-	return middleware.SessionState{UserID: "user-id", SessionID: "session", Roles: []string{"user"}}, nil
+
+	return middleware.SessionState{UserID: testUserID, SessionID: "session", Roles: []string{testSearch}}, nil
 }
-func (s *authorityStub) RevokeSession(context.Context, string) error { s.revoked = true; return nil }
+func (s *authorityStub) RevokeSession(context.Context, string) error {
+	s.revoked = true
+
+	return nil
+}
 
 func TestLogoutDeniesNextMutationInSameOperation(t *testing.T) {
+	t.Parallel()
+
 	svc := &userServiceStub{}
 	authority := &authorityStub{}
 	a := middleware.NewJWTAuthenticator("secret", "users")
 	a.SetSessionVerifier(authority)
-	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{Subject: "user-id", ID: "session", Issuer: "users", ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour))}).SignedString([]byte("secret"))
+	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{Subject: testUserID, ID: "session", Issuer: "users", ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour))}).SignedString([]byte("secret"))
 	handler := middleware.JWT(a, middleware.SessionCookie(middleware.SessionConfig{}, Handler(svc, nil, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))))
 	req := httptest.NewRequest(http.MethodPost, "/graphql", strings.NewReader(`{"query":"mutation { logout updateUser(id: \"user-id\", input: {firstName: \"After logout\"}) { id } }"}`))
 	req.Header.Set("Content-Type", "application/json")
