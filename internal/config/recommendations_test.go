@@ -13,7 +13,7 @@ func TestRecommendationsOptionalConfiguration(t *testing.T) {
 		t.Fatalf("must remain disabled without URL: %+v %v", cfg.Recommendations, err)
 	}
 	t.Setenv("RECOMMENDATIONS_URL", "http://recommendations:8088")
-	if _, err := Load(); err == nil {
+	if _, loadErr := Load(); loadErr == nil {
 		t.Fatal("enabled service accepted without service token")
 	}
 	t.Setenv("RECOMMENDATIONS_SERVICE_TOKEN", " test-token ")
