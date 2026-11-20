@@ -25,9 +25,9 @@ type userServiceStub struct {
 
 func upstreamUser() *users.User {
 	return &users.User{
-		ID:        "user-id",
+		ID:        testUserID,
 		Email:     "user@example.com",
-		Username:  "user",
+		Username:  testSearch,
 		FirstName: "First",
 	}
 }
@@ -106,14 +106,16 @@ func (s *userServiceStub) SetMyAvatar(_ context.Context, fileID *string) (*users
 }
 
 func (s *userServiceStub) GetPublicUser(_ context.Context, id string) (*users.PublicUser, error) {
-	return &users.PublicUser{ID: id, Username: "user", FirstName: "First", LastName: "Last", IsAdmin: false, CreatedAt: "now"}, nil
+	return &users.PublicUser{ID: id, Username: testSearch, FirstName: "First", LastName: "Last", IsAdmin: false, CreatedAt: "now"}, nil
 }
 
 func (s *userServiceStub) ListPublicUsers(_ context.Context, search string, limit, offset int) ([]*users.PublicUser, error) {
-	return []*users.PublicUser{{ID: "user-id", Username: "user", FirstName: "First", LastName: "Last", IsAdmin: false, CreatedAt: "now"}}, nil
+	return []*users.PublicUser{{ID: testUserID, Username: testSearch, FirstName: "First", LastName: "Last", IsAdmin: false, CreatedAt: "now"}}, nil
 }
 
 func TestPublicResolversMapRequests(t *testing.T) {
+	t.Parallel()
+
 	stub := &userServiceStub{}
 	resolver := &mutationResolver{Resolver: &Resolver{Users: stub}}
 	firstName := "First"
@@ -121,7 +123,7 @@ func TestPublicResolversMapRequests(t *testing.T) {
 	registered, err := resolver.Register(context.Background(), model.RegisterInput{
 		Email:     "user@example.com",
 		Password:  "password",
-		Username:  "user",
+		Username:  testSearch,
 		FirstName: &firstName,
 	})
 	if err != nil {
@@ -145,10 +147,12 @@ func TestPublicResolversMapRequests(t *testing.T) {
 }
 
 func TestProtectedResolversRequireJWT(t *testing.T) {
+	t.Parallel()
+
 	stub := &userServiceStub{}
 
 	resolver := &queryResolver{Resolver: &Resolver{Users: stub}}
-	if _, err := resolver.GetUser(context.Background(), "user-id"); !errors.Is(err, apperror.ErrUnauthenticated) {
+	if _, err := resolver.GetUser(context.Background(), testUserID); !errors.Is(err, apperror.ErrUnauthenticated) {
 		t.Fatalf("expected unauthenticated, got %v", err)
 	}
 
@@ -158,59 +162,63 @@ func TestProtectedResolversRequireJWT(t *testing.T) {
 }
 
 func TestProtectedResolversMapRequests(t *testing.T) {
+	t.Parallel()
+
 	stub := &userServiceStub{}
 	root := &Resolver{Users: stub}
 	query, mutation := &queryResolver{Resolver: root}, &mutationResolver{Resolver: root}
 
-	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "user-id", Token: "jwt", Roles: []string{"admin"}})
-	if user, err := query.GetUser(ctx, "user-id"); err != nil || user.ID != "user-id" {
+	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: testUserID, Token: "jwt", Roles: []string{"admin"}})
+	if user, err := query.GetUser(ctx, testUserID); err != nil || user.ID != testUserID {
 		t.Fatalf("GetUser() = %+v, %v", user, err)
 	}
 
 	limit, offset := 10, 2
-	search := "user"
+	search := testSearch
 	if users, err := query.Users(ctx, &search, &limit, &offset); err != nil || len(users) != 1 {
 		t.Fatalf("Users() = %+v, %v", users, err)
 	}
-	if stub.listSearch != "user" || stub.listLimit != 10 || stub.listOffset != 2 {
+	if stub.listSearch != testSearch || stub.listLimit != 10 || stub.listOffset != 2 {
 		t.Fatalf("list mapping failed")
 	}
 
 	username, clear := "updated", true
-	if _, err := mutation.UpdateUser(ctx, "user-id", model.UpdateUserInput{Username: &username, ClearBirthDate: &clear}); err != nil {
+	if _, err := mutation.UpdateUser(ctx, testUserID, model.UpdateUserInput{Username: &username, ClearBirthDate: &clear}); err != nil {
 		t.Fatal(err)
 	}
 
-	if stub.updateID != "user-id" || stub.update.Username == nil || *stub.update.Username != username || !stub.update.ClearBirthDate {
+	if stub.updateID != testUserID || stub.update.Username == nil || *stub.update.Username != username || !stub.update.ClearBirthDate {
 		t.Fatalf("update mapping failed: %+v", stub.update)
 	}
 
-	deleted, err := mutation.DeleteUser(ctx, "user-id")
-	if err != nil || !deleted || stub.deleteID != "user-id" {
+	deleted, err := mutation.DeleteUser(ctx, testUserID)
+	if err != nil || !deleted || stub.deleteID != testUserID {
 		t.Fatalf("DeleteUser() = %v, %v", deleted, err)
 	}
 }
 
 // TestGetUserIDOR запрещает не-админу получать полный профиль другого пользователя.
 func TestGetUserIDOR(t *testing.T) {
+	t.Parallel()
+
 	root := &Resolver{Users: &userServiceStub{}}
 	query := &queryResolver{Resolver: root}
 
 	// Владелец запрашивает свой профиль — разрешено.
-	ownerCtx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "user-id", Token: "jwt", Roles: []string{"user"}})
-	if _, err := query.GetUser(ownerCtx, "user-id"); err != nil {
+	ownerCtx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: testUserID, Token: "jwt", Roles: []string{testSearch}})
+	if _, err := query.GetUser(ownerCtx, testUserID); err != nil {
 		t.Fatalf("owner GetUser() unexpected error: %v", err)
 	}
 
 	// Админ запрашивает чужой профиль — разрешено.
 	adminCtx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "admin-id", Token: "jwt", Roles: []string{"admin"}})
-	if _, err := query.GetUser(adminCtx, "user-id"); err != nil {
+	if _, err := query.GetUser(adminCtx, testUserID); err != nil {
 		t.Fatalf("admin GetUser() unexpected error: %v", err)
 	}
 
 	// Обычный пользователь запрашивает чужой профиль — запрещено (IDOR).
-	attackerCtx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "attacker-id", Token: "jwt", Roles: []string{"user"}})
-	if _, err := query.GetUser(attackerCtx, "user-id"); !errors.Is(err, apperror.ErrPermissionDenied) {
+	attackerCtx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "attacker-id", Token: "jwt", Roles: []string{testSearch}})
+	if _, err := query.GetUser(attackerCtx, testUserID); !errors.Is(err, apperror.ErrPermissionDenied) {
 		t.Fatalf("expected ErrPermissionDenied for foreign user, got %v", err)
 	}
 }

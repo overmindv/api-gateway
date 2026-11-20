@@ -217,7 +217,7 @@ func TestITTaskAdminMutations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(adminList.Items) != 1 || stub.filter.Status != "draft" {
+	if len(adminList.Items) != 1 || stub.filter.Status != catalogStatusDraft {
 		t.Fatalf("unexpected admin list: %+v %+v", adminList, stub.filter)
 	}
 	adminTask, err := query.AdminITTask(ctx, "task-id")
@@ -237,11 +237,11 @@ func TestITTaskAdminMutations(t *testing.T) {
 	if stub.input.TaskType != "single_choice" || stub.input.Difficulty != "easy" || len(stub.input.Options) != 2 {
 		t.Fatalf("unexpected upstream input: %+v", stub.input)
 	}
-	if _, err := resolver.UpdateITTask(ctx, "task-id", sampleGraphQLTaskInput()); err != nil {
-		t.Fatal(err)
+	if _, updateErr := resolver.UpdateITTask(ctx, "task-id", sampleGraphQLTaskInput()); updateErr != nil {
+		t.Fatal(updateErr)
 	}
-	if _, err := resolver.ChangeITTaskStatus(ctx, "task-id", model.ITTaskStatusPublished); err != nil {
-		t.Fatal(err)
+	if _, statusErr := resolver.ChangeITTaskStatus(ctx, "task-id", model.ITTaskStatusPublished); statusErr != nil {
+		t.Fatal(statusErr)
 	}
 	deleted, err := resolver.DeleteITTask(ctx, "task-id")
 	if err != nil || !deleted || !stub.deleted || stub.status != "published" {
@@ -257,27 +257,27 @@ func TestITTaskSubmissionQueries(t *testing.T) {
 	root := &Resolver{Tasks: stub}
 	query := &queryResolver{Resolver: root}
 	mutation := &mutationResolver{Resolver: root}
-	ctx := tasksContext("user-id", []string{"student"})
+	ctx := tasksContext(testUserID, []string{"student"})
 	result, err := mutation.SubmitITTaskAnswer(ctx, "task-id", model.ITSubmissionInput{
 		TaskVersionID:     "version-id",
-		IdempotencyKey:    "key-id",
+		IdempotencyKey:    testKeyID,
 		SelectedOptionIds: []string{"option-id"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.Correct || !result.TaskUpdated || stub.submissionInput.IdempotencyKey != "key-id" {
+	if !result.Correct || !result.TaskUpdated || stub.submissionInput.IdempotencyKey != testKeyID {
 		t.Fatalf("unexpected submission mapping: %+v %+v", result, stub.submissionInput)
 	}
-	if _, err := query.ItSubmission(ctx, "submission-id"); err != nil {
-		t.Fatal(err)
+	if _, submissionErr := query.ItSubmission(ctx, "submission-id"); submissionErr != nil {
+		t.Fatal(submissionErr)
 	}
 	limit := 7
 	history, err := query.MyITSubmissions(ctx, &stub.taskID, &model.PaginationInput{Limit: &limit})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(history.Items) != 1 || history.Limit != 7 || stub.actor.UserID != "user-id" {
+	if len(history.Items) != 1 || history.Limit != 7 || stub.actor.UserID != testUserID {
 		t.Fatalf("unexpected history mapping: %+v", history)
 	}
 }
@@ -290,14 +290,14 @@ func TestITTaskCodeSubmissionQueries(t *testing.T) {
 	root := &Resolver{Tasks: stub}
 	query := &queryResolver{Resolver: root}
 	mutation := &mutationResolver{Resolver: root}
-	ctx := tasksContext("user-id", []string{"student"})
+	ctx := tasksContext(testUserID, []string{"student"})
 	result, err := mutation.SubmitITTaskCode(ctx, "task-id", model.ITCodeSubmissionInput{
 		TaskVersionID:  "version-id",
-		IdempotencyKey: "key-id",
+		IdempotencyKey: testKeyID,
 		Language:       model.ITProgrammingLanguagePython,
 		File: &gqlgen.Upload{
 			File:        bytes.NewReader([]byte("print(42)")),
-			Filename:    "solution.py",
+			Filename:    solutionFile,
 			Size:        9,
 			ContentType: "text/x-python",
 		},
@@ -313,7 +313,7 @@ func TestITTaskCodeSubmissionQueries(t *testing.T) {
 	if result.Status != model.ITCodeSubmissionStatusCompleted || result.Verdict == nil || string(source) != "print(42)" {
 		t.Fatalf("unexpected code submission mapping: result=%+v source=%q", result, source)
 	}
-	if stub.codeInput.Language != "python" || stub.codeInput.FileName != "solution.py" || stub.codeInput.IdempotencyKey != "key-id" {
+	if stub.codeInput.Language != pythonLanguage || stub.codeInput.FileName != solutionFile || stub.codeInput.IdempotencyKey != testKeyID {
 		t.Fatalf("unexpected code input: %+v", stub.codeInput)
 	}
 
@@ -330,7 +330,7 @@ func TestITTaskCodeSubmissionQueries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(history.Items) != 1 || history.Limit != 8 || stub.actor.UserID != "user-id" {
+	if len(history.Items) != 1 || history.Limit != 8 || stub.actor.UserID != testUserID {
 		t.Fatalf("unexpected code history mapping: %+v", history)
 	}
 }
@@ -357,8 +357,8 @@ func TestITTaskCodeSubmissionMultipart(t *testing.T) {
 			"taskId": "task-id",
 			"input": map[string]any{
 				"taskVersionId":  "version-id",
-				"idempotencyKey": "key-id",
-				"language":       "python",
+				"idempotencyKey": testKeyID,
+				"language":       pythonLanguage,
 				"file":           nil,
 			},
 		},
@@ -368,7 +368,7 @@ func TestITTaskCodeSubmissionMultipart(t *testing.T) {
 		"0": {"variables.input.file"},
 	})
 
-	file, err := writer.CreateFormFile("0", "solution.py")
+	file, err := writer.CreateFormFile("0", solutionFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +381,7 @@ func TestITTaskCodeSubmissionMultipart(t *testing.T) {
 
 	request := httptest.NewRequest(http.MethodPost, "/graphql", body)
 	request.Header.Set("Content-Type", writer.FormDataContentType())
-	request = request.WithContext(tasksContext("user-id", []string{"student"}))
+	request = request.WithContext(tasksContext(testUserID, []string{"student"}))
 	recorder := httptest.NewRecorder()
 
 	handler.ServeHTTP(recorder, request)
@@ -404,7 +404,7 @@ func TestITTaskCodeSubmissionMultipart(t *testing.T) {
 	if len(response.Errors) != 0 || response.Data.SubmitITTaskCode.ID != "code-submission-id" {
 		t.Fatalf("unexpected GraphQL response: %s", recorder.Body.String())
 	}
-	if stub.codeInput.FileName != "solution.py" || stub.codeInput.Language != "python" {
+	if stub.codeInput.FileName != solutionFile || stub.codeInput.Language != pythonLanguage {
 		t.Fatalf("unexpected multipart input: %+v", stub.codeInput)
 	}
 }
@@ -451,7 +451,7 @@ func sampleUpstreamTask() tasks.Task {
 
 	return tasks.Task{
 		ID:            "task-id",
-		Status:        "draft",
+		Status:        catalogStatusDraft,
 		TaskVersionID: "version-id",
 		VersionNumber: 1,
 		Title:         "Go interfaces",
@@ -484,7 +484,7 @@ func sampleTaskSummary() tasks.TaskSummary {
 func sampleUpstreamSubmission() tasks.Submission {
 	return tasks.Submission{
 		ID:                  "submission-id",
-		UserID:              "user-id",
+		UserID:              testUserID,
 		TaskID:              "task-id",
 		TaskVersionID:       "version-id",
 		TaskVersionNumber:   1,
@@ -492,7 +492,7 @@ func sampleUpstreamSubmission() tasks.Submission {
 		SelectedOptionIDs:   []string{"option-id"},
 		CorrectOptionIDs:    []string{"option-id"},
 		Correct:             true,
-		Verdict:             "accepted",
+		Verdict:             verdictAccepted,
 		TaskUpdated:         true,
 		LatestTaskVersionID: "version-id-2",
 		LatestVersionNumber: 2,
@@ -501,18 +501,18 @@ func sampleUpstreamSubmission() tasks.Submission {
 
 // sampleUpstreamCodeSubmission возвращает завершённый результат sandbox.
 func sampleUpstreamCodeSubmission() tasks.CodeSubmission {
-	verdict := "accepted"
+	verdict := verdictAccepted
 
 	return tasks.CodeSubmission{
 		ID:                "code-submission-id",
-		UserID:            "user-id",
+		UserID:            testUserID,
 		TaskID:            "task-id",
 		TaskVersionID:     "version-id",
 		TaskVersionNumber: 1,
 		ExecutionID:       "execution-id",
 		CorrelationID:     "correlation-id",
-		Language:          "python",
-		SourceFileName:    "solution.py",
+		Language:          pythonLanguage,
+		SourceFileName:    solutionFile,
 		Status:            "completed",
 		Verdict:           &verdict,
 		Execution: &tasks.ExecutionPhaseResult{
@@ -523,7 +523,7 @@ func sampleUpstreamCodeSubmission() tasks.CodeSubmission {
 		Tests: []tasks.ExecutionTestResult{
 			{
 				TestID:      "open-1",
-				Verdict:     "accepted",
+				Verdict:     verdictAccepted,
 				Stdout:      "42\n",
 				DurationMS:  12,
 				MemoryBytes: 1024,
@@ -535,6 +535,8 @@ func sampleUpstreamCodeSubmission() tasks.CodeSubmission {
 }
 
 func TestPublicTaskSearchReachesOwnerWithPagination(t *testing.T) {
+	t.Parallel()
+
 	svc := &tasksServiceStub{}
 	handler := Handler(nil, nil, svc, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	req := httptest.NewRequest(http.MethodPost, "/graphql", bytes.NewBufferString(`{"query":"{itTasks(filter:{search:\"  массив  \"}, pagination:{limit:12,offset:24}){items{id title} offset}}"}`))
