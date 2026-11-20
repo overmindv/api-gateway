@@ -11,6 +11,8 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
+const testUniversityID = "university-id"
+
 type catalogStub struct {
 	entities.CatalogService
 	called  bool
@@ -21,7 +23,7 @@ type catalogStub struct {
 
 func (s *catalogStub) CreateUniversity(_ context.Context, input entities.University, _ entities.Actor) (entities.University, error) {
 	s.called = true
-	input.ID = "university-id"
+	input.ID = testUniversityID
 
 	return input, nil
 }
@@ -29,7 +31,7 @@ func (s *catalogStub) CreateUniversity(_ context.Context, input entities.Univers
 func (s *catalogStub) UpdateProgram(_ context.Context, _ string, input entities.Program, _ entities.Actor) (entities.Program, error) {
 	s.program = input
 	input.ID = "program-id"
-	input.Status = "draft"
+	input.Status = catalogStatusDraft
 
 	return input, nil
 }
@@ -37,7 +39,7 @@ func (s *catalogStub) UpdateProgram(_ context.Context, _ string, input entities.
 func (s *catalogStub) UpdateCourse(_ context.Context, _ string, input entities.Course, _ entities.Actor) (entities.Course, error) {
 	s.course = input
 	input.ID = "course-id"
-	input.Status = "draft"
+	input.Status = catalogStatusDraft
 
 	return input, nil
 }
@@ -45,8 +47,8 @@ func (s *catalogStub) UpdateCourse(_ context.Context, _ string, input entities.C
 func (s *catalogStub) UpdateTopic(_ context.Context, _ string, input entities.Topic, _ entities.Actor) (entities.Topic, error) {
 	s.topic = input
 	input.ID = "topic-id"
-	input.Status = "draft"
-	input.Difficulty = "basic"
+	input.Status = catalogStatusDraft
+	input.Difficulty = catalogDifficultyBasic
 
 	return input, nil
 }
@@ -56,7 +58,7 @@ func TestCreateUniversityRequiresAdmin(t *testing.T) {
 	stub := &catalogStub{}
 	resolver := &mutationResolver{Resolver: &Resolver{Catalog: stub}}
 	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{
-		UserID: "user-id",
+		UserID: testUserID,
 		Token:  "token",
 		Roles:  []string{"student"},
 	})
@@ -74,7 +76,7 @@ func TestCreateUniversityCallsEntitiesForAdmin(t *testing.T) {
 	stub := &catalogStub{}
 	resolver := &mutationResolver{Resolver: &Resolver{Catalog: stub}}
 	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{
-		UserID: "user-id",
+		UserID: testUserID,
 		Token:  "token",
 		Roles:  []string{"admin"},
 	})
@@ -82,7 +84,7 @@ func TestCreateUniversityCallsEntitiesForAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !stub.called || result.ID != "university-id" {
+	if !stub.called || result.ID != testUniversityID {
 		t.Fatalf("неожиданный результат: %#v", result)
 	}
 }
@@ -92,7 +94,7 @@ func TestUpdateCatalogBindingsCanBeCleared(t *testing.T) {
 	stub := &catalogStub{}
 	resolver := &mutationResolver{Resolver: &Resolver{Catalog: stub}}
 	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{
-		UserID: "user-id",
+		UserID: testUserID,
 		Token:  "token",
 		Roles:  []string{"admin"},
 	})

@@ -138,7 +138,7 @@ func submissionInput(input model.ITSubmissionInput) tasks.SubmissionInput {
 func codeSubmissionInput(input model.ITCodeSubmissionInput) tasks.CodeSubmissionInput {
 	mode := input.RunMode.String()
 	if mode == "" {
-		mode = "samples"
+		mode = runModeSamples
 	}
 	dto := tasks.CodeSubmissionInput{
 		RunMode:        mode,
@@ -352,10 +352,11 @@ func executionFailureModel(item *tasks.ExecutionFailure) *model.ITExecutionFailu
 
 	code := item.Code
 	switch code {
-	case "INFRASTRUCTURE_ERROR", "CHECKER_ERROR", "COMPILATION_ERROR", "RUNTIME_ERROR", "TIME_LIMIT_EXCEEDED", "MEMORY_LIMIT_EXCEEDED", "OUTPUT_LIMIT_EXCEEDED", "WRONG_ANSWER", "CANCELLED":
+	case executionInfrastructureError, "CHECKER_ERROR", "COMPILATION_ERROR", "RUNTIME_ERROR", "TIME_LIMIT_EXCEEDED", "MEMORY_LIMIT_EXCEEDED", "OUTPUT_LIMIT_EXCEEDED", "WRONG_ANSWER", "CANCELED":
 	default:
-		code = "INFRASTRUCTURE_ERROR"
+		code = executionInfrastructureError
 	}
+
 	return &model.ITExecutionFailure{Code: code, Message: "execution could not be completed successfully"}
 }
 
@@ -379,5 +380,6 @@ func publicSampleID(id string) bool {
 		return false
 	}
 	n, err := strconv.Atoi(strings.TrimPrefix(id, "open-"))
+
 	return err == nil && n >= 1 && n <= 20 && id == "open-"+strconv.Itoa(n)
 }

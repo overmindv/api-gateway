@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+const (
+	httpScheme  = "http"
+	httpsScheme = "https"
+)
+
 func configureBrowserSecurity(cfg *Config) error {
 	environment := env("APP_ENV", "development")
 	switch environment {
@@ -36,15 +41,16 @@ func configureBrowserSecurity(cfg *Config) error {
 	}
 	for _, origin := range cfg.HTTP.CORSOrigins {
 		parsed, err := url.Parse(origin)
-		if err != nil || parsed.Hostname() == "" || parsed.User != nil || parsed.Path != "" || parsed.RawQuery != "" || parsed.Fragment != "" || strings.Contains(origin, "*") || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		if err != nil || parsed.Hostname() == "" || parsed.User != nil || parsed.Path != "" || parsed.RawQuery != "" || parsed.Fragment != "" || strings.Contains(origin, "*") || (parsed.Scheme != httpScheme && parsed.Scheme != httpsScheme) {
 			return fmt.Errorf("CORS_ORIGINS must contain exact HTTP(S) origins")
 		}
-		if cfg.HTTP.Production && parsed.Scheme != "https" {
+		if cfg.HTTP.Production && parsed.Scheme != httpsScheme {
 			return fmt.Errorf("production origins must use HTTPS")
 		}
 	}
 	if cfg.HTTP.Production && (!cfg.Session.Secure || len(cfg.HTTP.CORSOrigins) == 0) {
 		return fmt.Errorf("production requires Secure cookie and explicit CORS origins")
 	}
+
 	return nil
 }

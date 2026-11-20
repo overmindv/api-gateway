@@ -67,7 +67,7 @@ func treeModel(item *entities.TopicTreeNode) *model.TopicTreeNode {
 
 func statusValue(value *model.CatalogStatus) string {
 	if value == nil {
-		return "draft"
+		return catalogStatusDraft
 	}
 
 	return value.String()
@@ -83,7 +83,7 @@ func degreeValue(value *model.DegreeLevel) string {
 
 func difficultyValue(value *model.TopicDifficulty) string {
 	if value == nil {
-		return "basic"
+		return catalogDifficultyBasic
 	}
 
 	return value.String()

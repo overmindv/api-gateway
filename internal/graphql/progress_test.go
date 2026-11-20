@@ -29,15 +29,18 @@ type progressTasksStub struct {
 
 func (s *progressTasksStub) MyProgress(_ context.Context, actor tasks.Actor) (tasks.Progress, error) {
 	s.actor = actor
+
 	return tasks.Progress{UserID: actor.UserID, Public: s.public, Score: 30, Daily: []tasks.ProgressDay{}, ByDifficulty: []tasks.ProgressDifficulty{}}, nil
 }
 func (s *progressTasksStub) UserProgress(_ context.Context, _ string, actor tasks.Actor) (*tasks.Progress, error) {
 	s.actor = actor
+
 	return nil, nil
 }
 func (s *progressTasksStub) SetMyProgressPublic(_ context.Context, public bool, actor tasks.Actor) (bool, error) {
 	s.actor = actor
 	s.public = public
+
 	return public, nil
 }
 func (s *progressTasksStub) RatedUsers(_ context.Context, topics *[]string, limit, offset int, actor tasks.Actor) ([]tasks.RatedUser, error) {
@@ -51,6 +54,7 @@ func (s *progressTasksStub) RatedUsers(_ context.Context, topics *[]string, limi
 	if end > len(s.candidates) {
 		end = len(s.candidates)
 	}
+
 	return s.candidates[offset:end], nil
 }
 
@@ -60,6 +64,7 @@ func (s *progressUsersStub) GetPublicUser(_ context.Context, id string) (*users.
 	if id == progressDeleted {
 		return nil, &users.Error{Code: "NOT_FOUND"}
 	}
+
 	return &users.PublicUser{ID: id, Username: "learner", FirstName: "Иван", LastName: "Петров"}, nil
 }
 
@@ -76,6 +81,8 @@ func (s *progressCatalogStub) ListTopics(_ context.Context, _ string, _ entities
 }
 
 func TestProgressResolversRequireAuthenticatedActor(t *testing.T) {
+	t.Parallel()
+
 	service := &progressTasksStub{}
 	r := &Resolver{Tasks: service, Users: &progressUsersStub{}}
 	if _, err := (&queryResolver{r}).MyPracticeProgress(context.Background()); !errors.Is(err, apperror.ErrUnauthenticated) {
@@ -93,6 +100,8 @@ func TestProgressResolversRequireAuthenticatedActor(t *testing.T) {
 }
 
 func TestProgressOwnPrivatePeerAndVisibility(t *testing.T) {
+	t.Parallel()
+
 	service := &progressTasksStub{}
 	r := &Resolver{Tasks: service, Users: &progressUsersStub{}}
 	ctx := practiceContext()
@@ -111,6 +120,8 @@ func TestProgressOwnPrivatePeerAndVisibility(t *testing.T) {
 }
 
 func TestPracticeLeaderboardSkipsDeletedAndRanksVisibleTies(t *testing.T) {
+	t.Parallel()
+
 	service := &progressTasksStub{candidates: []tasks.RatedUser{
 		{UserID: progressDeleted, Score: 50, SolvedTasks: 2},
 		{UserID: progressPeerA, Score: 40, SolvedTasks: 2},
@@ -131,6 +142,8 @@ func TestPracticeLeaderboardSkipsDeletedAndRanksVisibleTies(t *testing.T) {
 }
 
 func TestPracticeLeaderboardCourseIncludesArchivedAndEmpty(t *testing.T) {
+	t.Parallel()
+
 	course := progressCourse
 	topic := progressTopic
 	service := &progressTasksStub{candidates: []tasks.RatedUser{{UserID: progressPeerA, Score: 20, SolvedTasks: 1}}}

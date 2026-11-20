@@ -14,22 +14,35 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
+const (
+	adminTasksPath      = "/v1/admin/tasks"
+	testTopicID         = "topic-id"
+	testUserID          = "user-id"
+	testTaskID          = "task-id"
+	testKeyID           = "key-id"
+	codeSubmissionsPath = "/v1/tasks/task-id/code-submissions"
+	pythonLanguage      = "python"
+	solutionFile        = "solution.py"
+	queuedStatus        = "queued"
+	pythonEchoSource    = "print(input())"
+)
+
 // TestClientForwardsFiltersAndActor проверяет query и доверенные actor headers.
 func TestClientForwardsFiltersAndActor(t *testing.T) {
 	t.Parallel()
 
 	client := testClient(t, func(request *http.Request) *http.Response {
-		if request.Method != http.MethodGet || request.URL.Path != "/v1/admin/tasks" {
+		if request.Method != http.MethodGet || request.URL.Path != adminTasksPath {
 			t.Fatalf("unexpected request: %s %s", request.Method, request.URL.Path)
 		}
 		query := request.URL.Query()
 		if query.Get("status") != "draft" || query.Get("task_type") != "single_choice" || query.Get("difficulty") != "easy" {
 			t.Fatalf("unexpected filters: %v", query)
 		}
-		if query.Get("topic_id") != "topic-id" || query.Get("limit") != "15" || query.Get("offset") != "5" {
+		if query.Get("topic_id") != testTopicID || query.Get("limit") != "15" || query.Get("offset") != "5" {
 			t.Fatalf("unexpected pagination: %v", query)
 		}
-		if request.Header.Get("X-User-ID") != "user-id" || request.Header.Get("X-User-Roles") != "admin,editor" {
+		if request.Header.Get("X-User-ID") != testUserID || request.Header.Get("X-User-Roles") != "admin,editor" {
 			t.Fatalf("unexpected actor headers: %v", request.Header)
 		}
 		if request.Header.Get(middleware.RequestIDHeader) != "request-id" {
@@ -38,14 +51,14 @@ func TestClientForwardsFiltersAndActor(t *testing.T) {
 
 		return jsonResponse(t, http.StatusOK, TaskList{
 			Items: []TaskSummary{{
-				ID:            "task-id",
+				ID:            testTaskID,
 				TaskVersionID: "version-id",
 			}},
 			Limit:  15,
 			Offset: 5,
 		})
 	})
-	topicID := "topic-id"
+	topicID := testTopicID
 	ctx := middleware.WithRequestID(context.Background(), "request-id")
 	result, err := client.ListAdmin(ctx, TaskFilter{
 		Status:     "draft",
@@ -55,13 +68,13 @@ func TestClientForwardsFiltersAndActor(t *testing.T) {
 		Limit:      15,
 		Offset:     5,
 	}, Actor{
-		UserID: "user-id",
+		UserID: testUserID,
 		Roles:  []string{"admin", "editor"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Items) != 1 || result.Items[0].ID != "task-id" || result.Limit != 15 {
+	if len(result.Items) != 1 || result.Items[0].ID != testTaskID || result.Limit != 15 {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 }
@@ -82,7 +95,7 @@ func TestClientMapsTaskWrites(t *testing.T) {
 		}
 		switch request.Method {
 		case http.MethodPost:
-			if request.URL.Path != "/v1/admin/tasks" || body["task_type"] != "multiple_choice" {
+			if request.URL.Path != adminTasksPath || body["task_type"] != "multiple_choice" {
 				t.Fatalf("unexpected create request: %s %#v", request.URL.Path, body)
 			}
 		case http.MethodPatch:
@@ -109,7 +122,7 @@ func TestClientMapsTaskWrites(t *testing.T) {
 	if _, err := client.Create(context.Background(), input, actor); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.ChangeStatus(context.Background(), "task-id", "published", actor); err != nil {
+	if _, err := client.ChangeStatus(context.Background(), testTaskID, "published", actor); err != nil {
 		t.Fatal(err)
 	}
 	if requests != 2 {
@@ -124,7 +137,7 @@ func TestClientMapsSubmissionAndHistory(t *testing.T) {
 	requests := 0
 	client := testClient(t, func(request *http.Request) *http.Response {
 		requests++
-		if request.Header.Get("X-User-ID") != "user-id" {
+		if request.Header.Get("X-User-ID") != testUserID {
 			t.Fatalf("actor header is missing")
 		}
 		switch request.URL.Path {
@@ -136,13 +149,13 @@ func TestClientMapsSubmissionAndHistory(t *testing.T) {
 			if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
 				t.Fatal(err)
 			}
-			if body.IdempotencyKey != "key-id" || len(body.SelectedOptionIDs) != 1 {
+			if body.IdempotencyKey != testKeyID || len(body.SelectedOptionIDs) != 1 {
 				t.Fatalf("unexpected submit input: %+v", body)
 			}
 
 			return jsonResponse(t, http.StatusCreated, sampleSubmission())
 		case "/v1/me/submissions":
-			if request.URL.Query().Get("task_id") != "task-id" || request.URL.Query().Get("limit") != "10" {
+			if request.URL.Query().Get("task_id") != testTaskID || request.URL.Query().Get("limit") != "10" {
 				t.Fatalf("unexpected history query: %v", request.URL.Query())
 			}
 
@@ -153,10 +166,10 @@ func TestClientMapsSubmissionAndHistory(t *testing.T) {
 			return nil
 		}
 	})
-	actor := Actor{UserID: "user-id", Roles: []string{"student"}}
-	result, err := client.Submit(context.Background(), "task-id", SubmissionInput{
+	actor := Actor{UserID: testUserID, Roles: []string{"student"}}
+	result, err := client.Submit(context.Background(), testTaskID, SubmissionInput{
 		TaskVersionID:     "version-id",
-		IdempotencyKey:    "key-id",
+		IdempotencyKey:    testKeyID,
 		SelectedOptionIDs: []string{"option-id"},
 	}, actor)
 	if err != nil {
@@ -165,7 +178,7 @@ func TestClientMapsSubmissionAndHistory(t *testing.T) {
 	if !result.Correct || !result.TaskUpdated || result.LatestVersionNumber != 2 {
 		t.Fatalf("unexpected submission: %+v", result)
 	}
-	taskID := "task-id"
+	taskID := testTaskID
 	history, err := client.ListMySubmissions(context.Background(), &taskID, 10, 0, actor)
 	if err != nil {
 		t.Fatal(err)
@@ -184,14 +197,14 @@ func TestClientMapsCodeSubmission(t *testing.T) {
 		requests++
 
 		switch request.URL.Path {
-		case "/v1/tasks/task-id/code-submissions":
+		case codeSubmissionsPath:
 			if request.Method != http.MethodPost {
 				t.Fatalf("unexpected submit method: %s", request.Method)
 			}
 			if err := request.ParseMultipartForm(512 << 10); err != nil {
 				t.Fatal(err)
 			}
-			if request.FormValue("language") != "python" || request.FormValue("idempotency_key") != "key-id" {
+			if request.FormValue("language") != pythonLanguage || request.FormValue("idempotency_key") != testKeyID {
 				t.Fatalf("unexpected multipart fields: %v", request.MultipartForm.Value)
 			}
 
@@ -207,7 +220,7 @@ func TestClientMapsCodeSubmission(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if header.Filename != "solution.py" || string(source) != "print(42)" {
+			if header.Filename != solutionFile || string(source) != "print(42)" {
 				t.Fatalf("unexpected source file: name=%s body=%q", header.Filename, source)
 			}
 
@@ -215,7 +228,7 @@ func TestClientMapsCodeSubmission(t *testing.T) {
 		case "/v1/code-submissions/code-submission-id":
 			return jsonResponse(t, http.StatusOK, sampleCodeSubmission())
 		case "/v1/me/code-submissions":
-			if request.URL.Query().Get("task_id") != "task-id" || request.URL.Query().Get("limit") != "5" {
+			if request.URL.Query().Get("task_id") != testTaskID || request.URL.Query().Get("limit") != "5" {
 				t.Fatalf("unexpected code history query: %v", request.URL.Query())
 			}
 
@@ -230,26 +243,26 @@ func TestClientMapsCodeSubmission(t *testing.T) {
 		}
 	})
 
-	actor := Actor{UserID: "user-id", Roles: []string{"student"}}
-	created, err := client.SubmitCode(context.Background(), "task-id", CodeSubmissionInput{
+	actor := Actor{UserID: testUserID, Roles: []string{"student"}}
+	created, err := client.SubmitCode(context.Background(), testTaskID, CodeSubmissionInput{
 		TaskVersionID:  "version-id",
-		IdempotencyKey: "key-id",
-		Language:       "python",
+		IdempotencyKey: testKeyID,
+		Language:       pythonLanguage,
 		FileName:       "../solution.py",
 		File:           bytes.NewReader([]byte("print(42)")),
 	}, actor)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if created.Status != "queued" || created.SourceFileName != "solution.py" {
+	if created.Status != queuedStatus || created.SourceFileName != solutionFile {
 		t.Fatalf("unexpected created submission: %+v", created)
 	}
 
-	if _, err := client.GetCodeSubmission(context.Background(), "code-submission-id", actor); err != nil {
-		t.Fatal(err)
+	if _, getErr := client.GetCodeSubmission(context.Background(), "code-submission-id", actor); getErr != nil {
+		t.Fatal(getErr)
 	}
 
-	taskID := "task-id"
+	taskID := testTaskID
 	history, err := client.ListMyCodeSubmissions(context.Background(), &taskID, 5, 0, actor)
 	if err != nil {
 		t.Fatal(err)
@@ -266,16 +279,16 @@ func TestCodeSubmissionBodyFromConsole(t *testing.T) {
 	requests := 0
 	client := testClient(t, func(request *http.Request) *http.Response {
 		requests++
-		if request.URL.Path != "/v1/tasks/task-id/code-submissions" {
+		if request.URL.Path != codeSubmissionsPath {
 			t.Fatalf("unexpected path: %s", request.URL.Path)
 		}
 		if err := request.ParseMultipartForm(512 << 10); err != nil {
 			t.Fatal(err)
 		}
-		if request.FormValue("language") != "python" || request.FormValue("idempotency_key") != "key-id" {
+		if request.FormValue("language") != pythonLanguage || request.FormValue("idempotency_key") != testKeyID {
 			t.Fatalf("unexpected multipart fields: %v", request.MultipartForm.Value)
 		}
-		if request.FormValue("source_code") != "print(input())" {
+		if request.FormValue("source_code") != pythonEchoSource {
 			t.Fatalf("source_code field = %q", request.FormValue("source_code"))
 		}
 		if len(request.MultipartForm.File["file"]) != 0 {
@@ -285,17 +298,17 @@ func TestCodeSubmissionBodyFromConsole(t *testing.T) {
 		return jsonResponse(t, http.StatusAccepted, sampleCodeSubmission())
 	})
 
-	sourceCode := "print(input())"
-	created, err := client.SubmitCode(context.Background(), "task-id", CodeSubmissionInput{
+	sourceCode := pythonEchoSource
+	created, err := client.SubmitCode(context.Background(), testTaskID, CodeSubmissionInput{
 		TaskVersionID:  "version-id",
-		IdempotencyKey: "key-id",
-		Language:       "python",
+		IdempotencyKey: testKeyID,
+		Language:       pythonLanguage,
 		SourceCode:     &sourceCode,
-	}, Actor{UserID: "user-id", Roles: []string{"student"}})
+	}, Actor{UserID: testUserID, Roles: []string{"student"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if created.Status != "queued" || requests != 1 {
+	if created.Status != queuedStatus || requests != 1 {
 		t.Fatalf("unexpected created submission: %+v, requests = %d", created, requests)
 	}
 }
@@ -305,8 +318,8 @@ func TestCodeSubmissionBodyRejectsNoSource(t *testing.T) {
 	t.Parallel()
 	if _, _, err := codeSubmissionBody(CodeSubmissionInput{
 		TaskVersionID:  "version-id",
-		IdempotencyKey: "key-id",
-		Language:       "python",
+		IdempotencyKey: testKeyID,
+		Language:       pythonLanguage,
 	}); err == nil {
 		t.Fatal("codeSubmissionBody() должен отклонить отсутствие источника кода")
 	}
@@ -318,9 +331,9 @@ func TestCodeSubmissionBodyRejectsLargeFile(t *testing.T) {
 
 	_, _, err := codeSubmissionBody(CodeSubmissionInput{
 		TaskVersionID:  "version-id",
-		IdempotencyKey: "key-id",
-		Language:       "python",
-		FileName:       "solution.py",
+		IdempotencyKey: testKeyID,
+		Language:       pythonLanguage,
+		FileName:       solutionFile,
 		File:           bytes.NewReader(bytes.Repeat([]byte("x"), maxCodeSourceSize+1)),
 	})
 
@@ -340,7 +353,7 @@ func TestClientMapsUpstreamError(t *testing.T) {
 			Message: "conflict",
 		})
 	})
-	_, err := client.Submit(context.Background(), "task-id", SubmissionInput{}, Actor{UserID: "user-id"})
+	_, err := client.Submit(context.Background(), testTaskID, SubmissionInput{}, Actor{UserID: testUserID})
 	upstream, ok := err.(*Error)
 	if !ok || upstream.Code != "IDEMPOTENCY_KEY_CONFLICT" || upstream.StatusCode != http.StatusConflict {
 		t.Fatalf("unexpected error: %#v", err)
@@ -362,7 +375,7 @@ func TestClientHandlesSoftDelete(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewReader(nil)),
 		}
 	})
-	if err := client.Delete(context.Background(), "task-id", Actor{UserID: "admin-id", Roles: []string{"admin"}}); err != nil {
+	if err := client.Delete(context.Background(), testTaskID, Actor{UserID: "admin-id", Roles: []string{"admin"}}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -400,13 +413,13 @@ func TestClientUsesAllReadAndUpdateRoutes(t *testing.T) {
 	if _, err := client.ListPublished(context.Background(), TaskFilter{Status: "draft", Limit: 20}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.GetPublished(context.Background(), "task-id"); err != nil {
+	if _, err := client.GetPublished(context.Background(), testTaskID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.GetAdmin(context.Background(), "task-id", actor); err != nil {
+	if _, err := client.GetAdmin(context.Background(), testTaskID, actor); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Update(context.Background(), "task-id", TaskInput{}, actor); err != nil {
+	if _, err := client.Update(context.Background(), testTaskID, TaskInput{}, actor); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := client.GetSubmission(context.Background(), "submission-id", actor); err != nil {
@@ -459,15 +472,15 @@ func jsonResponse(t *testing.T, status int, body any) *http.Response {
 func sampleCodeSubmission() CodeSubmission {
 	return CodeSubmission{
 		ID:                "code-submission-id",
-		UserID:            "user-id",
-		TaskID:            "task-id",
+		UserID:            testUserID,
+		TaskID:            testTaskID,
 		TaskVersionID:     "version-id",
 		TaskVersionNumber: 1,
 		ExecutionID:       "execution-id",
 		CorrelationID:     "correlation-id",
-		Language:          "python",
-		SourceFileName:    "solution.py",
-		Status:            "queued",
+		Language:          pythonLanguage,
+		SourceFileName:    solutionFile,
+		Status:            queuedStatus,
 		Tests:             []ExecutionTestResult{},
 	}
 }
@@ -477,7 +490,7 @@ func sampleTask() Task {
 	correct := true
 
 	return Task{
-		ID:            "task-id",
+		ID:            testTaskID,
 		Status:        "draft",
 		TaskVersionID: "version-id",
 		VersionNumber: 1,
@@ -498,8 +511,8 @@ func sampleTask() Task {
 func sampleSubmission() Submission {
 	return Submission{
 		ID:                  "submission-id",
-		UserID:              "user-id",
-		TaskID:              "task-id",
+		UserID:              testUserID,
+		TaskID:              testTaskID,
 		TaskVersionID:       "version-id",
 		TaskVersionNumber:   1,
 		SelectedOptionIDs:   []string{"option-id"},

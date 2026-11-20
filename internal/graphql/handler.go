@@ -92,9 +92,10 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 		Cache: lru.New[string](100),
 	})
 	server.AroundFields(func(ctx context.Context, next gqlgen.Resolver) (any, error) {
-		if gqlgen.GetOperationContext(ctx).Operation.Operation == ast.Mutation && gqlgen.GetFieldContext(ctx).Object == "Mutation" {
+		if gqlgen.GetOperationContext(ctx).Operation.Operation == ast.Mutation && gqlgen.GetFieldContext(ctx).Object == objectMutation {
 			ctx = middleware.RefreshAuth(ctx)
 		}
+
 		return next(ctx)
 	})
 	server.AroundOperations(limitPracticePlanOperation)
@@ -109,6 +110,7 @@ func HandlerWithRecommendationsAndMetrics(users users.UserService, catalog entit
 	if len(options) > 0 && options[0].RequestTimeout > 0 {
 		timeout = options[0].RequestTimeout
 	}
+
 	return boundedRequest(server, timeout)
 }
 
@@ -121,9 +123,9 @@ func Playground() http.Handler {
 func limitPracticePlanOperation(ctx context.Context, next gqlgen.OperationHandler) gqlgen.ResponseHandler {
 	operation := gqlgen.GetOperationContext(ctx)
 	if operation.Operation.Operation == ast.Query || operation.Operation.Operation == ast.Mutation {
-		root := "Query"
+		root := objectQuery
 		if operation.Operation.Operation == ast.Mutation {
-			root = "Mutation"
+			root = objectMutation
 		}
 		count := 0
 		for _, field := range gqlgen.CollectFields(operation, operation.Operation.SelectionSet, []string{root}) {
@@ -132,11 +134,13 @@ func limitPracticePlanOperation(ctx context.Context, next gqlgen.OperationHandle
 			}
 			count++
 			if count > 1 {
-				response := gqlgen.ErrorResponse(ctx, "Не удалось выполнить действие.")
+				response := gqlgen.ErrorResponse(ctx, genericActionMessage)
 				response.Errors[0].Extensions = map[string]any{"code": "OPERATION_LIMIT_EXCEEDED"}
+
 				return gqlgen.OneShot(response)
 			}
 		}
 	}
+
 	return next(ctx)
 }

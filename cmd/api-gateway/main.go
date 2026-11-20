@@ -67,11 +67,12 @@ func requestLogger(path string, fallback *slog.Logger) (*slog.Logger, func(), er
 		return fallback, func() {}, nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 		return nil, nil, fmt.Errorf("create request log directory: %w", err)
 	}
 
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	// Путь задаётся доверенной конфигурацией оператора, а не данными запроса.
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600) //nolint:gosec
 	if err != nil {
 		return nil, nil, fmt.Errorf("open request log file: %w", err)
 	}

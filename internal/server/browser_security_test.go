@@ -14,6 +14,8 @@ import (
 )
 
 func TestPublicAndLocalDebugRoutes(t *testing.T) {
+	t.Parallel()
+
 	for _, production := range []bool{false, true} {
 		cfg := config.HTTP{Production: production, CORSOrigins: []string{"https://learn.example"}}
 		log := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -43,6 +45,7 @@ func TestPublicAndLocalDebugRoutes(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // t.Setenv изменяет process-wide environment
 func TestServerRejectsCookieCSRFBeforeMutation(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	srv := New(config.HTTP{CORSOrigins: []string{"https://learn.example"}}, nil, nil, nil, nil, nil, middleware.NewJWTAuthenticator("test", "users"), true, log, log)

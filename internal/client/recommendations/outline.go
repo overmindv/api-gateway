@@ -30,5 +30,6 @@ type OutlineService interface {
 
 func (c *Client) LearningOutline(ctx context.Context, in OutlineRequest, actor string) (Outline, error) {
 	out, err := httpx.DoJSON[Outline](c.hx, ctx, http.MethodPost, "/v1/learning-outline", in, httpx.Actor{UserID: actor})
+
 	return out, goalError(err)
 }

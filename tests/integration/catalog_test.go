@@ -17,6 +17,8 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
+const draftStatus = "draft"
+
 // fakeEntitiesCatalog эмулирует HTTP API Entities и проверяет, что gateway передаёт actor и request_id.
 type fakeEntitiesCatalog struct {
 	t        *testing.T
@@ -43,6 +45,7 @@ func (f *fakeEntitiesCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	})
 	if !strings.Contains(r.Header.Get("X-User-Roles"), "admin") || r.Header.Get("X-User-ID") == "" {
 		writeEntitiesJSON(w, http.StatusForbidden, map[string]string{"code": "PERMISSION_DENIED", "message": "операция доступна только администратору"})
+
 		return
 	}
 
@@ -51,7 +54,7 @@ func (f *fakeEntitiesCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		var input entities.University
 		f.decode(r, &input)
 		input.ID = "33333333-3333-3333-3333-333333333333"
-		input.Status = "draft"
+		input.Status = draftStatus
 		input.CreatedAt = "2026-07-18T10:10:00Z"
 		input.UpdatedAt = input.CreatedAt
 		writeEntitiesJSON(w, http.StatusCreated, input)
@@ -60,7 +63,7 @@ func (f *fakeEntitiesCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		f.decode(r, &input)
 		input.ID = "44444444-4444-4444-4444-444444444444"
 		input.DegreeLevel = "other"
-		input.Status = "draft"
+		input.Status = draftStatus
 		input.CreatedAt = "2026-07-18T10:11:00Z"
 		input.UpdatedAt = input.CreatedAt
 		writeEntitiesJSON(w, http.StatusCreated, input)
@@ -69,7 +72,7 @@ func (f *fakeEntitiesCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		f.decode(r, &input)
 		input.ID = "55555555-5555-5555-5555-555555555555"
 		input.Slug = "algorithms"
-		input.Status = "draft"
+		input.Status = draftStatus
 		input.CreatedAt = "2026-07-18T10:12:00Z"
 		input.UpdatedAt = input.CreatedAt
 		writeEntitiesJSON(w, http.StatusCreated, input)
@@ -83,7 +86,7 @@ func (f *fakeEntitiesCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		}
 		input.Slug = strings.ToLower(input.Title)
 		input.Difficulty = "basic"
-		input.Status = "draft"
+		input.Status = draftStatus
 		input.CreatedAt = "2026-07-18T10:13:00Z"
 		input.UpdatedAt = input.CreatedAt
 		writeEntitiesJSON(w, http.StatusCreated, input)
@@ -113,6 +116,8 @@ func (f *fakeEntitiesCatalog) decode(r *http.Request, target any) {
 
 // TestGatewayFullCatalogFlow повторяет пользовательскую цепочку: регистрация, назначение админом и создание каталога.
 func TestGatewayFullCatalogFlow(t *testing.T) {
+	t.Parallel()
+
 	usersUpstream := newFakeUsersGraphQL()
 	usersServer := httptest.NewServer(usersUpstream)
 	defer usersServer.Close()

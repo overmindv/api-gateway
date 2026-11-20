@@ -18,10 +18,12 @@ type savedFake struct {
 
 func (s *savedFake) GetSaved(_ context.Context, _ string, actor string) (recommendations.SavedPlan, error) {
 	s.actor = actor
+
 	return s.plan, nil
 }
 func (s *savedFake) ListSaved(_ context.Context, actor string) ([]recommendations.SavedPlan, error) {
 	s.actor = actor
+
 	return []recommendations.SavedPlan{s.plan}, nil
 }
 func (s *savedFake) WriteSaved(_ context.Context, _, op, actor string, in recommendations.SavedInput) (recommendations.SavedPlan, error) {
@@ -29,16 +31,20 @@ func (s *savedFake) WriteSaved(_ context.Context, _, op, actor string, in recomm
 	s.writes++
 	s.op = op
 	s.plan.Revision++
+
 	return s.plan, nil
 }
 func savedFixture(t *testing.T) (*queryResolver, *savedFake, *practiceFixture) {
 	f := &practiceFixture{}
 	r := f.resolver(t)
-	s := &savedFake{Service: r.Recommendations, plan: recommendations.SavedPlan{ID: practiceTopic, IsOwner: true, Revision: 2, Document: recommendations.SavedDocument{Goal: "Junior AI", Minutes: 60, SessionCount: 3, Materials: []recommendations.SavedMaterial{{ID: "python", Status: "DONE"}}, Tasks: []recommendations.SavedTask{{ID: practiceTask, VersionID: practiceVersion}}}}}
+	s := &savedFake{Service: r.Recommendations, plan: recommendations.SavedPlan{ID: practiceTopic, IsOwner: true, Revision: 2, Document: recommendations.SavedDocument{Goal: testGoal, Minutes: 60, SessionCount: 3, Materials: []recommendations.SavedMaterial{{ID: pythonLanguage, Status: "DONE"}}, Tasks: []recommendations.SavedTask{{ID: practiceTask, VersionID: practiceVersion}}}}}
 	r.Recommendations = s
+
 	return r, s, f
 }
 func TestSavedPlanUsesOnlyOwnerEvidence(t *testing.T) {
+	t.Parallel()
+
 	r, s, _ := savedFixture(t)
 	p, err := r.SavedLearningPlan(practiceContext(), practiceTopic)
 	if err != nil || !p.ProgressAvailable || !p.Tasks[0].Completed || s.actor != practiceUser {
@@ -46,6 +52,8 @@ func TestSavedPlanUsesOnlyOwnerEvidence(t *testing.T) {
 	}
 }
 func TestPublicSavedPlanDoesNotLoadOwnerHistory(t *testing.T) {
+	t.Parallel()
+
 	r, s, f := savedFixture(t)
 	s.plan.IsOwner = false
 	s.plan.Public = true
@@ -56,9 +64,11 @@ func TestPublicSavedPlanDoesNotLoadOwnerHistory(t *testing.T) {
 	}
 }
 func TestSavedMutationsRequireAuthAndOwnerBeforeInference(t *testing.T) {
+	t.Parallel()
+
 	r, s, f := savedFixture(t)
 	m := &mutationResolver{r.Resolver}
-	if _, err := m.UpdateLearningMaterial(context.Background(), practiceTopic, 2, "python", model.MaterialProgressDone); err == nil {
+	if _, err := m.UpdateLearningMaterial(context.Background(), practiceTopic, 2, pythonLanguage, model.MaterialProgressDone); err == nil {
 		t.Fatal("anonymous write")
 	}
 	s.plan.IsOwner = false
@@ -71,8 +81,10 @@ func TestSavedMutationsRequireAuthAndOwnerBeforeInference(t *testing.T) {
 	}
 }
 func TestSavedPlanHistoryFailureIsNotZeroProgress(t *testing.T) {
+	t.Parallel()
+
 	r, _, f := savedFixture(t)
-	f.failPath = "/v1/me/submissions"
+	f.failPath = submissionsPath
 	p, err := r.SavedLearningPlan(practiceContext(), practiceTopic)
 	if err != nil || p.ProgressAvailable || p.Materials[0].Status != model.MaterialProgressDone {
 		t.Fatal("history outage hid material progress", p, err)
@@ -80,6 +92,8 @@ func TestSavedPlanHistoryFailureIsNotZeroProgress(t *testing.T) {
 }
 
 func TestSavedPlanRecordsAcceptedDifferentVersion(t *testing.T) {
+	t.Parallel()
+
 	r, s, _ := savedFixture(t)
 	s.plan.Document.Tasks[0].VersionID = practiceBase
 	p, err := r.SavedLearningPlan(practiceContext(), practiceTopic)

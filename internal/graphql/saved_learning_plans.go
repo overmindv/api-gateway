@@ -11,12 +11,17 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
-func savedID(id string) bool { u, err := uuid.Parse(id); return err == nil && u != uuid.Nil }
+func savedID(id string) bool {
+	u, err := uuid.Parse(id)
+
+	return err == nil && u != uuid.Nil
+}
 func (r *Resolver) savedService() (recommendations.SavedService, error) {
 	s, ok := r.Recommendations.(recommendations.SavedService)
 	if !ok {
 		return nil, practiceUnavailable()
 	}
+
 	return s, nil
 }
 func (r *queryResolver) MyLearningPlans(ctx context.Context) ([]*model.SavedLearningPlan, error) {
@@ -37,6 +42,7 @@ func (r *queryResolver) MyLearningPlans(ctx context.Context) ([]*model.SavedLear
 	for _, p := range plans {
 		out = append(out, savedModel(p, false))
 	}
+
 	return out, nil
 }
 func (r *queryResolver) SavedLearningPlan(ctx context.Context, id string) (*model.SavedLearningPlan, error) {
@@ -52,6 +58,7 @@ func (r *queryResolver) SavedLearningPlan(ctx context.Context, id string) (*mode
 	if err != nil {
 		return nil, err
 	}
+
 	return r.savedWithProgress(ctx, p), nil
 }
 func (r *Resolver) savedWithProgress(ctx context.Context, p recommendations.SavedPlan) *model.SavedLearningPlan {
@@ -69,7 +76,7 @@ func (r *Resolver) savedWithProgress(ctx context.Context, p recommendations.Save
 			accepted := map[string]bool{}
 			acceptedByTask := map[string]string{}
 			for _, e := range history {
-				if e.Verdict == "accepted" {
+				if e.Verdict == verdictAccepted {
 					accepted[e.TaskID+"/"+e.TaskVersionID] = true
 					acceptedByTask[e.TaskID] = e.TaskVersionID
 				}
@@ -91,6 +98,7 @@ func (r *Resolver) savedWithProgress(ctx context.Context, p recommendations.Save
 			task.CompletionVersionID = &version
 		}
 	}
+
 	return out
 }
 func savedModel(p recommendations.SavedPlan, available bool) *model.SavedLearningPlan {
@@ -102,6 +110,7 @@ func savedModel(p recommendations.SavedPlan, available bool) *model.SavedLearnin
 	for _, t := range d.Tasks {
 		out.Tasks = append(out.Tasks, &model.SavedLearningTask{ID: t.ID, VersionID: t.VersionID, Title: t.Title, Minutes: t.Minutes, Completed: t.Completed})
 	}
+
 	return out
 }
 func documentFrom(p *model.LearningPlan, goal string, minutes, sessions int) recommendations.SavedDocument {
@@ -119,6 +128,7 @@ func documentFrom(p *model.LearningPlan, goal string, minutes, sessions int) rec
 			}
 		}
 	}
+
 	return d
 }
 func (r *mutationResolver) SaveLearningPlan(ctx context.Context, goal string, minutes, sessionCount int, requestID string) (*model.SavedLearningPlan, error) {
@@ -136,25 +146,27 @@ func (r *mutationResolver) SaveLearningPlan(ctx context.Context, goal string, mi
 	existing, getErr := s.GetSaved(ctx, requestID, auth.UserID)
 	if getErr == nil {
 		if !existing.IsOwner {
-			return nil, &recommendations.Error{Code: "NOT_FOUND"}
+			return nil, &recommendations.Error{Code: codeNotFound}
 		}
+
 		return r.savedWithProgress(ctx, existing), nil
 	}
 	var upstream *recommendations.Error
-	if !errors.As(getErr, &upstream) || upstream.Code != "NOT_FOUND" {
+	if !errors.As(getErr, &upstream) || upstream.Code != codeNotFound {
 		return nil, getErr
 	}
 	p, err := (&queryResolver{r.Resolver}).LearningPlan(ctx, goal, minutes, sessionCount)
 	if err != nil {
 		return nil, err
 	}
-	if p.AiStatus != "GENERATED" && p.AiStatus != "CACHED" {
+	if p.AiStatus != aiStatusGenerated && p.AiStatus != aiStatusCached {
 		return nil, practiceUnavailable()
 	}
 	saved, err := s.WriteSaved(ctx, "", "", auth.UserID, recommendations.SavedInput{ID: requestID, Document: documentFrom(p, goal, minutes, sessionCount)})
 	if err != nil {
 		return nil, err
 	}
+
 	return r.savedWithProgress(ctx, saved), nil
 }
 func (r *mutationResolver) UpdateLearningMaterial(ctx context.Context, id string, revision int, materialID string, status model.MaterialProgress) (*model.SavedLearningPlan, error) {
@@ -179,6 +191,7 @@ func (r *mutationResolver) changeSaved(ctx context.Context, id, op string, in re
 	if err != nil {
 		return nil, err
 	}
+
 	return r.savedWithProgress(ctx, p), nil
 }
 func (r *mutationResolver) RefreshLearningPlan(ctx context.Context, id string, revision int) (*model.SavedLearningPlan, error) {
@@ -198,7 +211,7 @@ func (r *mutationResolver) RefreshLearningPlan(ctx context.Context, id string, r
 		return nil, err
 	}
 	if !old.IsOwner {
-		return nil, &recommendations.Error{Code: "NOT_FOUND"}
+		return nil, &recommendations.Error{Code: codeNotFound}
 	}
 	if old.Revision != int64(revision) {
 		return nil, &recommendations.Error{Code: "CONFLICT"}
@@ -213,7 +226,7 @@ func (r *mutationResolver) RefreshLearningPlan(ctx context.Context, id string, r
 	if err != nil {
 		return nil, err
 	}
-	if next.AiStatus != "GENERATED" && next.AiStatus != "CACHED" && next.AiStatus != "NO_MATCH" {
+	if next.AiStatus != aiStatusGenerated && next.AiStatus != aiStatusCached && next.AiStatus != "NO_MATCH" {
 		return nil, practiceUnavailable()
 	}
 	// При пустом обновлении сохраняем имеющийся документ и отметки.
@@ -221,6 +234,7 @@ func (r *mutationResolver) RefreshLearningPlan(ctx context.Context, id string, r
 	if len(doc.Materials)+len(doc.Tasks) == 0 {
 		doc = old.Document
 	}
+
 	return r.changeSaved(ctx, id, "refresh", recommendations.SavedInput{Revision: int64(revision), Document: doc})
 }
 func (r *mutationResolver) CloneLearningPlan(ctx context.Context, id, requestID string) (*model.SavedLearningPlan, error) {
@@ -239,6 +253,7 @@ func (r *mutationResolver) CloneLearningPlan(ctx context.Context, id, requestID 
 	if err != nil {
 		return nil, err
 	}
+
 	return r.savedWithProgress(ctx, p), nil
 }
 
@@ -246,5 +261,6 @@ func (r *mutationResolver) RemoveLearningPlanTask(ctx context.Context, id string
 	if !savedID(taskID) {
 		return nil, practiceInvalid()
 	}
+
 	return r.changeSaved(ctx, id, "remove_task", recommendations.SavedInput{Revision: int64(revision), TaskID: taskID})
 }

@@ -56,10 +56,12 @@ type SavedService interface {
 
 func (c *Client) GetSaved(ctx context.Context, id, actor string) (SavedPlan, error) {
 	p, err := httpx.DoJSON[SavedPlan](c.hx, ctx, http.MethodGet, "/v1/learning-plans/"+url.PathEscape(id), nil, httpx.Actor{UserID: actor})
+
 	return p, goalError(err)
 }
 func (c *Client) ListSaved(ctx context.Context, actor string) ([]SavedPlan, error) {
 	p, err := httpx.DoJSON[[]SavedPlan](c.hx, ctx, http.MethodGet, "/v1/learning-plans", nil, httpx.Actor{UserID: actor})
+
 	return p, goalError(err)
 }
 func (c *Client) WriteSaved(ctx context.Context, id, op, actor string, in SavedInput) (SavedPlan, error) {
@@ -68,5 +70,6 @@ func (c *Client) WriteSaved(ctx context.Context, id, op, actor string, in SavedI
 		path += "/" + url.PathEscape(id) + "/" + url.PathEscape(op)
 	}
 	p, err := httpx.DoJSON[SavedPlan](c.hx, ctx, http.MethodPost, path, in, httpx.Actor{UserID: actor})
+
 	return p, goalError(err)
 }

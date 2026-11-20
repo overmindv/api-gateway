@@ -19,6 +19,8 @@ import (
 )
 
 func TestQueryLimitsRejectBeforeFanout(t *testing.T) {
+	t.Parallel()
+
 	var calls atomic.Int64
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { calls.Add(1); w.WriteHeader(500) }))
 	defer upstream.Close()
@@ -39,6 +41,8 @@ func TestQueryLimitsRejectBeforeFanout(t *testing.T) {
 		{"depth", "{topicTree {" + deep + "}}", "OPERATION_LIMIT_EXCEEDED"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			body := practiceOperationRequest(t, h, tc.query, "", nil)
 			if !strings.Contains(body, tc.code) {
 				t.Fatalf("missing %s: %s", tc.code, body)
@@ -51,6 +55,8 @@ func TestQueryLimitsRejectBeforeFanout(t *testing.T) {
 }
 
 func TestQueryHTTPBounds(t *testing.T) {
+	t.Parallel()
+
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	h := Handler(nil, nil, nil, log)
 	valid := `{"query":"{__typename}"}`
@@ -60,6 +66,8 @@ func TestQueryHTTPBounds(t *testing.T) {
 		{"batch", `[{"query":"{__typename}"}]`, "BATCH_NOT_ALLOWED"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			req := httptest.NewRequest("POST", "/graphql", strings.NewReader(tc.body))
 			req.ContentLength = -1
 			req.Header.Set("Content-Type", "application/json")
@@ -73,6 +81,8 @@ func TestQueryHTTPBounds(t *testing.T) {
 }
 
 func TestWeightedComplexitySaturates(t *testing.T) {
+	t.Parallel()
+
 	if got := weightedCost(1000000, int(^uint(0)>>1)); got <= queryComplexityLimit {
 		t.Fatalf("overflow: %d", got)
 	}
@@ -82,8 +92,10 @@ func TestWeightedComplexitySaturates(t *testing.T) {
 }
 
 func TestQueryDeadlineCancelsUpstream(t *testing.T) {
-	cancelled := make(chan struct{})
-	upstream := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) { <-r.Context().Done(); close(cancelled) }))
+	t.Parallel()
+
+	canceled := make(chan struct{})
+	upstream := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) { <-r.Context().Done(); close(canceled) }))
 	defer upstream.Close()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	h := HandlerWithRecommendationsAndMetrics(nil, entities.New(upstream.URL, time.Second, log), nil, nil, nil, nil, nil, log, nil, HandlerOptions{RequestTimeout: 100 * time.Millisecond})
@@ -93,9 +105,9 @@ func TestQueryDeadlineCancelsUpstream(t *testing.T) {
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	select {
-	case <-cancelled:
+	case <-canceled:
 	case <-time.After(time.Second):
-		t.Fatal("upstream not cancelled")
+		t.Fatal("upstream not canceled")
 	}
 	if !strings.Contains(w.Body.String(), "DEADLINE_EXCEEDED") {
 		t.Fatalf("response: %s", w.Body.String())
@@ -103,6 +115,8 @@ func TestQueryDeadlineCancelsUpstream(t *testing.T) {
 }
 
 func TestASTBoundaryAndExpandedFragments(t *testing.T) {
+	t.Parallel()
+
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	h := Handler(nil, nil, nil, log)
 	roots := ""
@@ -133,6 +147,8 @@ func TestASTBoundaryAndExpandedFragments(t *testing.T) {
 }
 
 func TestPaginationVariablesAndOrdinaryHistory(t *testing.T) {
+	t.Parallel()
+
 	var calls atomic.Int64
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		calls.Add(1)
@@ -159,6 +175,8 @@ func TestPaginationVariablesAndOrdinaryHistory(t *testing.T) {
 }
 
 func TestMultipartWholeBodyBound(t *testing.T) {
+	t.Parallel()
+
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	h := Handler(nil, nil, nil, log)
 	req := httptest.NewRequest("POST", "/graphql", strings.NewReader(strings.Repeat("x", graphqlMultipartLimit+1)))
@@ -172,6 +190,8 @@ func TestMultipartWholeBodyBound(t *testing.T) {
 }
 
 func TestFrontendTopicsQueryFitsBudget(t *testing.T) {
+	t.Parallel()
+
 	var calls atomic.Int64
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		calls.Add(1)

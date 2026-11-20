@@ -162,7 +162,7 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("USERS_GRAPHQL_URL: %w", err)
 	}
 
-	if parsedGraphQLURL.Host == "" || (parsedGraphQLURL.Scheme != "http" && parsedGraphQLURL.Scheme != "https") {
+	if parsedGraphQLURL.Host == "" || (parsedGraphQLURL.Scheme != httpScheme && parsedGraphQLURL.Scheme != httpsScheme) {
 		return Config{}, fmt.Errorf("USERS_GRAPHQL_URL must be an absolute HTTP(S) URL")
 	}
 
@@ -170,7 +170,7 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("USERS_TIMEOUT must be positive")
 	}
 	parsedEntitiesURL, err := url.Parse(cfg.Entities.URL)
-	if err != nil || parsedEntitiesURL.Host == "" || (parsedEntitiesURL.Scheme != "http" && parsedEntitiesURL.Scheme != "https") {
+	if err != nil || parsedEntitiesURL.Host == "" || (parsedEntitiesURL.Scheme != httpScheme && parsedEntitiesURL.Scheme != httpsScheme) {
 		return Config{}, fmt.Errorf("ENTITIES_URL must be an absolute HTTP(S) URL")
 	}
 	if cfg.Entities.Timeout <= 0 {
@@ -181,14 +181,14 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("ENTITIES_GATEWAY_TOKEN must contain 32-512 printable ASCII characters without spaces")
 	}
 	parsedTasksURL, err := url.Parse(cfg.Tasks.URL)
-	if err != nil || parsedTasksURL.Host == "" || (parsedTasksURL.Scheme != "http" && parsedTasksURL.Scheme != "https") {
+	if err != nil || parsedTasksURL.Host == "" || (parsedTasksURL.Scheme != httpScheme && parsedTasksURL.Scheme != httpsScheme) {
 		return Config{}, fmt.Errorf("TASKS_URL must be an absolute HTTP(S) URL")
 	}
 	if cfg.Tasks.Timeout <= 0 {
 		return Config{}, fmt.Errorf("TASKS_TIMEOUT must be positive")
 	}
 	parsedTaskHunterURL, err := url.Parse(cfg.TaskHunter.URL)
-	if err != nil || parsedTaskHunterURL.Host == "" || (parsedTaskHunterURL.Scheme != "http" && parsedTaskHunterURL.Scheme != "https") {
+	if err != nil || parsedTaskHunterURL.Host == "" || (parsedTaskHunterURL.Scheme != httpScheme && parsedTaskHunterURL.Scheme != httpsScheme) {
 		return Config{}, fmt.Errorf("TASK_HUNTER_URL must be an absolute HTTP(S) URL")
 	}
 	if cfg.TaskHunter.Token == "" {
@@ -198,7 +198,7 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("TASK_HUNTER_TIMEOUT must be positive")
 	}
 	parsedMediaURL, err := url.Parse(cfg.Media.URL)
-	if err != nil || parsedMediaURL.Host == "" || (parsedMediaURL.Scheme != "http" && parsedMediaURL.Scheme != "https") {
+	if err != nil || parsedMediaURL.Host == "" || (parsedMediaURL.Scheme != httpScheme && parsedMediaURL.Scheme != httpsScheme) {
 		return Config{}, fmt.Errorf("MEDIA_URL must be an absolute HTTP(S) URL")
 	}
 	if cfg.Media.Token == "" {
@@ -208,7 +208,7 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("MEDIA_TIMEOUT must be positive")
 	}
 	parsedFeedURL, err := url.Parse(cfg.Feed.URL)
-	if err != nil || parsedFeedURL.Host == "" || (parsedFeedURL.Scheme != "http" && parsedFeedURL.Scheme != "https") {
+	if err != nil || parsedFeedURL.Host == "" || (parsedFeedURL.Scheme != httpScheme && parsedFeedURL.Scheme != httpsScheme) {
 		return Config{}, fmt.Errorf("FEED_URL must be an absolute HTTP(S) URL")
 	}
 	if cfg.Feed.Token == "" {
@@ -220,7 +220,7 @@ func Load() (Config, error) {
 
 	if cfg.Recommendations.URL != "" {
 		parsed, err := url.Parse(cfg.Recommendations.URL)
-		if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.User != nil {
+		if err != nil || parsed.Host == "" || (parsed.Scheme != httpScheme && parsed.Scheme != httpsScheme) || parsed.User != nil {
 			return Config{}, fmt.Errorf("RECOMMENDATIONS_URL must be an absolute HTTP(S) URL without credentials")
 		}
 		if cfg.Recommendations.Token == "" {

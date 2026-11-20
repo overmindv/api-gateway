@@ -12,7 +12,10 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
+//nolint:paralleltest // subtests используют один httptest.Server и общий канал запросов
 func TestCatalogCredentialsFollowVerifiedRole(t *testing.T) {
+	t.Parallel()
+
 	gatewayToken := strings.Repeat("a", 32)
 	requests := make(chan http.Header, 1)
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +53,8 @@ func TestCatalogCredentialsFollowVerifiedRole(t *testing.T) {
 }
 
 func TestCatalogClientDoesNotForwardCredentialsOnRedirect(t *testing.T) {
+	t.Parallel()
+
 	requests := make(chan struct{}, 1)
 	destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		requests <- struct{}{}

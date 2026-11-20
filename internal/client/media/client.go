@@ -57,6 +57,7 @@ func (c *Client) ListFiles(ctx context.Context, status string, limit, offset int
 	query.Set("status", status)
 	query.Set("limit", strconv.Itoa(httpx.ClampLimit(limit)))
 	query.Set("offset", strconv.Itoa(offset))
+
 	return request[FileList](c, ctx, http.MethodGet, "/v1/files?"+query.Encode(), nil, actor)
 }
 func (c *Client) DownloadURL(ctx context.Context, id, variant string, actor Actor) (Download, error) {
@@ -64,6 +65,7 @@ func (c *Client) DownloadURL(ctx context.Context, id, variant string, actor Acto
 }
 func (c *Client) DeleteFile(ctx context.Context, id string, actor Actor) error {
 	_, err := request[map[string]bool](c, ctx, http.MethodDelete, "/v1/files/"+url.PathEscape(id), nil, actor)
+
 	return err
 }
 

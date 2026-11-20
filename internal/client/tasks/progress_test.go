@@ -12,6 +12,8 @@ import (
 )
 
 func TestProgressClientScopeAndActor(t *testing.T) {
+	t.Parallel()
+
 	const actorID = "00000000-0000-4000-8000-000000000003"
 	const topicID = "00000000-0000-4000-8000-000000000022"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -8,6 +8,8 @@ import (
 )
 
 func TestLearningPlanGraphQLSessionContract(t *testing.T) {
+	t.Parallel()
+
 	fixture := &practiceFixture{}
 	r := fixture.resolver(t)
 	handler := HandlerWithRecommendationsAndMetrics(nil, r.Catalog, r.Tasks, nil, nil, nil, r.Recommendations, slog.New(slog.NewTextHandler(io.Discard, nil)), nil)
@@ -18,6 +20,8 @@ func TestLearningPlanGraphQLSessionContract(t *testing.T) {
 }
 
 func TestLearningPlanRejectsSessionRangeBeforeDependencies(t *testing.T) {
+	t.Parallel()
+
 	for _, count := range []string{"0", "9", "-1"} {
 		fixture := &practiceFixture{}
 		r := fixture.resolver(t)

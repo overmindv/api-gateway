@@ -54,6 +54,7 @@ func (a *JWTAuthenticator) Parse(header string) (AuthInfo, error) {
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, errors.New("unexpected jwt signing method")
 		}
+
 		return a.secret, nil
 	}, jwt.WithIssuer(a.issuer), jwt.WithExpirationRequired(), jwt.WithIssuedAt(), jwt.WithTimeFunc(a.now))
 	if err != nil || !token.Valid || parsedClaims.Subject == "" {
@@ -100,6 +101,7 @@ func JWT(authenticator *JWTAuthenticator, next http.Handler) http.Handler {
 		}
 		if header == "" {
 			next.ServeHTTP(w, r)
+
 			return
 		}
 

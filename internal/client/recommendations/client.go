@@ -11,6 +11,8 @@ import (
 	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
+const codeNotFound = "NOT_FOUND"
+
 type Request struct {
 	Goal           string     `json:"goal,omitempty"`
 	TopicIDs       []string   `json:"topic_ids"`
@@ -120,6 +122,7 @@ type Client struct{ hx *httpx.Client }
 
 func New(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client {
 	client := &http.Client{Timeout: timeout, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
+
 	return &Client{hx: httpx.New("recommendations", baseURL, client, log, func(status int) error {
 		code := "SERVICE_UNAVAILABLE"
 		switch status {
@@ -130,8 +133,9 @@ func New(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client
 		case http.StatusTooManyRequests:
 			code = "LIMIT_REACHED"
 		case http.StatusNotFound:
-			code = "NOT_FOUND"
+			code = codeNotFound
 		}
+
 		return &Error{Code: code}
 	}, httpx.Header{Name: "Authorization", Value: "Bearer " + token})}
 }
@@ -140,11 +144,13 @@ func (c *Client) GetGoal(ctx context.Context, userID string) (*Goal, error) {
 	goal, err := httpx.DoJSON[Goal](c.hx, ctx, http.MethodGet, "/v1/practice-goal", nil, httpx.Actor{UserID: userID})
 	if err != nil {
 		var upstream *Error
-		if errors.As(err, &upstream) && upstream.Code == "NOT_FOUND" {
+		if errors.As(err, &upstream) && upstream.Code == codeNotFound {
 			return nil, nil
 		}
+
 		return nil, goalError(err)
 	}
+
 	return &goal, nil
 }
 
@@ -153,11 +159,13 @@ func (c *Client) SaveGoal(ctx context.Context, input GoalInput, userID string) (
 	if err != nil {
 		return Goal{}, goalError(err)
 	}
+
 	return goal, nil
 }
 
 func (c *Client) DeleteGoal(ctx context.Context, userID string) error {
 	_, err := httpx.DoJSON[struct{}](c.hx, ctx, http.MethodDelete, "/v1/practice-goal", nil, httpx.Actor{UserID: userID})
+
 	return goalError(err)
 }
 
@@ -169,6 +177,7 @@ func goalError(err error) error {
 	if errors.As(err, &upstream) {
 		return upstream
 	}
+
 	return &Error{Code: "SERVICE_UNAVAILABLE"}
 }
 
@@ -179,7 +188,9 @@ func (c *Client) PracticePlan(ctx context.Context, input Request, userID string)
 		if errors.As(err, &upstream) {
 			return Plan{}, upstream
 		}
+
 		return Plan{}, &Error{Code: "SERVICE_UNAVAILABLE"}
 	}
+
 	return plan, nil
 }

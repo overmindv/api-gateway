@@ -11,13 +11,20 @@ import (
 	"github.com/overmindv/api-gateway/internal/apperror"
 )
 
+const (
+	testUserID    = "user-id"
+	testRequestID = "client-request-id"
+)
+
 func TestJWTAuthenticator(t *testing.T) {
+	t.Parallel()
+
 	now := time.Date(2026, 6, 27, 12, 0, 0, 0, time.UTC)
 	authenticator := NewJWTAuthenticator("secret", "users")
 	authenticator.now = func() time.Time { return now }
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Subject:   "user-id",
+		Subject:   testUserID,
 		Issuer:    "users",
 		IssuedAt:  jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour)),
@@ -29,7 +36,7 @@ func TestJWTAuthenticator(t *testing.T) {
 	}
 
 	info, err := authenticator.Parse("Bearer " + value)
-	if err != nil || info.UserID != "user-id" || info.Token != value {
+	if err != nil || info.UserID != testUserID || info.Token != value {
 		t.Fatalf("Parse() = %+v, %v", info, err)
 	}
 
@@ -48,7 +55,7 @@ func TestRequireAdminAllowsAdminAndSuperuser(t *testing.T) {
 
 	for _, roles := range [][]string{{"admin"}, {"superuser"}} {
 		ctx := ContextWithAuth(t.Context(), AuthInfo{
-			UserID: "user-id",
+			UserID: testUserID,
 			Token:  "token",
 			Roles:  roles,
 		})
@@ -59,7 +66,7 @@ func TestRequireAdminAllowsAdminAndSuperuser(t *testing.T) {
 	}
 
 	ctx := ContextWithAuth(t.Context(), AuthInfo{
-		UserID: "user-id",
+		UserID: testUserID,
 		Token:  "token",
 		Roles:  []string{"student"},
 	})
@@ -69,6 +76,8 @@ func TestRequireAdminAllowsAdminAndSuperuser(t *testing.T) {
 }
 
 func TestJWTMiddlewareStoresAuthenticationError(t *testing.T) {
+	t.Parallel()
+
 	authenticator := NewJWTAuthenticator("secret", "users")
 
 	handler := JWT(authenticator, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -89,19 +98,21 @@ func TestJWTMiddlewareStoresAuthenticationError(t *testing.T) {
 }
 
 func TestRequestIDMiddleware(t *testing.T) {
+	t.Parallel()
+
 	handler := RequestIDMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if RequestID(r.Context()) != "client-request-id" {
+		if RequestID(r.Context()) != testRequestID {
 			t.Fatalf("request id not propagated")
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
 
 	request := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	request.Header.Set(RequestIDHeader, "client-request-id")
+	request.Header.Set(RequestIDHeader, testRequestID)
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 
-	if response.Header().Get(RequestIDHeader) != "client-request-id" {
+	if response.Header().Get(RequestIDHeader) != testRequestID {
 		t.Fatalf("response request id missing")
 	}
 }

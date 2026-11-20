@@ -27,6 +27,7 @@ func (r *queryResolver) MyPracticeGoal(ctx context.Context) (*model.PracticeGoal
 	if err != nil || goal == nil {
 		return nil, err
 	}
+
 	return r.practiceGoalModel(ctx, *goal)
 }
 
@@ -50,21 +51,22 @@ func (r *mutationResolver) SavePracticeGoal(ctx context.Context, topicIds []stri
 	ids := make([]string, 0, len(topicIds))
 	seen := make(map[string]bool, len(topicIds))
 	for _, raw := range topicIds {
-		parsed, err := uuid.Parse(raw)
-		if err != nil || parsed == uuid.Nil || seen[parsed.String()] {
+		parsed, parseErr := uuid.Parse(raw)
+		if parseErr != nil || parsed == uuid.Nil || seen[parsed.String()] {
 			return nil, practiceInvalid()
 		}
 		id := parsed.String()
 		seen[id] = true
 		ids = append(ids, id)
 	}
-	if _, err := r.practiceTopics(ctx, ids); err != nil {
-		return nil, err
+	if _, topicsErr := r.practiceTopics(ctx, ids); topicsErr != nil {
+		return nil, topicsErr
 	}
 	goal, err := service.SaveGoal(ctx, recommendations.GoalInput{TopicIDs: ids, Minutes: minutes, SessionCount: practiceSessionCount(sessionCount)}, auth.UserID)
 	if err != nil {
 		return nil, err
 	}
+
 	return r.practiceGoalModel(ctx, goal)
 }
 
@@ -82,6 +84,7 @@ func (r *mutationResolver) DeletePracticeGoal(ctx context.Context) (bool, error)
 	if err := service.DeleteGoal(ctx, auth.UserID); err != nil {
 		return false, err
 	}
+
 	return true, nil
 }
 
@@ -93,11 +96,14 @@ func (r *Resolver) practiceGoalModel(ctx context.Context, goal recommendations.G
 			var catalogError *entities.Error
 			if errors.As(err, &catalogError) && catalogError.Code == "TOPIC_NOT_FOUND" {
 				topics = append(topics, &model.PracticeGoalTopic{ID: id, Title: "Тема недоступна", Status: "archived"})
+
 				continue
 			}
+
 			return nil, practiceUnavailable()
 		}
 		topics = append(topics, &model.PracticeGoalTopic{ID: topic.ID, Title: topic.Title, Status: topic.Status})
 	}
+
 	return &model.PracticeGoal{Topics: topics, Minutes: goal.Minutes, SessionCount: max(1, goal.SessionCount), Revision: int(goal.Revision)}, nil
 }

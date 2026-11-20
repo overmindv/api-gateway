@@ -30,5 +30,6 @@ func (r *queryResolver) ExternalTaskSearch(ctx context.Context, query string) ([
 	for _, item := range items {
 		result = append(result, &model.ExternalTaskResult{Title: item.Title, URL: item.URL, Rating: item.Rating, Tags: item.Tags})
 	}
+
 	return result, nil
 }

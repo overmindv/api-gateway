@@ -107,6 +107,7 @@ func (w *sessionResponseWriter) commitHeaders() {
 
 func (w *sessionResponseWriter) Write(b []byte) (int, error) {
 	w.commitHeaders()
+
 	return w.ResponseWriter.Write(b)
 }
 

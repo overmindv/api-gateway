@@ -12,6 +12,8 @@ import (
 
 // TestClientForwardsTrustedHeaders проверяет service token и actor context запроса Media.
 func TestClientForwardsTrustedHeaders(t *testing.T) {
+	t.Parallel()
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("X-Media-Service-Token") != "service-token" {
 			t.Fatal("service token не передан")

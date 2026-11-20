@@ -57,8 +57,10 @@ func (c *Client) UserProgress(ctx context.Context, userID string, actor Actor) (
 		if errors.As(err, &upstream) && upstream.StatusCode == http.StatusNotFound {
 			return nil, nil
 		}
+
 		return nil, err
 	}
+
 	return &result, nil
 }
 
@@ -68,6 +70,7 @@ func (c *Client) SetMyProgressPublic(ctx context.Context, public bool, actor Act
 	}](c, ctx, http.MethodPut, "/v1/me/practice-progress/visibility", struct {
 		Public bool `json:"public"`
 	}{Public: public}, actor)
+
 	return result.Public, err
 }
 
@@ -83,5 +86,6 @@ func (c *Client) RatedUsers(ctx context.Context, topicIDs *[]string, limit, offs
 			values.Add("topic_id", id)
 		}
 	}
+
 	return request[[]RatedUser](c, ctx, http.MethodGet, pathWithQuery("/v1/practice-leaderboard", values), nil, actor)
 }
