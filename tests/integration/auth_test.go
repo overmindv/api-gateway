@@ -72,6 +72,7 @@ func (f *fakeUsersGraphQL) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+
 		return
 	}
 
@@ -84,12 +85,14 @@ func (f *fakeUsersGraphQL) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case strings.Contains(request.Query, "updateUser(id:"):
 		if !f.hasBearer(r) {
 			writeGraphQLError(w, "UNAUTHENTICATED")
+
 			return
 		}
 		f.updateUser(w, request.Variables)
 	case strings.Contains(request.Query, "setUserAdminByUsername(username:"):
 		if !f.hasBearer(r) {
 			writeGraphQLError(w, "UNAUTHENTICATED")
+
 			return
 		}
 		f.setUserAdminByUsername(w, request.Variables)
@@ -127,6 +130,7 @@ func (f *fakeUsersGraphQL) login(w http.ResponseWriter, variables map[string]any
 	user := f.users[input["email"].(string)]
 	if user == nil || user.Password != input["password"].(string) {
 		writeGraphQLError(w, "UNAUTHENTICATED")
+
 		return
 	}
 	writeGraphQLData(w, map[string]any{
@@ -145,6 +149,7 @@ func (f *fakeUsersGraphQL) updateUser(w http.ResponseWriter, variables map[strin
 			user.FirstName = stringValueFromMap(input, "firstName")
 			user.UpdatedAt = "2026-07-18T10:05:00Z"
 			writeGraphQLData(w, map[string]any{"updateUser": user})
+
 			return
 		}
 	}
@@ -163,6 +168,7 @@ func (f *fakeUsersGraphQL) setUserAdminByUsername(w http.ResponseWriter, variabl
 				user.Roles = []string{}
 			}
 			writeGraphQLData(w, map[string]any{"setUserAdminByUsername": user})
+
 			return
 		}
 	}
@@ -189,6 +195,8 @@ func (f *fakeUsersGraphQL) hasBearer(r *http.Request) bool {
 }
 
 func TestGatewayAuthFlowThroughUsersClient(t *testing.T) {
+	t.Parallel()
+
 	upstream := newFakeUsersGraphQL()
 	upstreamServer := httptest.NewServer(upstream)
 	defer upstreamServer.Close()

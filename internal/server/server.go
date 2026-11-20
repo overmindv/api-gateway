@@ -60,22 +60,26 @@ func NewWithRecommendations(cfg config.HTTP, users users.UserService, catalog en
 		if err := usersHealth.Health(r.Context()); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			_, _ = w.Write([]byte(`{"status":"unhealthy","users":"unavailable"}`))
+
 			return
 		}
 		if err := tasks.Health(r.Context()); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			_, _ = w.Write([]byte(`{"status":"unhealthy","tasks":"unavailable"}`))
+
 			return
 		}
 		if err := taskHunter.Health(r.Context()); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			_, _ = w.Write([]byte(`{"status":"unhealthy","task_hunter":"unavailable"}`))
+
 			return
 		}
 		if mediaSvc != nil {
 			if err := mediaSvc.Health(r.Context()); err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				_, _ = w.Write([]byte(`{"status":"unhealthy","media":"unavailable"}`))
+
 				return
 			}
 		}
@@ -83,6 +87,7 @@ func NewWithRecommendations(cfg config.HTTP, users users.UserService, catalog en
 			if err := feedSvc.Health(r.Context()); err != nil {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				_, _ = w.Write([]byte(`{"status":"unhealthy","feed":"unavailable"}`))
+
 				return
 			}
 		}
