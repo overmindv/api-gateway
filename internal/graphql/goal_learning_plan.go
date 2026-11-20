@@ -40,16 +40,17 @@ func (r *queryResolver) learningPlan(ctx context.Context, goal string, minutes, 
 		if offset == 200 {
 			limit = 1
 		}
-		page, err := r.Catalog.ListTopics(ctx, "", entities.ListOptions{Status: "active", Limit: limit, Offset: offset})
-		if err != nil || len(page) > limit {
+		page, listErr := r.Catalog.ListTopics(ctx, "", entities.ListOptions{Status: statusActive, Limit: limit, Offset: offset})
+		if listErr != nil || len(page) > limit {
 			return nil, practiceUnavailable()
 		}
 		if offset == 200 {
 			truncated = len(page) > 0
+
 			break
 		}
 		for _, t := range page {
-			if t.Status == "active" && byID[t.ID] == "" {
+			if t.Status == statusActive && byID[t.ID] == "" {
 				topics = append(topics, recommendations.Topic{ID: t.ID, Title: t.Title})
 				byID[t.ID] = t.Title
 			}
@@ -94,5 +95,6 @@ func (r *queryResolver) learningPlan(ctx context.Context, goal string, minutes, 
 	} else {
 		result.Warnings = append(result.Warnings, "NO_PRACTICE_TOPICS")
 	}
+
 	return result, nil
 }

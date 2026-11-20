@@ -27,10 +27,13 @@ func practiceOperationRequest(t *testing.T, handler http.Handler, query, operati
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
+
 	return response.Body.String()
 }
 
 func TestPracticePlanRejectsAliasFanoutBeforeUpstream(t *testing.T) {
+	t.Parallel()
+
 	field := `practicePlan(topicIds:["` + practiceTopic + `"],minutes:60){totalMinutes}`
 	for _, tc := range []struct{ name, query string }{
 		{"aliases", `{first:` + field + ` second:` + field + `}`},
@@ -38,6 +41,8 @@ func TestPracticePlanRejectsAliasFanoutBeforeUpstream(t *testing.T) {
 		{"inline fragments", `{... on Query {first:` + field + `} ... on Query {second:` + field + `}}`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			var calls atomic.Int64
 			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				calls.Add(1)
@@ -56,6 +61,8 @@ func TestPracticePlanRejectsAliasFanoutBeforeUpstream(t *testing.T) {
 }
 
 func TestPracticePlanAllowsOneCollectedFieldPerOperation(t *testing.T) {
+	t.Parallel()
+
 	args := `(topicIds:["` + practiceTopic + `"],minutes:60)`
 	for _, tc := range []struct {
 		name, query, operationName string
@@ -67,6 +74,8 @@ func TestPracticePlanAllowsOneCollectedFieldPerOperation(t *testing.T) {
 		{name: "selected operation only", query: `query Preview {practicePlan` + args + `{totalMinutes}} query Unselected {first:practicePlan` + args + `{totalMinutes} second:practicePlan` + args + `{totalMinutes}}`, operationName: "Preview"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			fixture := &practiceFixture{}
 			resolver := fixture.resolver(t)
 			log := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -80,6 +89,8 @@ func TestPracticePlanAllowsOneCollectedFieldPerOperation(t *testing.T) {
 }
 
 func TestPracticePlanOperationLimitPreservesExistingQueries(t *testing.T) {
+	t.Parallel()
+
 	handler := Handler(nil, nil, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	body := practiceOperationRequest(t, handler, `{first:__typename second:__typename}`, "", nil)
 	if body != `{"data":{"first":"Query","second":"Query"}}` {

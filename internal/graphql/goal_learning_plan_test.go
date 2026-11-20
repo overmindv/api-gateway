@@ -9,9 +9,11 @@ import (
 )
 
 func TestGoalPlanSelectsTopicsThenLoadsCurrentPractice(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{}
 	r := f.resolver(t)
-	plan, err := r.LearningPlan(practiceContext(), "Junior AI", 60, 3)
+	plan, err := r.LearningPlan(practiceContext(), testGoal, 60, 3)
 	if err != nil || plan.AiStatus != "GENERATED" || len(plan.Materials) != 1 || len(plan.Topics) != 1 || plan.Practice == nil {
 		t.Fatalf("bad goal plan: %+v %v", plan, err)
 	}
@@ -20,9 +22,11 @@ func TestGoalPlanSelectsTopicsThenLoadsCurrentPractice(t *testing.T) {
 	}
 }
 func TestGoalPlanRequiresAuthAndBoundedGoal(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{}
 	r := f.resolver(t)
-	if _, err := r.LearningPlan(context.Background(), "Junior AI", 60, 3); err == nil {
+	if _, err := r.LearningPlan(context.Background(), testGoal, 60, 3); err == nil {
 		t.Fatal("auth bypass")
 	}
 	for _, goal := range []string{"", strings.Repeat("я", 1001)} {
@@ -35,15 +39,19 @@ func TestGoalPlanRequiresAuthAndBoundedGoal(t *testing.T) {
 	}
 }
 func TestGoalPlanKeepsMaterialsOnPracticeFailure(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{failPath: "/v1/tasks"}
 	r := f.resolver(t)
-	plan, err := r.LearningPlan(practiceContext(), "Junior AI", 60, 3)
+	plan, err := r.LearningPlan(practiceContext(), testGoal, 60, 3)
 	if err != nil || len(plan.Materials) != 1 || plan.Practice != nil || len(plan.Warnings) != 1 || plan.Warnings[0] != "PRACTICE_UNAVAILABLE" {
 		t.Fatalf("bad degradation %+v %v", plan, err)
 	}
 }
 
 func TestGoalPlanGraphQLContractAndFanout(t *testing.T) {
+	t.Parallel()
+
 	f := &practiceFixture{}
 	r := f.resolver(t)
 	handler := HandlerWithRecommendationsAndMetrics(nil, r.Catalog, r.Tasks, nil, nil, nil, r.Recommendations, slog.New(slog.NewTextHandler(io.Discard, nil)), nil)
