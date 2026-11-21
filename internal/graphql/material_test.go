@@ -185,8 +185,9 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 
 	client := startMaterialRPC(t, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, next grpc.UnaryHandler) (any, error) {
 		actor := materialRPCActor(ctx)
-		isProposalLookup := info.FullMethod == pb.ContentService_GetChangeProposal_FullMethodName
-		allowedActor := actor == materialOwner || actor == materialReader || (isProposalLookup && actor == proposalStranger)
+		isPrivateLookup := info.FullMethod == pb.ContentService_GetChangeProposal_FullMethodName ||
+			info.FullMethod == pb.ContentService_GetReviewRevisionStatus_FullMethodName
+		allowedActor := actor == materialOwner || actor == materialReader || (isPrivateLookup && actor == proposalStranger)
 		if !allowedActor {
 			t.Errorf("unexpected forwarded actor %q", actor)
 		}
@@ -287,6 +288,7 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 	run(materialReader, fmt.Sprintf(`{ material(id:%q) { revision { a:source b:source c:source d:source e:source f:source g:source } } }`, materialFixtureID),
 		`"code":"COMPLEXITY_LIMIT_EXCEEDED"`)
 	checkProposalGraphQL(t, run)
+	checkReviewGraphQL(run)
 	checkPublishedAttachmentGraphQL(t, run)
 }
 
@@ -314,6 +316,23 @@ func BenchmarkMaterialGateway(b *testing.B) {
 			gateway.ServeHTTP(response, request)
 			if response.Code != http.StatusOK || !bytes.Contains(response.Body.Bytes(), []byte(materialFixtureID)) {
 				b.Fatal("catalog request failed")
+			}
+		}
+	})
+	b.Run("review", func(b *testing.B) {
+		b.ReportAllocs()
+		query, err := json.Marshal(map[string]string{"query": fmt.Sprintf(
+			`{ materialReviewStatus(proposalId:%q,revisionId:%q) { current outcome decisions { legacy } } }`, proposalFixtureID, proposalHeadID)})
+		if err != nil {
+			b.Fatal(err)
+		}
+		for b.Loop() {
+			request := httptest.NewRequestWithContext(ctx, http.MethodPost, "/graphql", bytes.NewReader(query))
+			request.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+			gateway.ServeHTTP(response, request)
+			if response.Code != http.StatusOK || !bytes.Contains(response.Body.Bytes(), []byte(`"current":true`)) {
+				b.Fatal("review request failed")
 			}
 		}
 	})
