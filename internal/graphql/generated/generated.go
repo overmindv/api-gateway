@@ -239,6 +239,76 @@ type ComplexityRoot struct {
 		Warnings  func(childComplexity int) int
 	}
 
+	Material struct {
+		Attachments         func(childComplexity int) int
+		AuthorID            func(childComplexity int) int
+		Description         func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		Learning            func(childComplexity int) int
+		PublishedAt         func(childComplexity int) int
+		PublishedRevisionID func(childComplexity int) int
+		Revision            func(childComplexity int) int
+		Slug                func(childComplexity int) int
+		Status              func(childComplexity int) int
+		Tags                func(childComplexity int) int
+		Title               func(childComplexity int) int
+		Type                func(childComplexity int) int
+		UpdatedAt           func(childComplexity int) int
+	}
+
+	MaterialAttachment struct {
+		FileID   func(childComplexity int) int
+		Kind     func(childComplexity int) int
+		Position func(childComplexity int) int
+		Title    func(childComplexity int) int
+	}
+
+	MaterialCatalogEntry struct {
+		AuthorID   func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Learning   func(childComplexity int) int
+		RevisionID func(childComplexity int) int
+		Slug       func(childComplexity int) int
+		Status     func(childComplexity int) int
+		Title      func(childComplexity int) int
+	}
+
+	MaterialCatalogPage struct {
+		Items      func(childComplexity int) int
+		NextCursor func(childComplexity int) int
+	}
+
+	MaterialLearning struct {
+		EstimatedMinutes func(childComplexity int) int
+		LearningOutcomes func(childComplexity int) int
+		TopicIds         func(childComplexity int) int
+	}
+
+	MaterialRevision struct {
+		AuthorID  func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Format    func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Message   func(childComplexity int) int
+		Number    func(childComplexity int) int
+		Source    func(childComplexity int) int
+	}
+
+	MaterialRevisionPage struct {
+		Items              func(childComplexity int) int
+		NextBeforeRevision func(childComplexity int) int
+	}
+
+	MaterialRevisionSummary struct {
+		AuthorID  func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Format    func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Message   func(childComplexity int) int
+		Number    func(childComplexity int) int
+	}
+
 	MediaDownload struct {
 		ExpiresAt func(childComplexity int) int
 		URL       func(childComplexity int) int
@@ -302,6 +372,7 @@ type ComplexityRoot struct {
 		CompleteMediaUpload          func(childComplexity int, input model.CompleteMediaUploadInput) int
 		CreateCourse                 func(childComplexity int, input model.CreateCourseInput) int
 		CreateITTask                 func(childComplexity int, input model.ITTaskInput) int
+		CreateMaterialDraft          func(childComplexity int, input model.CreateMaterialDraftInput) int
 		CreateMediaUpload            func(childComplexity int, input model.CreateMediaUploadInput) int
 		CreateMediaUploadParts       func(childComplexity int, fileID string, partNumbers []int) int
 		CreateProgram                func(childComplexity int, input model.CreateProgramInput) int
@@ -323,6 +394,7 @@ type ComplexityRoot struct {
 		RemoveLearningPlanTask       func(childComplexity int, id string, revision int, taskID string) int
 		RemoveTopicPrerequisite      func(childComplexity int, input model.TopicPrerequisiteInput) int
 		SaveLearningPlan             func(childComplexity int, goal string, minutes int, sessionCount int, requestID string) int
+		SaveMaterialDraft            func(childComplexity int, input model.SaveMaterialDraftInput) int
 		SavePracticeGoal             func(childComplexity int, topicIds []string, minutes int, sessionCount *int) int
 		SetLearningPlanPublic        func(childComplexity int, id string, revision int, public bool) int
 		SetMyAvatar                  func(childComplexity int, fileID *string) int
@@ -503,6 +575,9 @@ type ComplexityRoot struct {
 		ItTask                 func(childComplexity int, id string) int
 		ItTasks                func(childComplexity int, filter *model.ITTaskFilter, pagination *model.PaginationInput) int
 		LearningPlan           func(childComplexity int, goal string, minutes int, sessionCount int) int
+		Material               func(childComplexity int, id string) int
+		MaterialRevisions      func(childComplexity int, id string, limit int, beforeRevision *int) int
+		Materials              func(childComplexity int, filter *model.MaterialCatalogFilter, limit int, cursor *string) int
 		Me                     func(childComplexity int) int
 		MediaDownloadURL       func(childComplexity int, fileID string, variant *string) int
 		MediaFile              func(childComplexity int, id string) int
@@ -718,6 +793,8 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
+	CreateMaterialDraft(ctx context.Context, input model.CreateMaterialDraftInput) (*model.Material, error)
+	SaveMaterialDraft(ctx context.Context, input model.SaveMaterialDraftInput) (*model.MaterialRevision, error)
 	SaveLearningPlan(ctx context.Context, goal string, minutes int, sessionCount int, requestID string) (*model.SavedLearningPlan, error)
 	RemoveLearningPlanTask(ctx context.Context, id string, revision int, taskID string) (*model.SavedLearningPlan, error)
 	UpdateLearningMaterial(ctx context.Context, id string, revision int, materialID string, status model.MaterialProgress) (*model.SavedLearningPlan, error)
@@ -770,6 +847,9 @@ type MutationResolver interface {
 	DeleteMediaFile(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
+	Materials(ctx context.Context, filter *model.MaterialCatalogFilter, limit int, cursor *string) (*model.MaterialCatalogPage, error)
+	Material(ctx context.Context, id string) (*model.Material, error)
+	MaterialRevisions(ctx context.Context, id string, limit int, beforeRevision *int) (*model.MaterialRevisionPage, error)
 	MyLearningPlans(ctx context.Context) ([]*model.SavedLearningPlan, error)
 	SavedLearningPlan(ctx context.Context, id string) (*model.SavedLearningPlan, error)
 	LearningPlan(ctx context.Context, goal string, minutes int, sessionCount int) (*model.LearningPlan, error)
@@ -1638,6 +1718,290 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.LearningPlan.Warnings(childComplexity), true
 
+	case "Material.attachments":
+		if e.complexity.Material.Attachments == nil {
+			break
+		}
+
+		return e.complexity.Material.Attachments(childComplexity), true
+	case "Material.authorId":
+		if e.complexity.Material.AuthorID == nil {
+			break
+		}
+
+		return e.complexity.Material.AuthorID(childComplexity), true
+	case "Material.description":
+		if e.complexity.Material.Description == nil {
+			break
+		}
+
+		return e.complexity.Material.Description(childComplexity), true
+	case "Material.id":
+		if e.complexity.Material.ID == nil {
+			break
+		}
+
+		return e.complexity.Material.ID(childComplexity), true
+	case "Material.learning":
+		if e.complexity.Material.Learning == nil {
+			break
+		}
+
+		return e.complexity.Material.Learning(childComplexity), true
+	case "Material.publishedAt":
+		if e.complexity.Material.PublishedAt == nil {
+			break
+		}
+
+		return e.complexity.Material.PublishedAt(childComplexity), true
+	case "Material.publishedRevisionId":
+		if e.complexity.Material.PublishedRevisionID == nil {
+			break
+		}
+
+		return e.complexity.Material.PublishedRevisionID(childComplexity), true
+	case "Material.revision":
+		if e.complexity.Material.Revision == nil {
+			break
+		}
+
+		return e.complexity.Material.Revision(childComplexity), true
+	case "Material.slug":
+		if e.complexity.Material.Slug == nil {
+			break
+		}
+
+		return e.complexity.Material.Slug(childComplexity), true
+	case "Material.status":
+		if e.complexity.Material.Status == nil {
+			break
+		}
+
+		return e.complexity.Material.Status(childComplexity), true
+	case "Material.tags":
+		if e.complexity.Material.Tags == nil {
+			break
+		}
+
+		return e.complexity.Material.Tags(childComplexity), true
+	case "Material.title":
+		if e.complexity.Material.Title == nil {
+			break
+		}
+
+		return e.complexity.Material.Title(childComplexity), true
+	case "Material.type":
+		if e.complexity.Material.Type == nil {
+			break
+		}
+
+		return e.complexity.Material.Type(childComplexity), true
+	case "Material.updatedAt":
+		if e.complexity.Material.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Material.UpdatedAt(childComplexity), true
+
+	case "MaterialAttachment.fileId":
+		if e.complexity.MaterialAttachment.FileID == nil {
+			break
+		}
+
+		return e.complexity.MaterialAttachment.FileID(childComplexity), true
+	case "MaterialAttachment.kind":
+		if e.complexity.MaterialAttachment.Kind == nil {
+			break
+		}
+
+		return e.complexity.MaterialAttachment.Kind(childComplexity), true
+	case "MaterialAttachment.position":
+		if e.complexity.MaterialAttachment.Position == nil {
+			break
+		}
+
+		return e.complexity.MaterialAttachment.Position(childComplexity), true
+	case "MaterialAttachment.title":
+		if e.complexity.MaterialAttachment.Title == nil {
+			break
+		}
+
+		return e.complexity.MaterialAttachment.Title(childComplexity), true
+
+	case "MaterialCatalogEntry.authorId":
+		if e.complexity.MaterialCatalogEntry.AuthorID == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.AuthorID(childComplexity), true
+	case "MaterialCatalogEntry.createdAt":
+		if e.complexity.MaterialCatalogEntry.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.CreatedAt(childComplexity), true
+	case "MaterialCatalogEntry.id":
+		if e.complexity.MaterialCatalogEntry.ID == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.ID(childComplexity), true
+	case "MaterialCatalogEntry.learning":
+		if e.complexity.MaterialCatalogEntry.Learning == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.Learning(childComplexity), true
+	case "MaterialCatalogEntry.revisionId":
+		if e.complexity.MaterialCatalogEntry.RevisionID == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.RevisionID(childComplexity), true
+	case "MaterialCatalogEntry.slug":
+		if e.complexity.MaterialCatalogEntry.Slug == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.Slug(childComplexity), true
+	case "MaterialCatalogEntry.status":
+		if e.complexity.MaterialCatalogEntry.Status == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.Status(childComplexity), true
+	case "MaterialCatalogEntry.title":
+		if e.complexity.MaterialCatalogEntry.Title == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.Title(childComplexity), true
+
+	case "MaterialCatalogPage.items":
+		if e.complexity.MaterialCatalogPage.Items == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogPage.Items(childComplexity), true
+	case "MaterialCatalogPage.nextCursor":
+		if e.complexity.MaterialCatalogPage.NextCursor == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogPage.NextCursor(childComplexity), true
+
+	case "MaterialLearning.estimatedMinutes":
+		if e.complexity.MaterialLearning.EstimatedMinutes == nil {
+			break
+		}
+
+		return e.complexity.MaterialLearning.EstimatedMinutes(childComplexity), true
+	case "MaterialLearning.learningOutcomes":
+		if e.complexity.MaterialLearning.LearningOutcomes == nil {
+			break
+		}
+
+		return e.complexity.MaterialLearning.LearningOutcomes(childComplexity), true
+	case "MaterialLearning.topicIds":
+		if e.complexity.MaterialLearning.TopicIds == nil {
+			break
+		}
+
+		return e.complexity.MaterialLearning.TopicIds(childComplexity), true
+
+	case "MaterialRevision.authorId":
+		if e.complexity.MaterialRevision.AuthorID == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevision.AuthorID(childComplexity), true
+	case "MaterialRevision.createdAt":
+		if e.complexity.MaterialRevision.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevision.CreatedAt(childComplexity), true
+	case "MaterialRevision.format":
+		if e.complexity.MaterialRevision.Format == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevision.Format(childComplexity), true
+	case "MaterialRevision.id":
+		if e.complexity.MaterialRevision.ID == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevision.ID(childComplexity), true
+	case "MaterialRevision.message":
+		if e.complexity.MaterialRevision.Message == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevision.Message(childComplexity), true
+	case "MaterialRevision.number":
+		if e.complexity.MaterialRevision.Number == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevision.Number(childComplexity), true
+	case "MaterialRevision.source":
+		if e.complexity.MaterialRevision.Source == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevision.Source(childComplexity), true
+
+	case "MaterialRevisionPage.items":
+		if e.complexity.MaterialRevisionPage.Items == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevisionPage.Items(childComplexity), true
+	case "MaterialRevisionPage.nextBeforeRevision":
+		if e.complexity.MaterialRevisionPage.NextBeforeRevision == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevisionPage.NextBeforeRevision(childComplexity), true
+
+	case "MaterialRevisionSummary.authorId":
+		if e.complexity.MaterialRevisionSummary.AuthorID == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevisionSummary.AuthorID(childComplexity), true
+	case "MaterialRevisionSummary.createdAt":
+		if e.complexity.MaterialRevisionSummary.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevisionSummary.CreatedAt(childComplexity), true
+	case "MaterialRevisionSummary.format":
+		if e.complexity.MaterialRevisionSummary.Format == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevisionSummary.Format(childComplexity), true
+	case "MaterialRevisionSummary.id":
+		if e.complexity.MaterialRevisionSummary.ID == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevisionSummary.ID(childComplexity), true
+	case "MaterialRevisionSummary.message":
+		if e.complexity.MaterialRevisionSummary.Message == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevisionSummary.Message(childComplexity), true
+	case "MaterialRevisionSummary.number":
+		if e.complexity.MaterialRevisionSummary.Number == nil {
+			break
+		}
+
+		return e.complexity.MaterialRevisionSummary.Number(childComplexity), true
+
 	case "MediaDownload.expiresAt":
 		if e.complexity.MediaDownload.ExpiresAt == nil {
 			break
@@ -1968,6 +2332,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateITTask(childComplexity, args["input"].(model.ITTaskInput)), true
+	case "Mutation.createMaterialDraft":
+		if e.complexity.Mutation.CreateMaterialDraft == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createMaterialDraft_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateMaterialDraft(childComplexity, args["input"].(model.CreateMaterialDraftInput)), true
 	case "Mutation.createMediaUpload":
 		if e.complexity.Mutation.CreateMediaUpload == nil {
 			break
@@ -2189,6 +2564,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SaveLearningPlan(childComplexity, args["goal"].(string), args["minutes"].(int), args["sessionCount"].(int), args["requestId"].(string)), true
+	case "Mutation.saveMaterialDraft":
+		if e.complexity.Mutation.SaveMaterialDraft == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveMaterialDraft_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SaveMaterialDraft(childComplexity, args["input"].(model.SaveMaterialDraftInput)), true
 	case "Mutation.savePracticeGoal":
 		if e.complexity.Mutation.SavePracticeGoal == nil {
 			break
@@ -3108,6 +3494,39 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.LearningPlan(childComplexity, args["goal"].(string), args["minutes"].(int), args["sessionCount"].(int)), true
+	case "Query.material":
+		if e.complexity.Query.Material == nil {
+			break
+		}
+
+		args, err := ec.field_Query_material_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Material(childComplexity, args["id"].(string)), true
+	case "Query.materialRevisions":
+		if e.complexity.Query.MaterialRevisions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materialRevisions_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MaterialRevisions(childComplexity, args["id"].(string), args["limit"].(int), args["beforeRevision"].(*int)), true
+	case "Query.materials":
+		if e.complexity.Query.Materials == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materials_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Materials(childComplexity, args["filter"].(*model.MaterialCatalogFilter), args["limit"].(int), args["cursor"].(*string)), true
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
 			break
@@ -4261,6 +4680,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCompleteMediaPartInput,
 		ec.unmarshalInputCompleteMediaUploadInput,
 		ec.unmarshalInputCreateCourseInput,
+		ec.unmarshalInputCreateMaterialDraftInput,
 		ec.unmarshalInputCreateMediaUploadInput,
 		ec.unmarshalInputCreateProgramInput,
 		ec.unmarshalInputCreateTopicInput,
@@ -4273,9 +4693,12 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputITTaskInput,
 		ec.unmarshalInputITTaskOptionInput,
 		ec.unmarshalInputLoginInput,
+		ec.unmarshalInputMaterialCatalogFilter,
+		ec.unmarshalInputMaterialLearningInput,
 		ec.unmarshalInputMediaFileFilter,
 		ec.unmarshalInputPaginationInput,
 		ec.unmarshalInputRegisterInput,
+		ec.unmarshalInputSaveMaterialDraftInput,
 		ec.unmarshalInputStartTaskCollectionInput,
 		ec.unmarshalInputTaskCandidateFilter,
 		ec.unmarshalInputTaskCandidateReviewInput,
@@ -4667,7 +5090,97 @@ type SearchResults {
   tasks: [ITTaskSummary!]!
 }
 
+enum MaterialStatus { draft published archived }
+enum MaterialType { article note summary theory }
+enum MaterialFormat { markdown typst }
+enum MaterialAssetKind { image attachment pdf archive }
+
+type MaterialLearning {
+  topicIds: [ID!]!
+  estimatedMinutes: Int!
+  learningOutcomes: [String!]!
+}
+type MaterialCatalogEntry {
+  id: ID!
+  title: String!
+  slug: String!
+  status: MaterialStatus!
+  authorId: ID
+  revisionId: ID
+  createdAt: String!
+  learning: MaterialLearning
+}
+type MaterialCatalogPage { items: [MaterialCatalogEntry!]!, nextCursor: String }
+type MaterialRevisionSummary {
+  id: ID!
+  number: Int!
+  format: MaterialFormat!
+  message: String!
+  authorId: ID
+  createdAt: String!
+}
+type MaterialRevisionPage { items: [MaterialRevisionSummary!]!, nextBeforeRevision: Int }
+type MaterialRevision {
+  id: ID!
+  number: Int!
+  format: MaterialFormat!
+  source: String!
+  message: String!
+  authorId: ID
+  createdAt: String!
+}
+type MaterialAttachment {
+  fileId: ID!
+  kind: MaterialAssetKind!
+  title: String!
+  position: Int!
+}
+type Material {
+  id: ID!
+  type: MaterialType!
+  status: MaterialStatus!
+  title: String!
+  slug: String!
+  description: String!
+  authorId: ID
+  revision: MaterialRevision
+  publishedRevisionId: ID
+  publishedAt: String
+  updatedAt: String!
+  tags: [String!]!
+  attachments: [MaterialAttachment!]!
+  learning: MaterialLearning
+}
+
+input MaterialCatalogFilter { topicId: ID, authorId: ID, status: MaterialStatus }
+input MaterialLearningInput {
+  topicIds: [ID!]! = []
+  estimatedMinutes: Int! = 0
+  learningOutcomes: [String!]! = []
+}
+input CreateMaterialDraftInput {
+  type: MaterialType!
+  title: String!
+  slug: String!
+  description: String! = ""
+  format: MaterialFormat! = markdown
+  source: String!
+  message: String! = ""
+  tags: [String!]! = []
+  learning: MaterialLearningInput
+}
+input SaveMaterialDraftInput {
+  materialId: ID!
+  expectedRevisionId: ID!
+  format: MaterialFormat! = markdown
+  source: String!
+  message: String! = ""
+}
+
 type Query {
+  materials(filter: MaterialCatalogFilter, limit: Int! = 20, cursor: String): MaterialCatalogPage
+  material(id: ID!): Material
+  materialRevisions(id: ID!, limit: Int! = 20, beforeRevision: Int): MaterialRevisionPage
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
   learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
@@ -4717,6 +5230,8 @@ type Query {
 }
 
 type Mutation {
+  createMaterialDraft(input: CreateMaterialDraftInput!): Material
+  saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
   saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
   removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
   updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!
@@ -5060,6 +5575,17 @@ func (ec *executionContext) field_Mutation_createITTask_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createMaterialDraft_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateMaterialDraftInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐCreateMaterialDraftInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createMediaUploadParts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -5311,6 +5837,17 @@ func (ec *executionContext) field_Mutation_saveLearningPlan_args(ctx context.Con
 		return nil, err
 	}
 	args["requestId"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveMaterialDraft_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNSaveMaterialDraftInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐSaveMaterialDraftInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -5761,6 +6298,59 @@ func (ec *executionContext) field_Query_learningPlan_args(ctx context.Context, r
 		return nil, err
 	}
 	args["sessionCount"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materialRevisions_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "beforeRevision", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["beforeRevision"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_material_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materials_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOMaterialCatalogFilter2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogFilter)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "cursor", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["cursor"] = arg2
 	return args, nil
 }
 
@@ -10241,6 +10831,1414 @@ func (ec *executionContext) fieldContext_LearningPlan_warnings(_ context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Material_id(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_type(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_type,
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
+		nil,
+		ec.marshalNMaterialType2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialType,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MaterialType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_status(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNMaterialStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MaterialStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_title(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_title,
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_slug(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_slug,
+		func(ctx context.Context) (any, error) {
+			return obj.Slug, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_slug(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_description(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_description,
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_authorId(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_authorId,
+		func(ctx context.Context) (any, error) {
+			return obj.AuthorID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_revision(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_revision,
+		func(ctx context.Context) (any, error) {
+			return obj.Revision, nil
+		},
+		nil,
+		ec.marshalOMaterialRevision2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevision,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_revision(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialRevision_id(ctx, field)
+			case "number":
+				return ec.fieldContext_MaterialRevision_number(ctx, field)
+			case "format":
+				return ec.fieldContext_MaterialRevision_format(ctx, field)
+			case "source":
+				return ec.fieldContext_MaterialRevision_source(ctx, field)
+			case "message":
+				return ec.fieldContext_MaterialRevision_message(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialRevision_authorId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialRevision_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialRevision", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_publishedRevisionId(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_publishedRevisionId,
+		func(ctx context.Context) (any, error) {
+			return obj.PublishedRevisionID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_publishedRevisionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_publishedAt(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_publishedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.PublishedAt, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_publishedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_tags(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_tags,
+		func(ctx context.Context) (any, error) {
+			return obj.Tags, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_tags(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_attachments(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_attachments,
+		func(ctx context.Context) (any, error) {
+			return obj.Attachments, nil
+		},
+		nil,
+		ec.marshalNMaterialAttachment2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachmentᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_attachments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "fileId":
+				return ec.fieldContext_MaterialAttachment_fileId(ctx, field)
+			case "kind":
+				return ec.fieldContext_MaterialAttachment_kind(ctx, field)
+			case "title":
+				return ec.fieldContext_MaterialAttachment_title(ctx, field)
+			case "position":
+				return ec.fieldContext_MaterialAttachment_position(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialAttachment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Material_learning(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Material_learning,
+		func(ctx context.Context) (any, error) {
+			return obj.Learning, nil
+		},
+		nil,
+		ec.marshalOMaterialLearning2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialLearning,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Material_learning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Material",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "topicIds":
+				return ec.fieldContext_MaterialLearning_topicIds(ctx, field)
+			case "estimatedMinutes":
+				return ec.fieldContext_MaterialLearning_estimatedMinutes(ctx, field)
+			case "learningOutcomes":
+				return ec.fieldContext_MaterialLearning_learningOutcomes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialLearning", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialAttachment_fileId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialAttachment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialAttachment_fileId,
+		func(ctx context.Context) (any, error) {
+			return obj.FileID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialAttachment_fileId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialAttachment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialAttachment_kind(ctx context.Context, field graphql.CollectedField, obj *model.MaterialAttachment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialAttachment_kind,
+		func(ctx context.Context) (any, error) {
+			return obj.Kind, nil
+		},
+		nil,
+		ec.marshalNMaterialAssetKind2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAssetKind,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialAttachment_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialAttachment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MaterialAssetKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialAttachment_title(ctx context.Context, field graphql.CollectedField, obj *model.MaterialAttachment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialAttachment_title,
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialAttachment_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialAttachment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialAttachment_position(ctx context.Context, field graphql.CollectedField, obj *model.MaterialAttachment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialAttachment_position,
+		func(ctx context.Context) (any, error) {
+			return obj.Position, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialAttachment_position(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialAttachment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogEntry_id(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogEntry_title(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_title,
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogEntry_slug(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_slug,
+		func(ctx context.Context) (any, error) {
+			return obj.Slug, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_slug(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogEntry_status(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNMaterialStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MaterialStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogEntry_authorId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_authorId,
+		func(ctx context.Context) (any, error) {
+			return obj.AuthorID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogEntry_revisionId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_revisionId,
+		func(ctx context.Context) (any, error) {
+			return obj.RevisionID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_revisionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogEntry_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogEntry_learning(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_learning,
+		func(ctx context.Context) (any, error) {
+			return obj.Learning, nil
+		},
+		nil,
+		ec.marshalOMaterialLearning2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialLearning,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_learning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "topicIds":
+				return ec.fieldContext_MaterialLearning_topicIds(ctx, field)
+			case "estimatedMinutes":
+				return ec.fieldContext_MaterialLearning_estimatedMinutes(ctx, field)
+			case "learningOutcomes":
+				return ec.fieldContext_MaterialLearning_learningOutcomes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialLearning", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogPage_items(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogPage_items,
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		ec.marshalNMaterialCatalogEntry2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogEntryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogPage_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialCatalogEntry_id(ctx, field)
+			case "title":
+				return ec.fieldContext_MaterialCatalogEntry_title(ctx, field)
+			case "slug":
+				return ec.fieldContext_MaterialCatalogEntry_slug(ctx, field)
+			case "status":
+				return ec.fieldContext_MaterialCatalogEntry_status(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialCatalogEntry_authorId(ctx, field)
+			case "revisionId":
+				return ec.fieldContext_MaterialCatalogEntry_revisionId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialCatalogEntry_createdAt(ctx, field)
+			case "learning":
+				return ec.fieldContext_MaterialCatalogEntry_learning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialCatalogEntry", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialCatalogPage_nextCursor(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogPage_nextCursor,
+		func(ctx context.Context) (any, error) {
+			return obj.NextCursor, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogPage_nextCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialLearning_topicIds(ctx context.Context, field graphql.CollectedField, obj *model.MaterialLearning) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialLearning_topicIds,
+		func(ctx context.Context) (any, error) {
+			return obj.TopicIds, nil
+		},
+		nil,
+		ec.marshalNID2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialLearning_topicIds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialLearning_estimatedMinutes(ctx context.Context, field graphql.CollectedField, obj *model.MaterialLearning) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialLearning_estimatedMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.EstimatedMinutes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialLearning_estimatedMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialLearning_learningOutcomes(ctx context.Context, field graphql.CollectedField, obj *model.MaterialLearning) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialLearning_learningOutcomes,
+		func(ctx context.Context) (any, error) {
+			return obj.LearningOutcomes, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialLearning_learningOutcomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialLearning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevision_id(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevision_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevision_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevision_number(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevision_number,
+		func(ctx context.Context) (any, error) {
+			return obj.Number, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevision_number(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevision_format(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevision_format,
+		func(ctx context.Context) (any, error) {
+			return obj.Format, nil
+		},
+		nil,
+		ec.marshalNMaterialFormat2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialFormat,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevision_format(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MaterialFormat does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevision_source(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevision_source,
+		func(ctx context.Context) (any, error) {
+			return obj.Source, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevision_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevision_message(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevision_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevision_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevision_authorId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevision_authorId,
+		func(ctx context.Context) (any, error) {
+			return obj.AuthorID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevision_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevision_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevision_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevision_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevisionPage_items(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevisionPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevisionPage_items,
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		ec.marshalNMaterialRevisionSummary2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevisionSummaryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevisionPage_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevisionPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialRevisionSummary_id(ctx, field)
+			case "number":
+				return ec.fieldContext_MaterialRevisionSummary_number(ctx, field)
+			case "format":
+				return ec.fieldContext_MaterialRevisionSummary_format(ctx, field)
+			case "message":
+				return ec.fieldContext_MaterialRevisionSummary_message(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialRevisionSummary_authorId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialRevisionSummary_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialRevisionSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevisionPage_nextBeforeRevision(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevisionPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevisionPage_nextBeforeRevision,
+		func(ctx context.Context) (any, error) {
+			return obj.NextBeforeRevision, nil
+		},
+		nil,
+		ec.marshalOInt2ᚖint,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevisionPage_nextBeforeRevision(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevisionPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevisionSummary_id(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevisionSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevisionSummary_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevisionSummary_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevisionSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevisionSummary_number(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevisionSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevisionSummary_number,
+		func(ctx context.Context) (any, error) {
+			return obj.Number, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevisionSummary_number(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevisionSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevisionSummary_format(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevisionSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevisionSummary_format,
+		func(ctx context.Context) (any, error) {
+			return obj.Format, nil
+		},
+		nil,
+		ec.marshalNMaterialFormat2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialFormat,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevisionSummary_format(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevisionSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MaterialFormat does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevisionSummary_message(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevisionSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevisionSummary_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevisionSummary_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevisionSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevisionSummary_authorId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevisionSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevisionSummary_authorId,
+		func(ctx context.Context) (any, error) {
+			return obj.AuthorID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevisionSummary_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevisionSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialRevisionSummary_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MaterialRevisionSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialRevisionSummary_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialRevisionSummary_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialRevisionSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MediaDownload_url(ctx context.Context, field graphql.CollectedField, obj *model.MediaDownload) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11207,6 +13205,134 @@ func (ec *executionContext) fieldContext_MediaUploadPart_expiresAt(_ context.Con
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createMaterialDraft(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createMaterialDraft,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CreateMaterialDraft(ctx, fc.Args["input"].(model.CreateMaterialDraftInput))
+		},
+		nil,
+		ec.marshalOMaterial2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterial,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createMaterialDraft(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Material_id(ctx, field)
+			case "type":
+				return ec.fieldContext_Material_type(ctx, field)
+			case "status":
+				return ec.fieldContext_Material_status(ctx, field)
+			case "title":
+				return ec.fieldContext_Material_title(ctx, field)
+			case "slug":
+				return ec.fieldContext_Material_slug(ctx, field)
+			case "description":
+				return ec.fieldContext_Material_description(ctx, field)
+			case "authorId":
+				return ec.fieldContext_Material_authorId(ctx, field)
+			case "revision":
+				return ec.fieldContext_Material_revision(ctx, field)
+			case "publishedRevisionId":
+				return ec.fieldContext_Material_publishedRevisionId(ctx, field)
+			case "publishedAt":
+				return ec.fieldContext_Material_publishedAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Material_updatedAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Material_tags(ctx, field)
+			case "attachments":
+				return ec.fieldContext_Material_attachments(ctx, field)
+			case "learning":
+				return ec.fieldContext_Material_learning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Material", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createMaterialDraft_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_saveMaterialDraft(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_saveMaterialDraft,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SaveMaterialDraft(ctx, fc.Args["input"].(model.SaveMaterialDraftInput))
+		},
+		nil,
+		ec.marshalOMaterialRevision2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevision,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_saveMaterialDraft(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialRevision_id(ctx, field)
+			case "number":
+				return ec.fieldContext_MaterialRevision_number(ctx, field)
+			case "format":
+				return ec.fieldContext_MaterialRevision_format(ctx, field)
+			case "source":
+				return ec.fieldContext_MaterialRevision_source(ctx, field)
+			case "message":
+				return ec.fieldContext_MaterialRevision_message(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialRevision_authorId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialRevision_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialRevision", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveMaterialDraft_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -17142,6 +19268,171 @@ func (ec *executionContext) fieldContext_PublicUserConnection_offset(_ context.C
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_materials,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Materials(ctx, fc.Args["filter"].(*model.MaterialCatalogFilter), fc.Args["limit"].(int), fc.Args["cursor"].(*string))
+		},
+		nil,
+		ec.marshalOMaterialCatalogPage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogPage,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_materials(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "items":
+				return ec.fieldContext_MaterialCatalogPage_items(ctx, field)
+			case "nextCursor":
+				return ec.fieldContext_MaterialCatalogPage_nextCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialCatalogPage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_materials_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_material(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_material,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().Material(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		ec.marshalOMaterial2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterial,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_material(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Material_id(ctx, field)
+			case "type":
+				return ec.fieldContext_Material_type(ctx, field)
+			case "status":
+				return ec.fieldContext_Material_status(ctx, field)
+			case "title":
+				return ec.fieldContext_Material_title(ctx, field)
+			case "slug":
+				return ec.fieldContext_Material_slug(ctx, field)
+			case "description":
+				return ec.fieldContext_Material_description(ctx, field)
+			case "authorId":
+				return ec.fieldContext_Material_authorId(ctx, field)
+			case "revision":
+				return ec.fieldContext_Material_revision(ctx, field)
+			case "publishedRevisionId":
+				return ec.fieldContext_Material_publishedRevisionId(ctx, field)
+			case "publishedAt":
+				return ec.fieldContext_Material_publishedAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Material_updatedAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Material_tags(ctx, field)
+			case "attachments":
+				return ec.fieldContext_Material_attachments(ctx, field)
+			case "learning":
+				return ec.fieldContext_Material_learning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Material", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_material_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_materialRevisions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_materialRevisions,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().MaterialRevisions(ctx, fc.Args["id"].(string), fc.Args["limit"].(int), fc.Args["beforeRevision"].(*int))
+		},
+		nil,
+		ec.marshalOMaterialRevisionPage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevisionPage,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_materialRevisions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "items":
+				return ec.fieldContext_MaterialRevisionPage_items(ctx, field)
+			case "nextBeforeRevision":
+				return ec.fieldContext_MaterialRevisionPage_nextBeforeRevision(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialRevisionPage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_materialRevisions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -25656,6 +27947,102 @@ func (ec *executionContext) unmarshalInputCreateCourseInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateMaterialDraftInput(ctx context.Context, obj any) (model.CreateMaterialDraftInput, error) {
+	var it model.CreateMaterialDraftInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["description"]; !present {
+		asMap["description"] = ""
+	}
+	if _, present := asMap["format"]; !present {
+		asMap["format"] = "markdown"
+	}
+	if _, present := asMap["message"]; !present {
+		asMap["message"] = ""
+	}
+	if _, present := asMap["tags"]; !present {
+		asMap["tags"] = []any{}
+	}
+
+	fieldsInOrder := [...]string{"type", "title", "slug", "description", "format", "source", "message", "tags", "learning"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNMaterialType2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "slug":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("slug"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Slug = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "format":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("format"))
+			data, err := ec.unmarshalNMaterialFormat2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialFormat(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Format = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "message":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Message = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		case "learning":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("learning"))
+			data, err := ec.unmarshalOMaterialLearningInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialLearningInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Learning = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateMediaUploadInput(ctx context.Context, obj any) (model.CreateMediaUploadInput, error) {
 	var it model.CreateMediaUploadInput
 	asMap := map[string]any{}
@@ -26389,6 +28776,98 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj an
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMaterialCatalogFilter(ctx context.Context, obj any) (model.MaterialCatalogFilter, error) {
+	var it model.MaterialCatalogFilter
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"topicId", "authorId", "status"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "topicId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TopicID = data
+		case "authorId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("authorId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AuthorID = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOMaterialStatus2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMaterialLearningInput(ctx context.Context, obj any) (model.MaterialLearningInput, error) {
+	var it model.MaterialLearningInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["topicIds"]; !present {
+		asMap["topicIds"] = []any{}
+	}
+	if _, present := asMap["estimatedMinutes"]; !present {
+		asMap["estimatedMinutes"] = 0
+	}
+	if _, present := asMap["learningOutcomes"]; !present {
+		asMap["learningOutcomes"] = []any{}
+	}
+
+	fieldsInOrder := [...]string{"topicIds", "estimatedMinutes", "learningOutcomes"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "topicIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicIds"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TopicIds = data
+		case "estimatedMinutes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("estimatedMinutes"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EstimatedMinutes = data
+		case "learningOutcomes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("learningOutcomes"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LearningOutcomes = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMediaFileFilter(ctx context.Context, obj any) (model.MediaFileFilter, error) {
 	var it model.MediaFileFilter
 	asMap := map[string]any{}
@@ -26530,6 +29009,68 @@ func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj
 				return it, err
 			}
 			it.Phone = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSaveMaterialDraftInput(ctx context.Context, obj any) (model.SaveMaterialDraftInput, error) {
+	var it model.SaveMaterialDraftInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["format"]; !present {
+		asMap["format"] = "markdown"
+	}
+	if _, present := asMap["message"]; !present {
+		asMap["message"] = ""
+	}
+
+	fieldsInOrder := [...]string{"materialId", "expectedRevisionId", "format", "source", "message"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "materialId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("materialId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaterialID = data
+		case "expectedRevisionId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expectedRevisionId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExpectedRevisionID = data
+		case "format":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("format"))
+			data, err := ec.unmarshalNMaterialFormat2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialFormat(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Format = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "message":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Message = data
 		}
 	}
 
@@ -28497,6 +31038,472 @@ func (ec *executionContext) _LearningPlan(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var materialImplementors = []string{"Material"}
+
+func (ec *executionContext) _Material(ctx context.Context, sel ast.SelectionSet, obj *model.Material) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Material")
+		case "id":
+			out.Values[i] = ec._Material_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._Material_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._Material_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._Material_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "slug":
+			out.Values[i] = ec._Material_slug(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._Material_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "authorId":
+			out.Values[i] = ec._Material_authorId(ctx, field, obj)
+		case "revision":
+			out.Values[i] = ec._Material_revision(ctx, field, obj)
+		case "publishedRevisionId":
+			out.Values[i] = ec._Material_publishedRevisionId(ctx, field, obj)
+		case "publishedAt":
+			out.Values[i] = ec._Material_publishedAt(ctx, field, obj)
+		case "updatedAt":
+			out.Values[i] = ec._Material_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tags":
+			out.Values[i] = ec._Material_tags(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "attachments":
+			out.Values[i] = ec._Material_attachments(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "learning":
+			out.Values[i] = ec._Material_learning(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialAttachmentImplementors = []string{"MaterialAttachment"}
+
+func (ec *executionContext) _MaterialAttachment(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialAttachment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialAttachmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialAttachment")
+		case "fileId":
+			out.Values[i] = ec._MaterialAttachment_fileId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._MaterialAttachment_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._MaterialAttachment_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "position":
+			out.Values[i] = ec._MaterialAttachment_position(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialCatalogEntryImplementors = []string{"MaterialCatalogEntry"}
+
+func (ec *executionContext) _MaterialCatalogEntry(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialCatalogEntry) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialCatalogEntryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialCatalogEntry")
+		case "id":
+			out.Values[i] = ec._MaterialCatalogEntry_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._MaterialCatalogEntry_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "slug":
+			out.Values[i] = ec._MaterialCatalogEntry_slug(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._MaterialCatalogEntry_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "authorId":
+			out.Values[i] = ec._MaterialCatalogEntry_authorId(ctx, field, obj)
+		case "revisionId":
+			out.Values[i] = ec._MaterialCatalogEntry_revisionId(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._MaterialCatalogEntry_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "learning":
+			out.Values[i] = ec._MaterialCatalogEntry_learning(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialCatalogPageImplementors = []string{"MaterialCatalogPage"}
+
+func (ec *executionContext) _MaterialCatalogPage(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialCatalogPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialCatalogPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialCatalogPage")
+		case "items":
+			out.Values[i] = ec._MaterialCatalogPage_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nextCursor":
+			out.Values[i] = ec._MaterialCatalogPage_nextCursor(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialLearningImplementors = []string{"MaterialLearning"}
+
+func (ec *executionContext) _MaterialLearning(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialLearning) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialLearningImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialLearning")
+		case "topicIds":
+			out.Values[i] = ec._MaterialLearning_topicIds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "estimatedMinutes":
+			out.Values[i] = ec._MaterialLearning_estimatedMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "learningOutcomes":
+			out.Values[i] = ec._MaterialLearning_learningOutcomes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialRevisionImplementors = []string{"MaterialRevision"}
+
+func (ec *executionContext) _MaterialRevision(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialRevision) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialRevisionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialRevision")
+		case "id":
+			out.Values[i] = ec._MaterialRevision_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "number":
+			out.Values[i] = ec._MaterialRevision_number(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "format":
+			out.Values[i] = ec._MaterialRevision_format(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "source":
+			out.Values[i] = ec._MaterialRevision_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._MaterialRevision_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "authorId":
+			out.Values[i] = ec._MaterialRevision_authorId(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._MaterialRevision_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialRevisionPageImplementors = []string{"MaterialRevisionPage"}
+
+func (ec *executionContext) _MaterialRevisionPage(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialRevisionPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialRevisionPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialRevisionPage")
+		case "items":
+			out.Values[i] = ec._MaterialRevisionPage_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nextBeforeRevision":
+			out.Values[i] = ec._MaterialRevisionPage_nextBeforeRevision(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialRevisionSummaryImplementors = []string{"MaterialRevisionSummary"}
+
+func (ec *executionContext) _MaterialRevisionSummary(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialRevisionSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialRevisionSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialRevisionSummary")
+		case "id":
+			out.Values[i] = ec._MaterialRevisionSummary_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "number":
+			out.Values[i] = ec._MaterialRevisionSummary_number(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "format":
+			out.Values[i] = ec._MaterialRevisionSummary_format(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._MaterialRevisionSummary_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "authorId":
+			out.Values[i] = ec._MaterialRevisionSummary_authorId(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._MaterialRevisionSummary_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var mediaDownloadImplementors = []string{"MediaDownload"}
 
 func (ec *executionContext) _MediaDownload(ctx context.Context, sel ast.SelectionSet, obj *model.MediaDownload) graphql.Marshaler {
@@ -28877,6 +31884,14 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createMaterialDraft":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createMaterialDraft(ctx, field)
+			})
+		case "saveMaterialDraft":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveMaterialDraft(ctx, field)
+			})
 		case "saveLearningPlan":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveLearningPlan(ctx, field)
@@ -30323,6 +33338,63 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "materials":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materials(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "material":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_material(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "materialRevisions":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materialRevisions(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "myLearningPlans":
 			field := field
 
@@ -32968,6 +36040,11 @@ func (ec *executionContext) unmarshalNCreateCourseInput2githubᚗcomᚋovermindv
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateMaterialDraftInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐCreateMaterialDraftInput(ctx context.Context, v any) (model.CreateMaterialDraftInput, error) {
+	res, err := ec.unmarshalInputCreateMaterialDraftInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateMediaUploadInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐCreateMediaUploadInput(ctx context.Context, v any) (model.CreateMediaUploadInput, error) {
 	res, err := ec.unmarshalInputCreateMediaUploadInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -33818,6 +36895,134 @@ func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋovermindvᚋapi�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNMaterialAssetKind2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAssetKind(ctx context.Context, v any) (model.MaterialAssetKind, error) {
+	var res model.MaterialAssetKind
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMaterialAssetKind2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAssetKind(ctx context.Context, sel ast.SelectionSet, v model.MaterialAssetKind) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNMaterialAttachment2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MaterialAttachment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMaterialAttachment2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMaterialAttachment2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachment(ctx context.Context, sel ast.SelectionSet, v *model.MaterialAttachment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MaterialAttachment(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMaterialCatalogEntry2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogEntryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MaterialCatalogEntry) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMaterialCatalogEntry2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogEntry(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMaterialCatalogEntry2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogEntry(ctx context.Context, sel ast.SelectionSet, v *model.MaterialCatalogEntry) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MaterialCatalogEntry(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMaterialFormat2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialFormat(ctx context.Context, v any) (model.MaterialFormat, error) {
+	var res model.MaterialFormat
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMaterialFormat2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialFormat(ctx context.Context, sel ast.SelectionSet, v model.MaterialFormat) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNMaterialProgress2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialProgress(ctx context.Context, v any) (model.MaterialProgress, error) {
 	var res model.MaterialProgress
 	err := res.UnmarshalGQL(v)
@@ -33825,6 +37030,80 @@ func (ec *executionContext) unmarshalNMaterialProgress2githubᚗcomᚋovermindv�
 }
 
 func (ec *executionContext) marshalNMaterialProgress2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialProgress(ctx context.Context, sel ast.SelectionSet, v model.MaterialProgress) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNMaterialRevisionSummary2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevisionSummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MaterialRevisionSummary) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMaterialRevisionSummary2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevisionSummary(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMaterialRevisionSummary2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevisionSummary(ctx context.Context, sel ast.SelectionSet, v *model.MaterialRevisionSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MaterialRevisionSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMaterialStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialStatus(ctx context.Context, v any) (model.MaterialStatus, error) {
+	var res model.MaterialStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMaterialStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialStatus(ctx context.Context, sel ast.SelectionSet, v model.MaterialStatus) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNMaterialType2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialType(ctx context.Context, v any) (model.MaterialType, error) {
+	var res model.MaterialType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMaterialType2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialType(ctx context.Context, sel ast.SelectionSet, v model.MaterialType) graphql.Marshaler {
 	return v
 }
 
@@ -34808,6 +38087,11 @@ func (ec *executionContext) marshalNPublicUserConnection2ᚖgithubᚗcomᚋoverm
 
 func (ec *executionContext) unmarshalNRegisterInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐRegisterInput(ctx context.Context, v any) (model.RegisterInput, error) {
 	res, err := ec.unmarshalInputRegisterInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNSaveMaterialDraftInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐSaveMaterialDraftInput(ctx context.Context, v any) (model.SaveMaterialDraftInput, error) {
+	res, err := ec.unmarshalInputSaveMaterialDraftInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -36109,6 +39393,73 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOMaterial2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v *model.Material) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Material(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMaterialCatalogFilter2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogFilter(ctx context.Context, v any) (*model.MaterialCatalogFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMaterialCatalogFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMaterialCatalogPage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogPage(ctx context.Context, sel ast.SelectionSet, v *model.MaterialCatalogPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialCatalogPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMaterialLearning2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialLearning(ctx context.Context, sel ast.SelectionSet, v *model.MaterialLearning) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialLearning(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMaterialLearningInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialLearningInput(ctx context.Context, v any) (*model.MaterialLearningInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMaterialLearningInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMaterialRevision2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevision(ctx context.Context, sel ast.SelectionSet, v *model.MaterialRevision) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialRevision(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMaterialRevisionPage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialRevisionPage(ctx context.Context, sel ast.SelectionSet, v *model.MaterialRevisionPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialRevisionPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMaterialStatus2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialStatus(ctx context.Context, v any) (*model.MaterialStatus, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.MaterialStatus)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMaterialStatus2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialStatus(ctx context.Context, sel ast.SelectionSet, v *model.MaterialStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOMediaFileFilter2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMediaFileFilter(ctx context.Context, v any) (*model.MediaFileFilter, error) {

@@ -66,6 +66,18 @@ type CreateCourseInput struct {
 	Status      *CatalogStatus `json:"status,omitempty"`
 }
 
+type CreateMaterialDraftInput struct {
+	Type        MaterialType           `json:"type"`
+	Title       string                 `json:"title"`
+	Slug        string                 `json:"slug"`
+	Description string                 `json:"description"`
+	Format      MaterialFormat         `json:"format"`
+	Source      string                 `json:"source"`
+	Message     string                 `json:"message"`
+	Tags        []string               `json:"tags"`
+	Learning    *MaterialLearningInput `json:"learning,omitempty"`
+}
+
 type CreateMediaUploadInput struct {
 	OriginalName   string          `json:"originalName"`
 	ContentType    string          `json:"contentType"`
@@ -333,6 +345,88 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
+type Material struct {
+	ID                  string                `json:"id"`
+	Type                MaterialType          `json:"type"`
+	Status              MaterialStatus        `json:"status"`
+	Title               string                `json:"title"`
+	Slug                string                `json:"slug"`
+	Description         string                `json:"description"`
+	AuthorID            *string               `json:"authorId,omitempty"`
+	Revision            *MaterialRevision     `json:"revision,omitempty"`
+	PublishedRevisionID *string               `json:"publishedRevisionId,omitempty"`
+	PublishedAt         *string               `json:"publishedAt,omitempty"`
+	UpdatedAt           string                `json:"updatedAt"`
+	Tags                []string              `json:"tags"`
+	Attachments         []*MaterialAttachment `json:"attachments"`
+	Learning            *MaterialLearning     `json:"learning,omitempty"`
+}
+
+type MaterialAttachment struct {
+	FileID   string            `json:"fileId"`
+	Kind     MaterialAssetKind `json:"kind"`
+	Title    string            `json:"title"`
+	Position int               `json:"position"`
+}
+
+type MaterialCatalogEntry struct {
+	ID         string            `json:"id"`
+	Title      string            `json:"title"`
+	Slug       string            `json:"slug"`
+	Status     MaterialStatus    `json:"status"`
+	AuthorID   *string           `json:"authorId,omitempty"`
+	RevisionID *string           `json:"revisionId,omitempty"`
+	CreatedAt  string            `json:"createdAt"`
+	Learning   *MaterialLearning `json:"learning,omitempty"`
+}
+
+type MaterialCatalogFilter struct {
+	TopicID  *string         `json:"topicId,omitempty"`
+	AuthorID *string         `json:"authorId,omitempty"`
+	Status   *MaterialStatus `json:"status,omitempty"`
+}
+
+type MaterialCatalogPage struct {
+	Items      []*MaterialCatalogEntry `json:"items"`
+	NextCursor *string                 `json:"nextCursor,omitempty"`
+}
+
+type MaterialLearning struct {
+	TopicIds         []string `json:"topicIds"`
+	EstimatedMinutes int      `json:"estimatedMinutes"`
+	LearningOutcomes []string `json:"learningOutcomes"`
+}
+
+type MaterialLearningInput struct {
+	TopicIds         []string `json:"topicIds"`
+	EstimatedMinutes int      `json:"estimatedMinutes"`
+	LearningOutcomes []string `json:"learningOutcomes"`
+}
+
+type MaterialRevision struct {
+	ID        string         `json:"id"`
+	Number    int            `json:"number"`
+	Format    MaterialFormat `json:"format"`
+	Source    string         `json:"source"`
+	Message   string         `json:"message"`
+	AuthorID  *string        `json:"authorId,omitempty"`
+	CreatedAt string         `json:"createdAt"`
+}
+
+type MaterialRevisionPage struct {
+	Items              []*MaterialRevisionSummary `json:"items"`
+	NextBeforeRevision *int                       `json:"nextBeforeRevision,omitempty"`
+}
+
+type MaterialRevisionSummary struct {
+	ID        string         `json:"id"`
+	Number    int            `json:"number"`
+	Format    MaterialFormat `json:"format"`
+	Message   string         `json:"message"`
+	AuthorID  *string        `json:"authorId,omitempty"`
+	CreatedAt string         `json:"createdAt"`
+}
+
 type MediaDownload struct {
 	URL       string `json:"url"`
 	ExpiresAt string `json:"expiresAt"`
@@ -554,6 +648,14 @@ type RegisterInput struct {
 	LastName  *string `json:"lastName,omitempty"`
 	BirthDate *string `json:"birthDate,omitempty"`
 	Phone     *string `json:"phone,omitempty"`
+}
+
+type SaveMaterialDraftInput struct {
+	MaterialID         string         `json:"materialId"`
+	ExpectedRevisionID string         `json:"expectedRevisionId"`
+	Format             MaterialFormat `json:"format"`
+	Source             string         `json:"source"`
+	Message            string         `json:"message"`
 }
 
 type SavedLearningMaterial struct {
@@ -1468,6 +1570,120 @@ func (e ITTaskType) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+type MaterialAssetKind string
+
+const (
+	MaterialAssetKindImage      MaterialAssetKind = "image"
+	MaterialAssetKindAttachment MaterialAssetKind = "attachment"
+	MaterialAssetKindPDF        MaterialAssetKind = "pdf"
+	MaterialAssetKindArchive    MaterialAssetKind = "archive"
+)
+
+var AllMaterialAssetKind = []MaterialAssetKind{
+	MaterialAssetKindImage,
+	MaterialAssetKindAttachment,
+	MaterialAssetKindPDF,
+	MaterialAssetKindArchive,
+}
+
+func (e MaterialAssetKind) IsValid() bool {
+	switch e {
+	case MaterialAssetKindImage, MaterialAssetKindAttachment, MaterialAssetKindPDF, MaterialAssetKindArchive:
+		return true
+	}
+	return false
+}
+
+func (e MaterialAssetKind) String() string {
+	return string(e)
+}
+
+func (e *MaterialAssetKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialAssetKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialAssetKind", str)
+	}
+	return nil
+}
+
+func (e MaterialAssetKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialAssetKind) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialAssetKind) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MaterialFormat string
+
+const (
+	MaterialFormatMarkdown MaterialFormat = "markdown"
+	MaterialFormatTypst    MaterialFormat = "typst"
+)
+
+var AllMaterialFormat = []MaterialFormat{
+	MaterialFormatMarkdown,
+	MaterialFormatTypst,
+}
+
+func (e MaterialFormat) IsValid() bool {
+	switch e {
+	case MaterialFormatMarkdown, MaterialFormatTypst:
+		return true
+	}
+	return false
+}
+
+func (e MaterialFormat) String() string {
+	return string(e)
+}
+
+func (e *MaterialFormat) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialFormat(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialFormat", str)
+	}
+	return nil
+}
+
+func (e MaterialFormat) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialFormat) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialFormat) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 type MaterialProgress string
 
 const (
@@ -1520,6 +1736,122 @@ func (e *MaterialProgress) UnmarshalJSON(b []byte) error {
 }
 
 func (e MaterialProgress) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MaterialStatus string
+
+const (
+	MaterialStatusDraft     MaterialStatus = "draft"
+	MaterialStatusPublished MaterialStatus = "published"
+	MaterialStatusArchived  MaterialStatus = "archived"
+)
+
+var AllMaterialStatus = []MaterialStatus{
+	MaterialStatusDraft,
+	MaterialStatusPublished,
+	MaterialStatusArchived,
+}
+
+func (e MaterialStatus) IsValid() bool {
+	switch e {
+	case MaterialStatusDraft, MaterialStatusPublished, MaterialStatusArchived:
+		return true
+	}
+	return false
+}
+
+func (e MaterialStatus) String() string {
+	return string(e)
+}
+
+func (e *MaterialStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialStatus", str)
+	}
+	return nil
+}
+
+func (e MaterialStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MaterialType string
+
+const (
+	MaterialTypeArticle MaterialType = "article"
+	MaterialTypeNote    MaterialType = "note"
+	MaterialTypeSummary MaterialType = "summary"
+	MaterialTypeTheory  MaterialType = "theory"
+)
+
+var AllMaterialType = []MaterialType{
+	MaterialTypeArticle,
+	MaterialTypeNote,
+	MaterialTypeSummary,
+	MaterialTypeTheory,
+}
+
+func (e MaterialType) IsValid() bool {
+	switch e {
+	case MaterialTypeArticle, MaterialTypeNote, MaterialTypeSummary, MaterialTypeTheory:
+		return true
+	}
+	return false
+}
+
+func (e MaterialType) String() string {
+	return string(e)
+}
+
+func (e *MaterialType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialType", str)
+	}
+	return nil
+}
+
+func (e MaterialType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialType) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

@@ -19,6 +19,7 @@ type Config struct {
 	Media           Media
 	Feed            Feed
 	Recommendations Recommendations
+	Content         Content
 	JWT             JWT
 	Session         Session
 }
@@ -74,6 +75,13 @@ type Recommendations struct {
 	URL     string
 	Token   string
 	Timeout time.Duration
+}
+
+type Content struct {
+	Address      string
+	ServiceToken string
+	Timeout      time.Duration
+	Insecure     bool
 }
 
 type JWT struct {
@@ -150,6 +158,15 @@ func Load() (Config, error) {
 
 	if err := configureBrowserSecurity(&cfg); err != nil {
 		return Config{}, err
+	}
+	contentConfig, contentErr := loadContent(cfg.HTTP.Production)
+	if contentErr != nil {
+		return Config{}, contentErr
+	}
+	cfg.Content = contentConfig
+	if token := cfg.Content.ServiceToken; token != "" && (token == cfg.JWT.Secret || token == cfg.Media.Token ||
+		token == cfg.Feed.Token || token == cfg.TaskHunter.Token || token == cfg.Recommendations.Token) {
+		return Config{}, fmt.Errorf("CONTENT_GRPC_SERVICE_TOKEN must be distinct from other credentials")
 	}
 	cfg.Users.LoginContextSecret = cfg.JWT.Secret
 
