@@ -12,10 +12,14 @@ import (
 func loadContent(production bool) (Content, error) {
 	cfg := Content{
 		Address: strings.TrimSpace(os.Getenv("CONTENT_GRPC_ADDR")), ServiceToken: os.Getenv("CONTENT_GRPC_SERVICE_TOKEN"),
-		CAFile:  os.Getenv("CONTENT_GRPC_TLS_CA_FILE"),
-		Timeout: 3 * time.Second,
+		ModerationToken: os.Getenv("CONTENT_GRPC_MODERATION_TOKEN"),
+		CAFile:          os.Getenv("CONTENT_GRPC_TLS_CA_FILE"),
+		Timeout:         3 * time.Second,
 	}
 	if cfg.Address == "" && cfg.ServiceToken == "" {
+		if cfg.ModerationToken != "" {
+			return Content{}, errors.New("CONTENT_GRPC_MODERATION_TOKEN requires a Content endpoint")
+		}
 		if cfg.CAFile != "" {
 			return Content{}, errors.New("CONTENT_GRPC_TLS_CA_FILE requires a Content endpoint")
 		}
@@ -28,9 +32,11 @@ func loadContent(production bool) (Content, error) {
 		strings.IndexFunc(host, func(r rune) bool { return r <= 32 || r >= 127 }) >= 0 {
 		return Content{}, errors.New("CONTENT_GRPC_ADDR must be a host and TCP port")
 	}
-	if len(cfg.ServiceToken) < 32 || len(cfg.ServiceToken) > 256 ||
-		strings.IndexFunc(cfg.ServiceToken, func(r rune) bool { return r <= 32 || r >= 127 }) >= 0 {
+	if !validContentToken(cfg.ServiceToken) {
 		return Content{}, errors.New("CONTENT_GRPC_SERVICE_TOKEN must be a separate printable service token")
+	}
+	if cfg.ModerationToken != "" && (!validContentToken(cfg.ModerationToken) || cfg.ModerationToken == cfg.ServiceToken) {
+		return Content{}, errors.New("CONTENT_GRPC_MODERATION_TOKEN must be a separate printable service token")
 	}
 	if raw := os.Getenv("CONTENT_GRPC_TIMEOUT"); raw != "" {
 		cfg.Timeout, err = time.ParseDuration(raw)
@@ -49,4 +55,9 @@ func loadContent(production bool) (Content, error) {
 	}
 
 	return cfg, nil
+}
+
+func validContentToken(token string) bool {
+	return len(token) >= 32 && len(token) <= 256 &&
+		strings.IndexFunc(token, func(r rune) bool { return r <= 32 || r >= 127 }) < 0
 }

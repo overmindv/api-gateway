@@ -50,6 +50,7 @@ func (a *JWTAuthenticator) ParseContext(ctx context.Context, header string) (Aut
 }
 
 func (a *JWTAuthenticator) checkSession(ctx context.Context, info AuthInfo, fresh bool) (AuthInfo, error) {
+	info.freshSession = false
 	key := sha256.Sum256([]byte(info.Token))
 	now := a.now()
 	a.cache.mu.Lock()
@@ -80,6 +81,7 @@ func (a *JWTAuthenticator) checkSession(ctx context.Context, info AuthInfo, fres
 	a.cache.values[key] = sessionEntry{state: state, expires: now.Add(5 * time.Second)}
 	info.Roles = append([]string(nil), state.Roles...)
 	info.Err = nil
+	info.freshSession = true
 
 	return info, nil
 }
