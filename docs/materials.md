@@ -29,6 +29,22 @@
 `FAILED_PRECONDITION`, `DEADLINE_EXCEEDED` и `SERVICE_UNAVAILABLE`.
 После `REVISION_CONFLICT` перечитай материал перед повтором операции.
 
+## Предложения правок
+
+- `openMaterialChange` принимает ID материала и опубликованной ревизии.
+- `appendMaterialChange` создает новую редакцию при совпадении `expectedHeadId`.
+  Правка без изменения текста не сохраняется.
+- `closeMaterialChange` закрывает предложение от имени его автора.
+- `materialChangeProposal` возвращает выбранное предложение, включая
+  `baseOutdated`, если его основание больше не является текущей публикацией.
+- `materialChangeHistory` возвращает до 50 редакций без исходников. Для
+  следующей страницы передай `nextBeforeOrdinal` как `beforeOrdinal`.
+- `materialChangeDiff` сравнивает основание с выбранной редакцией.
+  `truncated: true` означает, что сравнение ограничено.
+
+Доступ и актуальность версий проверяет Content. В этом API нет слияния,
+модерации и отката публикаций.
+
 Для включения укажи `CONTENT_GRPC_ADDR` в формате `host:port` и отдельный
 `CONTENT_GRPC_SERVICE_TOKEN` от 32 до 256 печатных ASCII-символов без
 пробелов, совпадающий с токеном Content. Дедлайн

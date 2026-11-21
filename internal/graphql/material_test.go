@@ -183,9 +183,11 @@ func startMaterialRPC(t testing.TB, interceptor grpc.UnaryServerInterceptor, tim
 func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 	t.Parallel()
 
-	client := startMaterialRPC(t, func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, next grpc.UnaryHandler) (any, error) {
+	client := startMaterialRPC(t, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, next grpc.UnaryHandler) (any, error) {
 		actor := materialRPCActor(ctx)
-		if actor != materialOwner && actor != materialReader {
+		isProposalLookup := info.FullMethod == pb.ContentService_GetChangeProposal_FullMethodName
+		allowedActor := actor == materialOwner || actor == materialReader || (isProposalLookup && actor == proposalStranger)
+		if !allowedActor {
 			t.Errorf("unexpected forwarded actor %q", actor)
 		}
 		token := metadata.ValueFromIncomingContext(ctx, "authorization")
@@ -235,7 +237,8 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 				t.Errorf("response missing %q: %s", part, payload)
 			}
 		}
-		if strings.Contains(payload, "private upstream details") || (actor != materialOwner && strings.Contains(payload, "Private draft")) {
+		if strings.Contains(payload, "private upstream details") || strings.Contains(payload, proposalDetail) ||
+			(actor != materialOwner && strings.Contains(payload, "Private draft")) {
 			t.Error("response exposed upstream error or a private draft")
 		}
 	}
@@ -283,6 +286,7 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 		`"code":"DEADLINE_EXCEEDED"`, `"__typename":"Query"`)
 	run(materialReader, fmt.Sprintf(`{ material(id:%q) { revision { a:source b:source c:source d:source e:source f:source g:source } } }`, materialFixtureID),
 		`"code":"COMPLEXITY_LIMIT_EXCEEDED"`)
+	checkProposalGraphQL(t, run)
 }
 
 func BenchmarkMaterialGateway(b *testing.B) {

@@ -279,6 +279,49 @@ type ComplexityRoot struct {
 		NextCursor func(childComplexity int) int
 	}
 
+	MaterialChangeDiff struct {
+		BaseRevisionID func(childComplexity int) int
+		RevisionID     func(childComplexity int) int
+		Truncated      func(childComplexity int) int
+		UnifiedDiff    func(childComplexity int) int
+	}
+
+	MaterialChangeHistoryEntry struct {
+		AuthorID         func(childComplexity int) int
+		BaseRevisionID   func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		ID               func(childComplexity int) int
+		Message          func(childComplexity int) int
+		Ordinal          func(childComplexity int) int
+		ParentRevisionID func(childComplexity int) int
+	}
+
+	MaterialChangeHistoryPage struct {
+		Items             func(childComplexity int) int
+		NextBeforeOrdinal func(childComplexity int) int
+	}
+
+	MaterialChangeProposal struct {
+		AuthorID       func(childComplexity int) int
+		BaseOutdated   func(childComplexity int) int
+		BaseRevisionID func(childComplexity int) int
+		ClosedAt       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Head           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		MaterialID     func(childComplexity int) int
+		Status         func(childComplexity int) int
+	}
+
+	MaterialChangeRevision struct {
+		CreatedAt        func(childComplexity int) int
+		ID               func(childComplexity int) int
+		Message          func(childComplexity int) int
+		Ordinal          func(childComplexity int) int
+		ParentRevisionID func(childComplexity int) int
+		Source           func(childComplexity int) int
+	}
+
 	MaterialLearning struct {
 		EstimatedMinutes func(childComplexity int) int
 		LearningOutcomes func(childComplexity int) int
@@ -362,6 +405,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AcknowledgeTaskCollectionJob func(childComplexity int, id string) int
 		AddTopicPrerequisite         func(childComplexity int, input model.TopicPrerequisiteInput) int
+		AppendMaterialChange         func(childComplexity int, input model.AppendMaterialChangeInput) int
 		ApproveTaskCandidate         func(childComplexity int, id string, input model.TaskCandidateReviewInput) int
 		ChangeCourseStatus           func(childComplexity int, id string, status model.CatalogStatus) int
 		ChangeITTaskStatus           func(childComplexity int, id string, status model.ITTaskStatus) int
@@ -369,6 +413,7 @@ type ComplexityRoot struct {
 		ChangeTopicStatus            func(childComplexity int, id string, status model.CatalogStatus) int
 		ChangeUniversityStatus       func(childComplexity int, id string, status model.CatalogStatus) int
 		CloneLearningPlan            func(childComplexity int, id string, requestID string) int
+		CloseMaterialChange          func(childComplexity int, proposalID string) int
 		CompleteMediaUpload          func(childComplexity int, input model.CompleteMediaUploadInput) int
 		CreateCourse                 func(childComplexity int, input model.CreateCourseInput) int
 		CreateITTask                 func(childComplexity int, input model.ITTaskInput) int
@@ -388,6 +433,7 @@ type ComplexityRoot struct {
 		DeleteUser                   func(childComplexity int, id string) int
 		Login                        func(childComplexity int, input model.LoginInput) int
 		Logout                       func(childComplexity int) int
+		OpenMaterialChange           func(childComplexity int, input model.OpenMaterialChangeInput) int
 		RefreshLearningPlan          func(childComplexity int, id string, revision int) int
 		Register                     func(childComplexity int, input model.RegisterInput) int
 		RejectTaskCandidate          func(childComplexity int, id string, expectedRevision int, reason *string) int
@@ -576,6 +622,9 @@ type ComplexityRoot struct {
 		ItTasks                func(childComplexity int, filter *model.ITTaskFilter, pagination *model.PaginationInput) int
 		LearningPlan           func(childComplexity int, goal string, minutes int, sessionCount int) int
 		Material               func(childComplexity int, id string) int
+		MaterialChangeDiff     func(childComplexity int, proposalID string, revisionID *string) int
+		MaterialChangeHistory  func(childComplexity int, proposalID string, limit int, beforeOrdinal *int) int
+		MaterialChangeProposal func(childComplexity int, id string) int
 		MaterialRevisions      func(childComplexity int, id string, limit int, beforeRevision *int) int
 		Materials              func(childComplexity int, filter *model.MaterialCatalogFilter, limit int, cursor *string) int
 		Me                     func(childComplexity int) int
@@ -796,6 +845,9 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreateMaterialDraft(ctx context.Context, input model.CreateMaterialDraftInput) (*model.Material, error)
 	SaveMaterialDraft(ctx context.Context, input model.SaveMaterialDraftInput) (*model.MaterialRevision, error)
+	OpenMaterialChange(ctx context.Context, input model.OpenMaterialChangeInput) (*model.MaterialChangeProposal, error)
+	AppendMaterialChange(ctx context.Context, input model.AppendMaterialChangeInput) (*model.MaterialChangeProposal, error)
+	CloseMaterialChange(ctx context.Context, proposalID string) (*model.MaterialChangeProposal, error)
 	SaveLearningPlan(ctx context.Context, goal string, minutes int, sessionCount int, requestID string) (*model.SavedLearningPlan, error)
 	RemoveLearningPlanTask(ctx context.Context, id string, revision int, taskID string) (*model.SavedLearningPlan, error)
 	UpdateLearningMaterial(ctx context.Context, id string, revision int, materialID string, status model.MaterialProgress) (*model.SavedLearningPlan, error)
@@ -852,6 +904,9 @@ type QueryResolver interface {
 	Material(ctx context.Context, id string) (*model.Material, error)
 	PublishedMaterial(ctx context.Context, id string) (*model.Material, error)
 	MaterialRevisions(ctx context.Context, id string, limit int, beforeRevision *int) (*model.MaterialRevisionPage, error)
+	MaterialChangeProposal(ctx context.Context, id string) (*model.MaterialChangeProposal, error)
+	MaterialChangeHistory(ctx context.Context, proposalID string, limit int, beforeOrdinal *int) (*model.MaterialChangeHistoryPage, error)
+	MaterialChangeDiff(ctx context.Context, proposalID string, revisionID *string) (*model.MaterialChangeDiff, error)
 	MyLearningPlans(ctx context.Context) ([]*model.SavedLearningPlan, error)
 	SavedLearningPlan(ctx context.Context, id string) (*model.SavedLearningPlan, error)
 	LearningPlan(ctx context.Context, goal string, minutes int, sessionCount int) (*model.LearningPlan, error)
@@ -1892,6 +1947,179 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.MaterialCatalogPage.NextCursor(childComplexity), true
 
+	case "MaterialChangeDiff.baseRevisionId":
+		if e.complexity.MaterialChangeDiff.BaseRevisionID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeDiff.BaseRevisionID(childComplexity), true
+	case "MaterialChangeDiff.revisionId":
+		if e.complexity.MaterialChangeDiff.RevisionID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeDiff.RevisionID(childComplexity), true
+	case "MaterialChangeDiff.truncated":
+		if e.complexity.MaterialChangeDiff.Truncated == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeDiff.Truncated(childComplexity), true
+	case "MaterialChangeDiff.unifiedDiff":
+		if e.complexity.MaterialChangeDiff.UnifiedDiff == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeDiff.UnifiedDiff(childComplexity), true
+
+	case "MaterialChangeHistoryEntry.authorId":
+		if e.complexity.MaterialChangeHistoryEntry.AuthorID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryEntry.AuthorID(childComplexity), true
+	case "MaterialChangeHistoryEntry.baseRevisionId":
+		if e.complexity.MaterialChangeHistoryEntry.BaseRevisionID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryEntry.BaseRevisionID(childComplexity), true
+	case "MaterialChangeHistoryEntry.createdAt":
+		if e.complexity.MaterialChangeHistoryEntry.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryEntry.CreatedAt(childComplexity), true
+	case "MaterialChangeHistoryEntry.id":
+		if e.complexity.MaterialChangeHistoryEntry.ID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryEntry.ID(childComplexity), true
+	case "MaterialChangeHistoryEntry.message":
+		if e.complexity.MaterialChangeHistoryEntry.Message == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryEntry.Message(childComplexity), true
+	case "MaterialChangeHistoryEntry.ordinal":
+		if e.complexity.MaterialChangeHistoryEntry.Ordinal == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryEntry.Ordinal(childComplexity), true
+	case "MaterialChangeHistoryEntry.parentRevisionId":
+		if e.complexity.MaterialChangeHistoryEntry.ParentRevisionID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryEntry.ParentRevisionID(childComplexity), true
+
+	case "MaterialChangeHistoryPage.items":
+		if e.complexity.MaterialChangeHistoryPage.Items == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryPage.Items(childComplexity), true
+	case "MaterialChangeHistoryPage.nextBeforeOrdinal":
+		if e.complexity.MaterialChangeHistoryPage.NextBeforeOrdinal == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeHistoryPage.NextBeforeOrdinal(childComplexity), true
+
+	case "MaterialChangeProposal.authorId":
+		if e.complexity.MaterialChangeProposal.AuthorID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.AuthorID(childComplexity), true
+	case "MaterialChangeProposal.baseOutdated":
+		if e.complexity.MaterialChangeProposal.BaseOutdated == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.BaseOutdated(childComplexity), true
+	case "MaterialChangeProposal.baseRevisionId":
+		if e.complexity.MaterialChangeProposal.BaseRevisionID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.BaseRevisionID(childComplexity), true
+	case "MaterialChangeProposal.closedAt":
+		if e.complexity.MaterialChangeProposal.ClosedAt == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.ClosedAt(childComplexity), true
+	case "MaterialChangeProposal.createdAt":
+		if e.complexity.MaterialChangeProposal.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.CreatedAt(childComplexity), true
+	case "MaterialChangeProposal.head":
+		if e.complexity.MaterialChangeProposal.Head == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.Head(childComplexity), true
+	case "MaterialChangeProposal.id":
+		if e.complexity.MaterialChangeProposal.ID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.ID(childComplexity), true
+	case "MaterialChangeProposal.materialId":
+		if e.complexity.MaterialChangeProposal.MaterialID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.MaterialID(childComplexity), true
+	case "MaterialChangeProposal.status":
+		if e.complexity.MaterialChangeProposal.Status == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.Status(childComplexity), true
+
+	case "MaterialChangeRevision.createdAt":
+		if e.complexity.MaterialChangeRevision.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeRevision.CreatedAt(childComplexity), true
+	case "MaterialChangeRevision.id":
+		if e.complexity.MaterialChangeRevision.ID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeRevision.ID(childComplexity), true
+	case "MaterialChangeRevision.message":
+		if e.complexity.MaterialChangeRevision.Message == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeRevision.Message(childComplexity), true
+	case "MaterialChangeRevision.ordinal":
+		if e.complexity.MaterialChangeRevision.Ordinal == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeRevision.Ordinal(childComplexity), true
+	case "MaterialChangeRevision.parentRevisionId":
+		if e.complexity.MaterialChangeRevision.ParentRevisionID == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeRevision.ParentRevisionID(childComplexity), true
+	case "MaterialChangeRevision.source":
+		if e.complexity.MaterialChangeRevision.Source == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeRevision.Source(childComplexity), true
+
 	case "MaterialLearning.estimatedMinutes":
 		if e.complexity.MaterialLearning.EstimatedMinutes == nil {
 			break
@@ -2224,6 +2452,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.AddTopicPrerequisite(childComplexity, args["input"].(model.TopicPrerequisiteInput)), true
+	case "Mutation.appendMaterialChange":
+		if e.complexity.Mutation.AppendMaterialChange == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_appendMaterialChange_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AppendMaterialChange(childComplexity, args["input"].(model.AppendMaterialChangeInput)), true
 	case "Mutation.approveTaskCandidate":
 		if e.complexity.Mutation.ApproveTaskCandidate == nil {
 			break
@@ -2301,6 +2540,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CloneLearningPlan(childComplexity, args["id"].(string), args["requestId"].(string)), true
+	case "Mutation.closeMaterialChange":
+		if e.complexity.Mutation.CloseMaterialChange == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_closeMaterialChange_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CloseMaterialChange(childComplexity, args["proposalId"].(string)), true
 	case "Mutation.completeMediaUpload":
 		if e.complexity.Mutation.CompleteMediaUpload == nil {
 			break
@@ -2500,6 +2750,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.Logout(childComplexity), true
+	case "Mutation.openMaterialChange":
+		if e.complexity.Mutation.OpenMaterialChange == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_openMaterialChange_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.OpenMaterialChange(childComplexity, args["input"].(model.OpenMaterialChangeInput)), true
 	case "Mutation.refreshLearningPlan":
 		if e.complexity.Mutation.RefreshLearningPlan == nil {
 			break
@@ -3507,6 +3768,39 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Material(childComplexity, args["id"].(string)), true
+	case "Query.materialChangeDiff":
+		if e.complexity.Query.MaterialChangeDiff == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materialChangeDiff_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MaterialChangeDiff(childComplexity, args["proposalId"].(string), args["revisionId"].(*string)), true
+	case "Query.materialChangeHistory":
+		if e.complexity.Query.MaterialChangeHistory == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materialChangeHistory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MaterialChangeHistory(childComplexity, args["proposalId"].(string), args["limit"].(int), args["beforeOrdinal"].(*int)), true
+	case "Query.materialChangeProposal":
+		if e.complexity.Query.MaterialChangeProposal == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materialChangeProposal_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MaterialChangeProposal(childComplexity, args["id"].(string)), true
 	case "Query.materialRevisions":
 		if e.complexity.Query.MaterialRevisions == nil {
 			break
@@ -4688,6 +4982,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputAppendMaterialChangeInput,
 		ec.unmarshalInputCatalogBindingInput,
 		ec.unmarshalInputCatalogFilter,
 		ec.unmarshalInputCompleteMediaPartInput,
@@ -4711,6 +5006,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputMaterialDraftMetadataInput,
 		ec.unmarshalInputMaterialLearningInput,
 		ec.unmarshalInputMediaFileFilter,
+		ec.unmarshalInputOpenMaterialChangeInput,
 		ec.unmarshalInputPaginationInput,
 		ec.unmarshalInputRegisterInput,
 		ec.unmarshalInputSaveMaterialDraftInput,
@@ -5205,11 +5501,60 @@ input SaveMaterialDraftInput {
   metadata: MaterialDraftMetadataInput
 }
 
+enum MaterialChangeStatus { open closed }
+
+type MaterialChangeProposal {
+  id: ID!
+  materialId: ID!
+  baseRevisionId: ID!
+  authorId: ID!
+  status: MaterialChangeStatus!
+  head: MaterialChangeRevision!
+  createdAt: String!
+  closedAt: String
+  baseOutdated: Boolean!
+}
+type MaterialChangeRevision {
+  id: ID!
+  parentRevisionId: ID
+  ordinal: Int!
+  source: String!
+  message: String!
+  createdAt: String!
+}
+type MaterialChangeHistoryEntry {
+  id: ID!
+  parentRevisionId: ID
+  baseRevisionId: ID!
+  ordinal: Int!
+  authorId: ID!
+  message: String!
+  createdAt: String!
+}
+type MaterialChangeHistoryPage { items: [MaterialChangeHistoryEntry!]!, nextBeforeOrdinal: Int }
+type MaterialChangeDiff { baseRevisionId: ID!, revisionId: ID!, unifiedDiff: String!, truncated: Boolean! }
+
+input OpenMaterialChangeInput {
+  materialId: ID!
+  baseRevisionId: ID!
+  source: String!
+  message: String! = ""
+}
+input AppendMaterialChangeInput {
+  proposalId: ID!
+  expectedHeadId: ID!
+  source: String!
+  message: String! = ""
+}
+
 type Query {
   materials(filter: MaterialCatalogFilter, limit: Int! = 20, cursor: String): MaterialCatalogPage
   material(id: ID!): Material
   publishedMaterial(id: ID!): Material
   materialRevisions(id: ID!, limit: Int! = 20, beforeRevision: Int): MaterialRevisionPage
+  materialChangeProposal(id: ID!): MaterialChangeProposal
+  materialChangeHistory(proposalId: ID!, limit: Int! = 20, beforeOrdinal: Int): MaterialChangeHistoryPage
+  materialChangeDiff(proposalId: ID!, revisionId: ID): MaterialChangeDiff
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
   learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
@@ -5261,6 +5606,9 @@ type Query {
 type Mutation {
   createMaterialDraft(input: CreateMaterialDraftInput!): Material
   saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
+  openMaterialChange(input: OpenMaterialChangeInput!): MaterialChangeProposal
+  appendMaterialChange(input: AppendMaterialChangeInput!): MaterialChangeProposal
+  closeMaterialChange(proposalId: ID!): MaterialChangeProposal
   saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
   removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
   updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!
@@ -5459,6 +5807,17 @@ func (ec *executionContext) field_Mutation_addTopicPrerequisite_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_appendMaterialChange_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNAppendMaterialChangeInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAppendMaterialChangeInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_approveTaskCandidate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -5568,6 +5927,17 @@ func (ec *executionContext) field_Mutation_cloneLearningPlan_args(ctx context.Co
 		return nil, err
 	}
 	args["requestId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_closeMaterialChange_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "proposalId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["proposalId"] = arg0
 	return args, nil
 }
 
@@ -5756,6 +6126,17 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNLoginInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLoginInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_openMaterialChange_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNOpenMaterialChangeInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐOpenMaterialChangeInput)
 	if err != nil {
 		return nil, err
 	}
@@ -6327,6 +6708,54 @@ func (ec *executionContext) field_Query_learningPlan_args(ctx context.Context, r
 		return nil, err
 	}
 	args["sessionCount"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materialChangeDiff_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "proposalId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["proposalId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "revisionId", ec.unmarshalOID2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["revisionId"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materialChangeHistory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "proposalId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["proposalId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "beforeOrdinal", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["beforeOrdinal"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materialChangeProposal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -11743,6 +12172,848 @@ func (ec *executionContext) fieldContext_MaterialCatalogPage_nextCursor(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _MaterialChangeDiff_baseRevisionId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeDiff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeDiff_baseRevisionId,
+		func(ctx context.Context) (any, error) {
+			return obj.BaseRevisionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeDiff_baseRevisionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeDiff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeDiff_revisionId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeDiff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeDiff_revisionId,
+		func(ctx context.Context) (any, error) {
+			return obj.RevisionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeDiff_revisionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeDiff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeDiff_unifiedDiff(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeDiff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeDiff_unifiedDiff,
+		func(ctx context.Context) (any, error) {
+			return obj.UnifiedDiff, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeDiff_unifiedDiff(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeDiff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeDiff_truncated(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeDiff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeDiff_truncated,
+		func(ctx context.Context) (any, error) {
+			return obj.Truncated, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeDiff_truncated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeDiff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryEntry_id(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryEntry_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryEntry_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryEntry_parentRevisionId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryEntry_parentRevisionId,
+		func(ctx context.Context) (any, error) {
+			return obj.ParentRevisionID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryEntry_parentRevisionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryEntry_baseRevisionId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryEntry_baseRevisionId,
+		func(ctx context.Context) (any, error) {
+			return obj.BaseRevisionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryEntry_baseRevisionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryEntry_ordinal(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryEntry_ordinal,
+		func(ctx context.Context) (any, error) {
+			return obj.Ordinal, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryEntry_ordinal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryEntry_authorId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryEntry_authorId,
+		func(ctx context.Context) (any, error) {
+			return obj.AuthorID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryEntry_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryEntry_message(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryEntry_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryEntry_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryEntry_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryEntry_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryEntry_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryPage_items(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryPage_items,
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		ec.marshalNMaterialChangeHistoryEntry2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeHistoryEntryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryPage_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialChangeHistoryEntry_id(ctx, field)
+			case "parentRevisionId":
+				return ec.fieldContext_MaterialChangeHistoryEntry_parentRevisionId(ctx, field)
+			case "baseRevisionId":
+				return ec.fieldContext_MaterialChangeHistoryEntry_baseRevisionId(ctx, field)
+			case "ordinal":
+				return ec.fieldContext_MaterialChangeHistoryEntry_ordinal(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialChangeHistoryEntry_authorId(ctx, field)
+			case "message":
+				return ec.fieldContext_MaterialChangeHistoryEntry_message(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialChangeHistoryEntry_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeHistoryEntry", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeHistoryPage_nextBeforeOrdinal(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeHistoryPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeHistoryPage_nextBeforeOrdinal,
+		func(ctx context.Context) (any, error) {
+			return obj.NextBeforeOrdinal, nil
+		},
+		nil,
+		ec.marshalOInt2ᚖint,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeHistoryPage_nextBeforeOrdinal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeHistoryPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_id(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_materialId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_materialId,
+		func(ctx context.Context) (any, error) {
+			return obj.MaterialID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_materialId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_baseRevisionId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_baseRevisionId,
+		func(ctx context.Context) (any, error) {
+			return obj.BaseRevisionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_baseRevisionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_authorId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_authorId,
+		func(ctx context.Context) (any, error) {
+			return obj.AuthorID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_authorId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_status(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNMaterialChangeStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MaterialChangeStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_head(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_head,
+		func(ctx context.Context) (any, error) {
+			return obj.Head, nil
+		},
+		nil,
+		ec.marshalNMaterialChangeRevision2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeRevision,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_head(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialChangeRevision_id(ctx, field)
+			case "parentRevisionId":
+				return ec.fieldContext_MaterialChangeRevision_parentRevisionId(ctx, field)
+			case "ordinal":
+				return ec.fieldContext_MaterialChangeRevision_ordinal(ctx, field)
+			case "source":
+				return ec.fieldContext_MaterialChangeRevision_source(ctx, field)
+			case "message":
+				return ec.fieldContext_MaterialChangeRevision_message(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialChangeRevision_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeRevision", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_closedAt(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_closedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ClosedAt, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_closedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeProposal_baseOutdated(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_baseOutdated,
+		func(ctx context.Context) (any, error) {
+			return obj.BaseOutdated, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_baseOutdated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeRevision_id(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeRevision_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeRevision_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeRevision_parentRevisionId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeRevision_parentRevisionId,
+		func(ctx context.Context) (any, error) {
+			return obj.ParentRevisionID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeRevision_parentRevisionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeRevision_ordinal(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeRevision_ordinal,
+		func(ctx context.Context) (any, error) {
+			return obj.Ordinal, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeRevision_ordinal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeRevision_source(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeRevision_source,
+		func(ctx context.Context) (any, error) {
+			return obj.Source, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeRevision_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeRevision_message(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeRevision_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeRevision_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MaterialChangeRevision_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeRevision) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeRevision_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeRevision_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeRevision",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MaterialLearning_topicIds(ctx context.Context, field graphql.CollectedField, obj *model.MaterialLearning) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -13371,6 +14642,189 @@ func (ec *executionContext) fieldContext_Mutation_saveMaterialDraft(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_saveMaterialDraft_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_openMaterialChange(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_openMaterialChange,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().OpenMaterialChange(ctx, fc.Args["input"].(model.OpenMaterialChangeInput))
+		},
+		nil,
+		ec.marshalOMaterialChangeProposal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeProposal,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_openMaterialChange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialChangeProposal_id(ctx, field)
+			case "materialId":
+				return ec.fieldContext_MaterialChangeProposal_materialId(ctx, field)
+			case "baseRevisionId":
+				return ec.fieldContext_MaterialChangeProposal_baseRevisionId(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialChangeProposal_authorId(ctx, field)
+			case "status":
+				return ec.fieldContext_MaterialChangeProposal_status(ctx, field)
+			case "head":
+				return ec.fieldContext_MaterialChangeProposal_head(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialChangeProposal_createdAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
+			case "baseOutdated":
+				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeProposal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_openMaterialChange_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_appendMaterialChange(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_appendMaterialChange,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().AppendMaterialChange(ctx, fc.Args["input"].(model.AppendMaterialChangeInput))
+		},
+		nil,
+		ec.marshalOMaterialChangeProposal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeProposal,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_appendMaterialChange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialChangeProposal_id(ctx, field)
+			case "materialId":
+				return ec.fieldContext_MaterialChangeProposal_materialId(ctx, field)
+			case "baseRevisionId":
+				return ec.fieldContext_MaterialChangeProposal_baseRevisionId(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialChangeProposal_authorId(ctx, field)
+			case "status":
+				return ec.fieldContext_MaterialChangeProposal_status(ctx, field)
+			case "head":
+				return ec.fieldContext_MaterialChangeProposal_head(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialChangeProposal_createdAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
+			case "baseOutdated":
+				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeProposal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_appendMaterialChange_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_closeMaterialChange(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_closeMaterialChange,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CloseMaterialChange(ctx, fc.Args["proposalId"].(string))
+		},
+		nil,
+		ec.marshalOMaterialChangeProposal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeProposal,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_closeMaterialChange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialChangeProposal_id(ctx, field)
+			case "materialId":
+				return ec.fieldContext_MaterialChangeProposal_materialId(ctx, field)
+			case "baseRevisionId":
+				return ec.fieldContext_MaterialChangeProposal_baseRevisionId(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialChangeProposal_authorId(ctx, field)
+			case "status":
+				return ec.fieldContext_MaterialChangeProposal_status(ctx, field)
+			case "head":
+				return ec.fieldContext_MaterialChangeProposal_head(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialChangeProposal_createdAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
+			case "baseOutdated":
+				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeProposal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_closeMaterialChange_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -19542,6 +20996,165 @@ func (ec *executionContext) fieldContext_Query_materialRevisions(ctx context.Con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_materialRevisions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_materialChangeProposal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_materialChangeProposal,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().MaterialChangeProposal(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		ec.marshalOMaterialChangeProposal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeProposal,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_materialChangeProposal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialChangeProposal_id(ctx, field)
+			case "materialId":
+				return ec.fieldContext_MaterialChangeProposal_materialId(ctx, field)
+			case "baseRevisionId":
+				return ec.fieldContext_MaterialChangeProposal_baseRevisionId(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialChangeProposal_authorId(ctx, field)
+			case "status":
+				return ec.fieldContext_MaterialChangeProposal_status(ctx, field)
+			case "head":
+				return ec.fieldContext_MaterialChangeProposal_head(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialChangeProposal_createdAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
+			case "baseOutdated":
+				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeProposal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_materialChangeProposal_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_materialChangeHistory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_materialChangeHistory,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().MaterialChangeHistory(ctx, fc.Args["proposalId"].(string), fc.Args["limit"].(int), fc.Args["beforeOrdinal"].(*int))
+		},
+		nil,
+		ec.marshalOMaterialChangeHistoryPage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeHistoryPage,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_materialChangeHistory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "items":
+				return ec.fieldContext_MaterialChangeHistoryPage_items(ctx, field)
+			case "nextBeforeOrdinal":
+				return ec.fieldContext_MaterialChangeHistoryPage_nextBeforeOrdinal(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeHistoryPage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_materialChangeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_materialChangeDiff(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_materialChangeDiff,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().MaterialChangeDiff(ctx, fc.Args["proposalId"].(string), fc.Args["revisionId"].(*string))
+		},
+		nil,
+		ec.marshalOMaterialChangeDiff2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeDiff,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_materialChangeDiff(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "baseRevisionId":
+				return ec.fieldContext_MaterialChangeDiff_baseRevisionId(ctx, field)
+			case "revisionId":
+				return ec.fieldContext_MaterialChangeDiff_revisionId(ctx, field)
+			case "unifiedDiff":
+				return ec.fieldContext_MaterialChangeDiff_unifiedDiff(ctx, field)
+			case "truncated":
+				return ec.fieldContext_MaterialChangeDiff_truncated(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeDiff", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_materialChangeDiff_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -27821,6 +29434,58 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAppendMaterialChangeInput(ctx context.Context, obj any) (model.AppendMaterialChangeInput, error) {
+	var it model.AppendMaterialChangeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["message"]; !present {
+		asMap["message"] = ""
+	}
+
+	fieldsInOrder := [...]string{"proposalId", "expectedHeadId", "source", "message"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "proposalId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("proposalId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProposalID = data
+		case "expectedHeadId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expectedHeadId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExpectedHeadID = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "message":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Message = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCatalogBindingInput(ctx context.Context, obj any) (model.CatalogBindingInput, error) {
 	var it model.CatalogBindingInput
 	asMap := map[string]any{}
@@ -29096,6 +30761,58 @@ func (ec *executionContext) unmarshalInputMediaFileFilter(ctx context.Context, o
 				return it, err
 			}
 			it.Status = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputOpenMaterialChangeInput(ctx context.Context, obj any) (model.OpenMaterialChangeInput, error) {
+	var it model.OpenMaterialChangeInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["message"]; !present {
+		asMap["message"] = ""
+	}
+
+	fieldsInOrder := [...]string{"materialId", "baseRevisionId", "source", "message"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "materialId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("materialId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MaterialID = data
+		case "baseRevisionId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("baseRevisionId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BaseRevisionID = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "message":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Message = data
 		}
 	}
 
@@ -31508,6 +33225,304 @@ func (ec *executionContext) _MaterialCatalogPage(ctx context.Context, sel ast.Se
 	return out
 }
 
+var materialChangeDiffImplementors = []string{"MaterialChangeDiff"}
+
+func (ec *executionContext) _MaterialChangeDiff(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialChangeDiff) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialChangeDiffImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialChangeDiff")
+		case "baseRevisionId":
+			out.Values[i] = ec._MaterialChangeDiff_baseRevisionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "revisionId":
+			out.Values[i] = ec._MaterialChangeDiff_revisionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unifiedDiff":
+			out.Values[i] = ec._MaterialChangeDiff_unifiedDiff(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "truncated":
+			out.Values[i] = ec._MaterialChangeDiff_truncated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialChangeHistoryEntryImplementors = []string{"MaterialChangeHistoryEntry"}
+
+func (ec *executionContext) _MaterialChangeHistoryEntry(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialChangeHistoryEntry) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialChangeHistoryEntryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialChangeHistoryEntry")
+		case "id":
+			out.Values[i] = ec._MaterialChangeHistoryEntry_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "parentRevisionId":
+			out.Values[i] = ec._MaterialChangeHistoryEntry_parentRevisionId(ctx, field, obj)
+		case "baseRevisionId":
+			out.Values[i] = ec._MaterialChangeHistoryEntry_baseRevisionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "ordinal":
+			out.Values[i] = ec._MaterialChangeHistoryEntry_ordinal(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "authorId":
+			out.Values[i] = ec._MaterialChangeHistoryEntry_authorId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._MaterialChangeHistoryEntry_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._MaterialChangeHistoryEntry_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialChangeHistoryPageImplementors = []string{"MaterialChangeHistoryPage"}
+
+func (ec *executionContext) _MaterialChangeHistoryPage(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialChangeHistoryPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialChangeHistoryPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialChangeHistoryPage")
+		case "items":
+			out.Values[i] = ec._MaterialChangeHistoryPage_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nextBeforeOrdinal":
+			out.Values[i] = ec._MaterialChangeHistoryPage_nextBeforeOrdinal(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialChangeProposalImplementors = []string{"MaterialChangeProposal"}
+
+func (ec *executionContext) _MaterialChangeProposal(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialChangeProposal) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialChangeProposalImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialChangeProposal")
+		case "id":
+			out.Values[i] = ec._MaterialChangeProposal_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "materialId":
+			out.Values[i] = ec._MaterialChangeProposal_materialId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "baseRevisionId":
+			out.Values[i] = ec._MaterialChangeProposal_baseRevisionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "authorId":
+			out.Values[i] = ec._MaterialChangeProposal_authorId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._MaterialChangeProposal_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "head":
+			out.Values[i] = ec._MaterialChangeProposal_head(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._MaterialChangeProposal_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "closedAt":
+			out.Values[i] = ec._MaterialChangeProposal_closedAt(ctx, field, obj)
+		case "baseOutdated":
+			out.Values[i] = ec._MaterialChangeProposal_baseOutdated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var materialChangeRevisionImplementors = []string{"MaterialChangeRevision"}
+
+func (ec *executionContext) _MaterialChangeRevision(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialChangeRevision) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialChangeRevisionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialChangeRevision")
+		case "id":
+			out.Values[i] = ec._MaterialChangeRevision_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "parentRevisionId":
+			out.Values[i] = ec._MaterialChangeRevision_parentRevisionId(ctx, field, obj)
+		case "ordinal":
+			out.Values[i] = ec._MaterialChangeRevision_ordinal(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "source":
+			out.Values[i] = ec._MaterialChangeRevision_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._MaterialChangeRevision_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._MaterialChangeRevision_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var materialLearningImplementors = []string{"MaterialLearning"}
 
 func (ec *executionContext) _MaterialLearning(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialLearning) graphql.Marshaler {
@@ -32112,6 +34127,18 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "saveMaterialDraft":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveMaterialDraft(ctx, field)
+			})
+		case "openMaterialChange":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_openMaterialChange(ctx, field)
+			})
+		case "appendMaterialChange":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_appendMaterialChange(ctx, field)
+			})
+		case "closeMaterialChange":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_closeMaterialChange(ctx, field)
 			})
 		case "saveLearningPlan":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -33626,6 +35653,63 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_materialRevisions(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "materialChangeProposal":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materialChangeProposal(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "materialChangeHistory":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materialChangeHistory(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "materialChangeDiff":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materialChangeDiff(ctx, field)
 				return res
 			}
 
@@ -36148,6 +38232,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNAppendMaterialChangeInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAppendMaterialChangeInput(ctx context.Context, v any) (model.AppendMaterialChangeInput, error) {
+	res, err := ec.unmarshalInputAppendMaterialChangeInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNAuthPayload2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAuthPayload(ctx context.Context, sel ast.SelectionSet, v model.AuthPayload) graphql.Marshaler {
 	return ec._AuthPayload(ctx, sel, &v)
 }
@@ -37258,6 +39347,80 @@ func (ec *executionContext) marshalNMaterialCatalogEntry2ᚖgithubᚗcomᚋoverm
 	return ec._MaterialCatalogEntry(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMaterialChangeHistoryEntry2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeHistoryEntryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MaterialChangeHistoryEntry) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMaterialChangeHistoryEntry2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeHistoryEntry(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMaterialChangeHistoryEntry2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeHistoryEntry(ctx context.Context, sel ast.SelectionSet, v *model.MaterialChangeHistoryEntry) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MaterialChangeHistoryEntry(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMaterialChangeRevision2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeRevision(ctx context.Context, sel ast.SelectionSet, v *model.MaterialChangeRevision) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MaterialChangeRevision(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMaterialChangeStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeStatus(ctx context.Context, v any) (model.MaterialChangeStatus, error) {
+	var res model.MaterialChangeStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMaterialChangeStatus2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeStatus(ctx context.Context, sel ast.SelectionSet, v model.MaterialChangeStatus) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNMaterialFormat2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialFormat(ctx context.Context, v any) (model.MaterialFormat, error) {
 	var res model.MaterialFormat
 	err := res.UnmarshalGQL(v)
@@ -37598,6 +39761,11 @@ func (ec *executionContext) unmarshalNMediaVisibility2githubᚗcomᚋovermindv�
 
 func (ec *executionContext) marshalNMediaVisibility2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMediaVisibility(ctx context.Context, sel ast.SelectionSet, v model.MediaVisibility) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNOpenMaterialChangeInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐOpenMaterialChangeInput(ctx context.Context, v any) (model.OpenMaterialChangeInput, error) {
+	res, err := ec.unmarshalInputOpenMaterialChangeInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPracticeGoal2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPracticeGoal(ctx context.Context, sel ast.SelectionSet, v model.PracticeGoal) graphql.Marshaler {
@@ -39678,6 +41846,27 @@ func (ec *executionContext) marshalOMaterialCatalogPage2ᚖgithubᚗcomᚋovermi
 		return graphql.Null
 	}
 	return ec._MaterialCatalogPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMaterialChangeDiff2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeDiff(ctx context.Context, sel ast.SelectionSet, v *model.MaterialChangeDiff) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialChangeDiff(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMaterialChangeHistoryPage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeHistoryPage(ctx context.Context, sel ast.SelectionSet, v *model.MaterialChangeHistoryPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialChangeHistoryPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMaterialChangeProposal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeProposal(ctx context.Context, sel ast.SelectionSet, v *model.MaterialChangeProposal) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialChangeProposal(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOMaterialDraftMetadataInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialDraftMetadataInput(ctx context.Context, v any) (*model.MaterialDraftMetadataInput, error) {

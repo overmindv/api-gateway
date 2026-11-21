@@ -26,6 +26,7 @@ type Actor struct {
 }
 
 type Service interface {
+	ProposalService
 	List(context.Context, Actor, *pb.ListContentCatalogRequest) (*pb.ListContentCatalogResponse, error)
 	Get(context.Context, Actor, *pb.GetContentItemRequest) (*pb.GetContentItemResponse, error)
 	GetPublished(context.Context, Actor, *pb.GetPublishedContentItemRequest) (*pb.GetPublishedContentItemResponse, error)

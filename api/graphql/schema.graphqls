@@ -383,11 +383,60 @@ input SaveMaterialDraftInput {
   metadata: MaterialDraftMetadataInput
 }
 
+enum MaterialChangeStatus { open closed }
+
+type MaterialChangeProposal {
+  id: ID!
+  materialId: ID!
+  baseRevisionId: ID!
+  authorId: ID!
+  status: MaterialChangeStatus!
+  head: MaterialChangeRevision!
+  createdAt: String!
+  closedAt: String
+  baseOutdated: Boolean!
+}
+type MaterialChangeRevision {
+  id: ID!
+  parentRevisionId: ID
+  ordinal: Int!
+  source: String!
+  message: String!
+  createdAt: String!
+}
+type MaterialChangeHistoryEntry {
+  id: ID!
+  parentRevisionId: ID
+  baseRevisionId: ID!
+  ordinal: Int!
+  authorId: ID!
+  message: String!
+  createdAt: String!
+}
+type MaterialChangeHistoryPage { items: [MaterialChangeHistoryEntry!]!, nextBeforeOrdinal: Int }
+type MaterialChangeDiff { baseRevisionId: ID!, revisionId: ID!, unifiedDiff: String!, truncated: Boolean! }
+
+input OpenMaterialChangeInput {
+  materialId: ID!
+  baseRevisionId: ID!
+  source: String!
+  message: String! = ""
+}
+input AppendMaterialChangeInput {
+  proposalId: ID!
+  expectedHeadId: ID!
+  source: String!
+  message: String! = ""
+}
+
 type Query {
   materials(filter: MaterialCatalogFilter, limit: Int! = 20, cursor: String): MaterialCatalogPage
   material(id: ID!): Material
   publishedMaterial(id: ID!): Material
   materialRevisions(id: ID!, limit: Int! = 20, beforeRevision: Int): MaterialRevisionPage
+  materialChangeProposal(id: ID!): MaterialChangeProposal
+  materialChangeHistory(proposalId: ID!, limit: Int! = 20, beforeOrdinal: Int): MaterialChangeHistoryPage
+  materialChangeDiff(proposalId: ID!, revisionId: ID): MaterialChangeDiff
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
   learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
@@ -439,6 +488,9 @@ type Query {
 type Mutation {
   createMaterialDraft(input: CreateMaterialDraftInput!): Material
   saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
+  openMaterialChange(input: OpenMaterialChangeInput!): MaterialChangeProposal
+  appendMaterialChange(input: AppendMaterialChangeInput!): MaterialChangeProposal
+  closeMaterialChange(proposalId: ID!): MaterialChangeProposal
   saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
   removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
   updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!

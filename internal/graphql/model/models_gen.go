@@ -11,6 +11,13 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+type AppendMaterialChangeInput struct {
+	ProposalID     string `json:"proposalId"`
+	ExpectedHeadID string `json:"expectedHeadId"`
+	Source         string `json:"source"`
+	Message        string `json:"message"`
+}
+
 type AuthPayload struct {
 	User      *User  `json:"user"`
 	Token     string `json:"token"`
@@ -399,6 +406,49 @@ type MaterialCatalogPage struct {
 	NextCursor *string                 `json:"nextCursor,omitempty"`
 }
 
+type MaterialChangeDiff struct {
+	BaseRevisionID string `json:"baseRevisionId"`
+	RevisionID     string `json:"revisionId"`
+	UnifiedDiff    string `json:"unifiedDiff"`
+	Truncated      bool   `json:"truncated"`
+}
+
+type MaterialChangeHistoryEntry struct {
+	ID               string  `json:"id"`
+	ParentRevisionID *string `json:"parentRevisionId,omitempty"`
+	BaseRevisionID   string  `json:"baseRevisionId"`
+	Ordinal          int     `json:"ordinal"`
+	AuthorID         string  `json:"authorId"`
+	Message          string  `json:"message"`
+	CreatedAt        string  `json:"createdAt"`
+}
+
+type MaterialChangeHistoryPage struct {
+	Items             []*MaterialChangeHistoryEntry `json:"items"`
+	NextBeforeOrdinal *int                          `json:"nextBeforeOrdinal,omitempty"`
+}
+
+type MaterialChangeProposal struct {
+	ID             string                  `json:"id"`
+	MaterialID     string                  `json:"materialId"`
+	BaseRevisionID string                  `json:"baseRevisionId"`
+	AuthorID       string                  `json:"authorId"`
+	Status         MaterialChangeStatus    `json:"status"`
+	Head           *MaterialChangeRevision `json:"head"`
+	CreatedAt      string                  `json:"createdAt"`
+	ClosedAt       *string                 `json:"closedAt,omitempty"`
+	BaseOutdated   bool                    `json:"baseOutdated"`
+}
+
+type MaterialChangeRevision struct {
+	ID               string  `json:"id"`
+	ParentRevisionID *string `json:"parentRevisionId,omitempty"`
+	Ordinal          int     `json:"ordinal"`
+	Source           string  `json:"source"`
+	Message          string  `json:"message"`
+	CreatedAt        string  `json:"createdAt"`
+}
+
 type MaterialDraftMetadataInput struct {
 	Title    string   `json:"title"`
 	TopicIds []string `json:"topicIds"`
@@ -495,6 +545,13 @@ type MediaUploadPart struct {
 }
 
 type Mutation struct {
+}
+
+type OpenMaterialChangeInput struct {
+	MaterialID     string `json:"materialId"`
+	BaseRevisionID string `json:"baseRevisionId"`
+	Source         string `json:"source"`
+	Message        string `json:"message"`
 }
 
 type PaginationInput struct {
@@ -1639,6 +1696,61 @@ func (e *MaterialAssetKind) UnmarshalJSON(b []byte) error {
 }
 
 func (e MaterialAssetKind) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MaterialChangeStatus string
+
+const (
+	MaterialChangeStatusOpen   MaterialChangeStatus = "open"
+	MaterialChangeStatusClosed MaterialChangeStatus = "closed"
+)
+
+var AllMaterialChangeStatus = []MaterialChangeStatus{
+	MaterialChangeStatusOpen,
+	MaterialChangeStatusClosed,
+}
+
+func (e MaterialChangeStatus) IsValid() bool {
+	switch e {
+	case MaterialChangeStatusOpen, MaterialChangeStatusClosed:
+		return true
+	}
+	return false
+}
+
+func (e MaterialChangeStatus) String() string {
+	return string(e)
+}
+
+func (e *MaterialChangeStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialChangeStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialChangeStatus", str)
+	}
+	return nil
+}
+
+func (e MaterialChangeStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialChangeStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialChangeStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil
