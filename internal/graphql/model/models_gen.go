@@ -1719,16 +1719,18 @@ type MaterialChangeStatus string
 const (
 	MaterialChangeStatusOpen   MaterialChangeStatus = "open"
 	MaterialChangeStatusClosed MaterialChangeStatus = "closed"
+	MaterialChangeStatusMerged MaterialChangeStatus = "merged"
 )
 
 var AllMaterialChangeStatus = []MaterialChangeStatus{
 	MaterialChangeStatusOpen,
 	MaterialChangeStatusClosed,
+	MaterialChangeStatusMerged,
 }
 
 func (e MaterialChangeStatus) IsValid() bool {
 	switch e {
-	case MaterialChangeStatusOpen, MaterialChangeStatusClosed:
+	case MaterialChangeStatusOpen, MaterialChangeStatusClosed, MaterialChangeStatusMerged:
 		return true
 	}
 	return false

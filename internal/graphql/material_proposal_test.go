@@ -13,6 +13,7 @@ import (
 
 const (
 	proposalFixtureID = "00000000-0000-4000-8000-000000000108"
+	proposalMergedID  = "00000000-0000-4000-8000-000000000118"
 	proposalHeadID    = "00000000-0000-4000-8000-000000000109"
 	proposalStranger  = "00000000-0000-4000-8000-000000000110"
 	proposalDetail    = "private proposal context"
@@ -44,11 +45,18 @@ func (materialRPCFixture) OpenChangeProposal(ctx context.Context, req *pb.OpenCh
 
 func (materialRPCFixture) GetChangeProposal(ctx context.Context, req *pb.GetChangeProposalRequest) (*pb.GetChangeProposalResponse, error) {
 	actor := materialRPCActor(ctx)
-	if (actor != materialReader && actor != materialOwner) || req.GetProposalId() != proposalFixtureID {
+	if actor != materialReader && actor != materialOwner {
 		return nil, status.Error(codes.NotFound, proposalDetail)
 	}
 	proposal := proposalFixture(proposalText)
-	proposal.BaseOutdated = true
+	switch req.GetProposalId() {
+	case proposalFixtureID:
+		proposal.BaseOutdated = true
+	case proposalMergedID:
+		proposal.Id, proposal.Status = proposalMergedID, "merged"
+	default:
+		return nil, status.Error(codes.NotFound, proposalDetail)
+	}
 
 	return &pb.GetChangeProposalResponse{Proposal: proposal}, nil
 }
@@ -105,6 +113,9 @@ func checkProposalGraphQL(t *testing.T, run func(string, string, ...string)) {
 	run("", get, `"code":"UNAUTHENTICATED"`)
 	run(proposalStranger, get, `"code":"NOT_FOUND"`)
 	run(materialOwner, get, `"baseOutdated":true`, proposalText)
+	merged := fmt.Sprintf(`{ materialChangeProposal(id:%q){ status } }`, proposalMergedID)
+	run(materialOwner, merged, `"status":"merged"`)
+	run(proposalStranger, merged, `"code":"NOT_FOUND"`)
 	open := `mutation { openMaterialChange(input:{materialId:%q,baseRevisionId:%q,source:%q}){ id } }`
 	run(materialReader, fmt.Sprintf(open, materialFixtureID, materialDraftID, proposalText), `"code":"REVISION_CONFLICT"`)
 	run(materialReader, fmt.Sprintf(open, materialFixtureID, materialPublishedID, proposalBaseText), `"code":"INVALID_ARGUMENT"`)

@@ -5542,7 +5542,7 @@ input SaveMaterialDraftInput {
   metadata: MaterialDraftMetadataInput
 }
 
-enum MaterialChangeStatus { open closed }
+enum MaterialChangeStatus { open closed merged }
 
 type MaterialChangeProposal {
   id: ID!
