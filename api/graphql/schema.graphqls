@@ -433,6 +433,7 @@ type Query {
   materials(filter: MaterialCatalogFilter, limit: Int! = 20, cursor: String): MaterialCatalogPage
   material(id: ID!): Material
   publishedMaterial(id: ID!): Material
+  publishedMaterialAttachmentDownload(materialId: ID!, revisionId: ID!, fileId: ID!): MediaDownload
   materialRevisions(id: ID!, limit: Int! = 20, beforeRevision: Int): MaterialRevisionPage
   materialChangeProposal(id: ID!): MaterialChangeProposal
   materialChangeHistory(proposalId: ID!, limit: Int! = 20, beforeOrdinal: Int): MaterialChangeHistoryPage

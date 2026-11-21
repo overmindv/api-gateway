@@ -287,6 +287,7 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 	run(materialReader, fmt.Sprintf(`{ material(id:%q) { revision { a:source b:source c:source d:source e:source f:source g:source } } }`, materialFixtureID),
 		`"code":"COMPLEXITY_LIMIT_EXCEEDED"`)
 	checkProposalGraphQL(t, run)
+	checkPublishedAttachmentGraphQL(t, run)
 }
 
 func BenchmarkMaterialGateway(b *testing.B) {

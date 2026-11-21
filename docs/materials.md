@@ -14,6 +14,9 @@
 - `materialRevisions(id, limit, beforeRevision)`: история для владельца
   без текста ревизий. Для следующей страницы передай `nextBeforeRevision`.
 - `createMaterialDraft(input)`: новый материал с текстом, вложениями и учебными полями.
+- `publishedMaterialAttachmentDownload(materialId, revisionId, fileId)`:
+  короткая ссылка для авторизованного читателя. Передавай `publishedRevisionId`
+  и `fileId` из этой публикации. Ссылку запрашивай по нажатию и не кешируй.
 - `saveMaterialDraft(input)`: новая рабочая ревизия. Передай
   `expectedRevisionId` из прочитанного материала. `metadata` сохраняет заголовок
   и темы вместе с текстом. Для замены вложений передай `metadata` и новый список

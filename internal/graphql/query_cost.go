@@ -16,7 +16,7 @@ func (s costSchema) Complexity(_ context.Context, object, field string, child in
 	if (object == "MaterialRevision" || object == "MaterialChangeRevision") && field == "source" {
 		return 4000 + child, true
 	}
-	if object == objectQuery && field == "materialChangeDiff" {
+	if object == objectQuery && (field == "materialChangeDiff" || field == "publishedMaterialAttachmentDownload") {
 		return 6500 + child, true
 	}
 	if object == objectQuery && field == "materialChangeProposal" {

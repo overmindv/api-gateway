@@ -609,59 +609,60 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AdminITTask            func(childComplexity int, id string) int
-		AdminITTasks           func(childComplexity int, filter *model.ITAdminTaskFilter, pagination *model.PaginationInput) int
-		Course                 func(childComplexity int, id string) int
-		Courses                func(childComplexity int, programID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
-		ExternalTaskSearch     func(childComplexity int, query string) int
-		Feed                   func(childComplexity int, pagination *model.PaginationInput) int
-		GetUser                func(childComplexity int, id string) int
-		ItCodeSubmission       func(childComplexity int, id string) int
-		ItSubmission           func(childComplexity int, id string) int
-		ItTask                 func(childComplexity int, id string) int
-		ItTasks                func(childComplexity int, filter *model.ITTaskFilter, pagination *model.PaginationInput) int
-		LearningPlan           func(childComplexity int, goal string, minutes int, sessionCount int) int
-		Material               func(childComplexity int, id string) int
-		MaterialChangeDiff     func(childComplexity int, proposalID string, revisionID *string) int
-		MaterialChangeHistory  func(childComplexity int, proposalID string, limit int, beforeOrdinal *int) int
-		MaterialChangeProposal func(childComplexity int, id string) int
-		MaterialRevisions      func(childComplexity int, id string, limit int, beforeRevision *int) int
-		Materials              func(childComplexity int, filter *model.MaterialCatalogFilter, limit int, cursor *string) int
-		Me                     func(childComplexity int) int
-		MediaDownloadURL       func(childComplexity int, fileID string, variant *string) int
-		MediaFile              func(childComplexity int, id string) int
-		MyITCodeSubmissions    func(childComplexity int, taskID *string, pagination *model.PaginationInput) int
-		MyITSubmissions        func(childComplexity int, taskID *string, pagination *model.PaginationInput) int
-		MyLearningPlans        func(childComplexity int) int
-		MyMediaFiles           func(childComplexity int, filter *model.MediaFileFilter, pagination *model.PaginationInput) int
-		MyPracticeGoal         func(childComplexity int) int
-		MyPracticeProgress     func(childComplexity int) int
-		PracticeLeaderboard    func(childComplexity int, courseID *string) int
-		PracticePlan           func(childComplexity int, topicIds []string, minutes int, sessionCount *int, goal *string) int
-		PracticeProgress       func(childComplexity int, userID string) int
-		ProblemList            func(childComplexity int, id string) int
-		ProblemLists           func(childComplexity int, pagination *model.PaginationInput) int
-		Program                func(childComplexity int, id string) int
-		Programs               func(childComplexity int, universityID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
-		PublishedMaterial      func(childComplexity int, id string) int
-		SavedLearningPlan      func(childComplexity int, id string) int
-		Search                 func(childComplexity int, query string, limit int) int
-		SearchUsers            func(childComplexity int, search string, pagination *model.PaginationInput) int
-		TaskCandidate          func(childComplexity int, id string) int
-		TaskCandidates         func(childComplexity int, filter *model.TaskCandidateFilter, pagination *model.PaginationInput) int
-		TaskCollectionJob      func(childComplexity int, id string) int
-		TaskCollectionJobs     func(childComplexity int, unreadOnly *bool, pagination *model.PaginationInput) int
-		TaskCollectionSources  func(childComplexity int) int
-		Topic                  func(childComplexity int, id string) int
-		TopicPrerequisites     func(childComplexity int, topicID string) int
-		TopicTree              func(childComplexity int, courseID *string) int
-		Topics                 func(childComplexity int, courseID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
-		Universities           func(childComplexity int, filter *model.CatalogFilter, pagination *model.PaginationInput) int
-		University             func(childComplexity int, id string) int
-		UserByUsername         func(childComplexity int, username string) int
-		UserProfile            func(childComplexity int, id string) int
-		Users                  func(childComplexity int, search *string, limit *int, offset *int) int
-		ValidateCatalogBinding func(childComplexity int, input model.CatalogBindingInput) int
+		AdminITTask                         func(childComplexity int, id string) int
+		AdminITTasks                        func(childComplexity int, filter *model.ITAdminTaskFilter, pagination *model.PaginationInput) int
+		Course                              func(childComplexity int, id string) int
+		Courses                             func(childComplexity int, programID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
+		ExternalTaskSearch                  func(childComplexity int, query string) int
+		Feed                                func(childComplexity int, pagination *model.PaginationInput) int
+		GetUser                             func(childComplexity int, id string) int
+		ItCodeSubmission                    func(childComplexity int, id string) int
+		ItSubmission                        func(childComplexity int, id string) int
+		ItTask                              func(childComplexity int, id string) int
+		ItTasks                             func(childComplexity int, filter *model.ITTaskFilter, pagination *model.PaginationInput) int
+		LearningPlan                        func(childComplexity int, goal string, minutes int, sessionCount int) int
+		Material                            func(childComplexity int, id string) int
+		MaterialChangeDiff                  func(childComplexity int, proposalID string, revisionID *string) int
+		MaterialChangeHistory               func(childComplexity int, proposalID string, limit int, beforeOrdinal *int) int
+		MaterialChangeProposal              func(childComplexity int, id string) int
+		MaterialRevisions                   func(childComplexity int, id string, limit int, beforeRevision *int) int
+		Materials                           func(childComplexity int, filter *model.MaterialCatalogFilter, limit int, cursor *string) int
+		Me                                  func(childComplexity int) int
+		MediaDownloadURL                    func(childComplexity int, fileID string, variant *string) int
+		MediaFile                           func(childComplexity int, id string) int
+		MyITCodeSubmissions                 func(childComplexity int, taskID *string, pagination *model.PaginationInput) int
+		MyITSubmissions                     func(childComplexity int, taskID *string, pagination *model.PaginationInput) int
+		MyLearningPlans                     func(childComplexity int) int
+		MyMediaFiles                        func(childComplexity int, filter *model.MediaFileFilter, pagination *model.PaginationInput) int
+		MyPracticeGoal                      func(childComplexity int) int
+		MyPracticeProgress                  func(childComplexity int) int
+		PracticeLeaderboard                 func(childComplexity int, courseID *string) int
+		PracticePlan                        func(childComplexity int, topicIds []string, minutes int, sessionCount *int, goal *string) int
+		PracticeProgress                    func(childComplexity int, userID string) int
+		ProblemList                         func(childComplexity int, id string) int
+		ProblemLists                        func(childComplexity int, pagination *model.PaginationInput) int
+		Program                             func(childComplexity int, id string) int
+		Programs                            func(childComplexity int, universityID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
+		PublishedMaterial                   func(childComplexity int, id string) int
+		PublishedMaterialAttachmentDownload func(childComplexity int, materialID string, revisionID string, fileID string) int
+		SavedLearningPlan                   func(childComplexity int, id string) int
+		Search                              func(childComplexity int, query string, limit int) int
+		SearchUsers                         func(childComplexity int, search string, pagination *model.PaginationInput) int
+		TaskCandidate                       func(childComplexity int, id string) int
+		TaskCandidates                      func(childComplexity int, filter *model.TaskCandidateFilter, pagination *model.PaginationInput) int
+		TaskCollectionJob                   func(childComplexity int, id string) int
+		TaskCollectionJobs                  func(childComplexity int, unreadOnly *bool, pagination *model.PaginationInput) int
+		TaskCollectionSources               func(childComplexity int) int
+		Topic                               func(childComplexity int, id string) int
+		TopicPrerequisites                  func(childComplexity int, topicID string) int
+		TopicTree                           func(childComplexity int, courseID *string) int
+		Topics                              func(childComplexity int, courseID *string, filter *model.CatalogFilter, pagination *model.PaginationInput) int
+		Universities                        func(childComplexity int, filter *model.CatalogFilter, pagination *model.PaginationInput) int
+		University                          func(childComplexity int, id string) int
+		UserByUsername                      func(childComplexity int, username string) int
+		UserProfile                         func(childComplexity int, id string) int
+		Users                               func(childComplexity int, search *string, limit *int, offset *int) int
+		ValidateCatalogBinding              func(childComplexity int, input model.CatalogBindingInput) int
 	}
 
 	SavedLearningMaterial struct {
@@ -903,6 +904,7 @@ type QueryResolver interface {
 	Materials(ctx context.Context, filter *model.MaterialCatalogFilter, limit int, cursor *string) (*model.MaterialCatalogPage, error)
 	Material(ctx context.Context, id string) (*model.Material, error)
 	PublishedMaterial(ctx context.Context, id string) (*model.Material, error)
+	PublishedMaterialAttachmentDownload(ctx context.Context, materialID string, revisionID string, fileID string) (*model.MediaDownload, error)
 	MaterialRevisions(ctx context.Context, id string, limit int, beforeRevision *int) (*model.MaterialRevisionPage, error)
 	MaterialChangeProposal(ctx context.Context, id string) (*model.MaterialChangeProposal, error)
 	MaterialChangeHistory(ctx context.Context, proposalID string, limit int, beforeOrdinal *int) (*model.MaterialChangeHistoryPage, error)
@@ -3990,6 +3992,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.PublishedMaterial(childComplexity, args["id"].(string)), true
+	case "Query.publishedMaterialAttachmentDownload":
+		if e.complexity.Query.PublishedMaterialAttachmentDownload == nil {
+			break
+		}
+
+		args, err := ec.field_Query_publishedMaterialAttachmentDownload_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PublishedMaterialAttachmentDownload(childComplexity, args["materialId"].(string), args["revisionId"].(string), args["fileId"].(string)), true
 	case "Query.savedLearningPlan":
 		if e.complexity.Query.SavedLearningPlan == nil {
 			break
@@ -5551,6 +5564,7 @@ type Query {
   materials(filter: MaterialCatalogFilter, limit: Int! = 20, cursor: String): MaterialCatalogPage
   material(id: ID!): Material
   publishedMaterial(id: ID!): Material
+  publishedMaterialAttachmentDownload(materialId: ID!, revisionId: ID!, fileId: ID!): MediaDownload
   materialRevisions(id: ID!, limit: Int! = 20, beforeRevision: Int): MaterialRevisionPage
   materialChangeProposal(id: ID!): MaterialChangeProposal
   materialChangeHistory(proposalId: ID!, limit: Int! = 20, beforeOrdinal: Int): MaterialChangeHistoryPage
@@ -6986,6 +7000,27 @@ func (ec *executionContext) field_Query_programs_args(ctx context.Context, rawAr
 		return nil, err
 	}
 	args["pagination"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_publishedMaterialAttachmentDownload_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "materialId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["materialId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "revisionId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["revisionId"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "fileId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["fileId"] = arg2
 	return args, nil
 }
 
@@ -20949,6 +20984,53 @@ func (ec *executionContext) fieldContext_Query_publishedMaterial(ctx context.Con
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_publishedMaterial_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_publishedMaterialAttachmentDownload(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_publishedMaterialAttachmentDownload,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().PublishedMaterialAttachmentDownload(ctx, fc.Args["materialId"].(string), fc.Args["revisionId"].(string), fc.Args["fileId"].(string))
+		},
+		nil,
+		ec.marshalOMediaDownload2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMediaDownload,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_publishedMaterialAttachmentDownload(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "url":
+				return ec.fieldContext_MediaDownload_url(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_MediaDownload_expiresAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MediaDownload", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_publishedMaterialAttachmentDownload_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -35643,6 +35725,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "publishedMaterialAttachmentDownload":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_publishedMaterialAttachmentDownload(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "materialRevisions":
 			field := field
 
@@ -41920,6 +42021,13 @@ func (ec *executionContext) marshalOMaterialStatus2ᚖgithubᚗcomᚋovermindv�
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOMediaDownload2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMediaDownload(ctx context.Context, sel ast.SelectionSet, v *model.MediaDownload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MediaDownload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOMediaFileFilter2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMediaFileFilter(ctx context.Context, v any) (*model.MediaFileFilter, error) {
