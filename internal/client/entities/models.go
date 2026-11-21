@@ -40,17 +40,23 @@ type Course struct {
 }
 
 type Topic struct {
-	ID            string  `json:"id,omitempty"`
-	CourseID      *string `json:"course_id"`
-	ParentTopicID *string `json:"parent_topic_id"`
-	Title         string  `json:"title"`
-	Slug          string  `json:"slug"`
-	Description   string  `json:"description"`
-	OrderIndex    int     `json:"order_index"`
-	Difficulty    string  `json:"difficulty"`
-	Status        string  `json:"status"`
-	CreatedAt     string  `json:"created_at,omitempty"`
-	UpdatedAt     string  `json:"updated_at,omitempty"`
+	ID               string                 `json:"id,omitempty"`
+	CourseID         *string                `json:"course_id"`
+	ParentTopicID    *string                `json:"parent_topic_id"`
+	Title            string                 `json:"title"`
+	Slug             string                 `json:"slug"`
+	Description      string                 `json:"description"`
+	OrderIndex       int                    `json:"order_index"`
+	Difficulty       string                 `json:"difficulty"`
+	Status           string                 `json:"status"`
+	CreatedAt        string                 `json:"created_at,omitempty"`
+	UpdatedAt        string                 `json:"updated_at,omitempty"`
+	LearningMetadata *TopicLearningMetadata `json:"learning_metadata,omitempty"`
+}
+
+type TopicLearningMetadata struct {
+	EstimatedMinutes *int     `json:"estimated_minutes"`
+	Outcomes         []string `json:"outcomes"`
 }
 
 type TopicTreeNode struct {

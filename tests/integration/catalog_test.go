@@ -17,7 +17,11 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
-const draftStatus = "draft"
+const (
+	draftStatus       = "draft"
+	basicDifficulty   = "basic"
+	topicCreationTime = "2026-07-18T10:13:00Z"
+)
 
 // fakeEntitiesCatalog эмулирует HTTP API Entities и проверяет, что gateway передаёт actor и request_id.
 type fakeEntitiesCatalog struct {
@@ -85,11 +89,20 @@ func (f *fakeEntitiesCatalog) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			input.ID = "77777777-7777-7777-7777-777777777777"
 		}
 		input.Slug = strings.ToLower(input.Title)
-		input.Difficulty = "basic"
+		input.Difficulty = basicDifficulty
 		input.Status = draftStatus
-		input.CreatedAt = "2026-07-18T10:13:00Z"
+		input.CreatedAt = topicCreationTime
 		input.UpdatedAt = input.CreatedAt
 		writeEntitiesJSON(w, http.StatusCreated, input)
+	case r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/v1/topics/"):
+		var input entities.Topic
+		f.decode(r, &input)
+		input.ID = strings.TrimPrefix(r.URL.Path, "/v1/topics/")
+		input.Difficulty = basicDifficulty
+		input.Status = draftStatus
+		input.CreatedAt = topicCreationTime
+		input.UpdatedAt = input.CreatedAt
+		writeEntitiesJSON(w, http.StatusOK, input)
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/prerequisites"):
 		var input struct {
 			PrerequisiteTopicID string `json:"prerequisite_topic_id"`
@@ -162,10 +175,54 @@ func TestGatewayFullCatalogFlow(t *testing.T) {
 	if prerequisite.TopicID != next.ID || prerequisite.PrerequisiteTopicID != intro.ID {
 		t.Fatalf("prerequisite is not attached correctly: %+v", prerequisite)
 	}
+	checkTopicLearningMetadata(t, handler, entitiesUpstream, registered.Token, admin.Token, next)
 	for _, request := range entitiesUpstream.requests {
 		if request.RequestID == "" || request.UserID != fakeStudentID || !strings.Contains(request.Roles, "admin") {
 			t.Fatalf("gateway did not pass actor/request metadata to entities: %+v", request)
 		}
+	}
+}
+
+func checkTopicLearningMetadata(t *testing.T, handler http.Handler, upstream *fakeEntitiesCatalog, studentToken, adminToken string, topic catalogTopicPayload) {
+	t.Helper()
+	const mutation = `mutation UpdateTopic($id: ID!, $input: UpdateTopicInput!) {
+		updateTopic(id: $id, input: $input) { id learningMetadata { estimatedMinutes outcomes } }
+	}`
+	variables := map[string]any{
+		"id": topic.ID,
+		"input": map[string]any{
+			"courseId":      topic.CourseID,
+			"parentTopicId": topic.ParentTopicID,
+			"title":         topic.Title,
+			"learningMetadata": map[string]any{
+				"estimatedMinutes": 90,
+				"outcomes":         []string{"Compare algorithm complexity"},
+			},
+		},
+	}
+	before := len(upstream.requests)
+	refused := gatewayPostGraphQL(t, handler, studentToken, mutation, variables)
+	if len(refused.Errors) == 0 || len(upstream.requests) != before {
+		t.Fatal("student was allowed to write learning metadata")
+	}
+	response := gatewayPostGraphQL(t, handler, adminToken, mutation, variables)
+	if len(response.Errors) != 0 || len(upstream.requests) != before+1 {
+		t.Fatal("metadata mutation failed", response.Errors)
+	}
+	var data struct {
+		UpdateTopic struct {
+			ID       string `json:"id"`
+			Metadata *struct {
+				EstimatedMinutes int      `json:"estimatedMinutes"`
+				Outcomes         []string `json:"outcomes"`
+			} `json:"learningMetadata"`
+		} `json:"updateTopic"`
+	}
+	decodeGatewayData(t, response.Data, &data)
+	metadata := data.UpdateTopic.Metadata
+	if data.UpdateTopic.ID != topic.ID || metadata == nil || metadata.EstimatedMinutes != 90 ||
+		len(metadata.Outcomes) != 1 || metadata.Outcomes[0] != "Compare algorithm complexity" {
+		t.Fatal("gateway lost learning metadata", data.UpdateTopic)
 	}
 }
 

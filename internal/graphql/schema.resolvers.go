@@ -309,7 +309,12 @@ func (r *mutationResolver) CreateTopic(ctx context.Context, input model.CreateTo
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.Catalog.CreateTopic(ctx, entities.Topic{CourseID: input.CourseID, ParentTopicID: input.ParentTopicID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty), Status: statusValue(input.Status)}, actor)
+	result, err := r.Catalog.CreateTopic(ctx, entities.Topic{
+		CourseID: input.CourseID, ParentTopicID: input.ParentTopicID, Title: input.Title, Slug: stringValue(input.Slug),
+		Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0),
+		Difficulty: difficultyValue(input.Difficulty), Status: statusValue(input.Status),
+		LearningMetadata: topicLearningInput(input.LearningMetadata),
+	}, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +348,11 @@ func (r *mutationResolver) UpdateTopic(ctx context.Context, id string, input mod
 	} else if parentID == nil {
 		parentID = current.ParentTopicID
 	}
-	result, err := r.Catalog.UpdateTopic(ctx, id, entities.Topic{CourseID: courseID, ParentTopicID: parentID, Title: input.Title, Slug: stringValue(input.Slug), Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0), Difficulty: difficultyValue(input.Difficulty)}, actor)
+	result, err := r.Catalog.UpdateTopic(ctx, id, entities.Topic{
+		CourseID: courseID, ParentTopicID: parentID, Title: input.Title, Slug: stringValue(input.Slug),
+		Description: stringValue(input.Description), OrderIndex: intValue(input.OrderIndex, 0),
+		Difficulty: difficultyValue(input.Difficulty), LearningMetadata: topicLearningInput(input.LearningMetadata),
+	}, actor)
 	if err != nil {
 		return nil, err
 	}

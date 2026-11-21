@@ -49,7 +49,26 @@ func courseModel(item entities.Course) *model.Course {
 }
 
 func topicModel(item entities.Topic) *model.Topic {
-	return &model.Topic{ID: item.ID, CourseID: item.CourseID, ParentTopicID: item.ParentTopicID, Title: item.Title, Slug: item.Slug, Description: item.Description, OrderIndex: item.OrderIndex, Difficulty: model.TopicDifficulty(item.Difficulty), Status: model.CatalogStatus(item.Status), CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt}
+	result := &model.Topic{ID: item.ID, CourseID: item.CourseID, ParentTopicID: item.ParentTopicID, Title: item.Title, Slug: item.Slug, Description: item.Description, OrderIndex: item.OrderIndex, Difficulty: model.TopicDifficulty(item.Difficulty), Status: model.CatalogStatus(item.Status), CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt}
+	if item.LearningMetadata != nil {
+		result.LearningMetadata = &model.TopicLearningMetadata{
+			EstimatedMinutes: item.LearningMetadata.EstimatedMinutes,
+			Outcomes:         item.LearningMetadata.Outcomes,
+		}
+	}
+
+	return result
+}
+
+func topicLearningInput(input *model.TopicLearningMetadataInput) *entities.TopicLearningMetadata {
+	if input == nil {
+		return nil
+	}
+
+	return &entities.TopicLearningMetadata{
+		EstimatedMinutes: input.EstimatedMinutes,
+		Outcomes:         input.Outcomes,
+	}
 }
 
 func prerequisiteModel(item entities.TopicPrerequisite) *model.TopicPrerequisite {
