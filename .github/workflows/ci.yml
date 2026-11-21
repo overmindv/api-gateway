@@ -54,6 +54,32 @@ jobs:
       - name: Build service
         run: make build
 
+  content-contract:
+    name: Content draft contract
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: content_contract_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:55460:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d content_contract_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CONTENT_CONTRACT_DSN: postgres://postgres@127.0.0.1:55460/content_contract_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: bash scripts/test-content-contract.sh
+
   # E2E-CI отключён
   # e2e:
   #   permissions:
