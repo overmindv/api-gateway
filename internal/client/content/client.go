@@ -28,6 +28,7 @@ type Actor struct {
 type Service interface {
 	List(context.Context, Actor, *pb.ListContentCatalogRequest) (*pb.ListContentCatalogResponse, error)
 	Get(context.Context, Actor, *pb.GetContentItemRequest) (*pb.GetContentItemResponse, error)
+	GetPublished(context.Context, Actor, *pb.GetPublishedContentItemRequest) (*pb.GetPublishedContentItemResponse, error)
 	Revisions(context.Context, Actor, *pb.ListContentRevisionHistoryRequest) (*pb.ListContentRevisionHistoryResponse, error)
 	CreateDraft(context.Context, Actor, *pb.CreateContentItemRequest) (*pb.CreateContentItemResponse, error)
 	SaveDraft(context.Context, Actor, *pb.CreateContentRevisionRequest) (*pb.CreateContentRevisionResponse, error)
@@ -139,6 +140,10 @@ func (c *Client) List(ctx context.Context, actor Actor, req *pb.ListContentCatal
 
 func (c *Client) Get(ctx context.Context, actor Actor, req *pb.GetContentItemRequest) (*pb.GetContentItemResponse, error) {
 	return call(ctx, c, actor, req, c.rpc.GetContentItem)
+}
+
+func (c *Client) GetPublished(ctx context.Context, actor Actor, req *pb.GetPublishedContentItemRequest) (*pb.GetPublishedContentItemResponse, error) {
+	return call(ctx, c, actor, req, c.rpc.GetPublishedContentItem)
 }
 
 func (c *Client) Revisions(ctx context.Context, actor Actor, req *pb.ListContentRevisionHistoryRequest) (*pb.ListContentRevisionHistoryResponse, error) {

@@ -373,6 +373,7 @@ input SaveMaterialDraftInput {
 type Query {
   materials(filter: MaterialCatalogFilter, limit: Int! = 20, cursor: String): MaterialCatalogPage
   material(id: ID!): Material
+  publishedMaterial(id: ID!): Material
   materialRevisions(id: ID!, limit: Int! = 20, beforeRevision: Int): MaterialRevisionPage
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
