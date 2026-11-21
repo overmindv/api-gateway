@@ -12,9 +12,14 @@ import (
 func loadContent(production bool) (Content, error) {
 	cfg := Content{
 		Address: strings.TrimSpace(os.Getenv("CONTENT_GRPC_ADDR")), ServiceToken: os.Getenv("CONTENT_GRPC_SERVICE_TOKEN"),
+		CAFile:  os.Getenv("CONTENT_GRPC_TLS_CA_FILE"),
 		Timeout: 3 * time.Second,
 	}
 	if cfg.Address == "" && cfg.ServiceToken == "" {
+		if cfg.CAFile != "" {
+			return Content{}, errors.New("CONTENT_GRPC_TLS_CA_FILE requires a Content endpoint")
+		}
+
 		return cfg, nil
 	}
 	host, port, err := net.SplitHostPort(cfg.Address)
@@ -38,6 +43,9 @@ func loadContent(production bool) (Content, error) {
 		if err != nil || (cfg.Insecure && production) {
 			return Content{}, errors.New("CONTENT_GRPC_INSECURE is only allowed outside production")
 		}
+	}
+	if cfg.Insecure && cfg.CAFile != "" {
+		return Content{}, errors.New("CONTENT_GRPC_TLS_CA_FILE requires TLS")
 	}
 
 	return cfg, nil

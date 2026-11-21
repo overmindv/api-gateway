@@ -3,6 +3,9 @@ package content
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"os"
 	"strings"
 	"time"
 
@@ -35,6 +38,7 @@ type Error struct{ Code string }
 func (e *Error) Error() string { return e.Code }
 
 const messageLimit = 512 << 10
+const codeUnavailable = "SERVICE_UNAVAILABLE"
 
 type Client struct {
 	conn    *grpc.ClientConn
@@ -44,9 +48,9 @@ type Client struct {
 }
 
 func New(cfg config.Content) (*Client, error) {
-	transport := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
-	if cfg.Insecure {
-		transport = insecure.NewCredentials()
+	transport, err := contentCredentials(cfg)
+	if err != nil {
+		return nil, err
 	}
 	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(transport), grpc.WithDisableRetry(),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(messageLimit), grpc.MaxCallSendMsgSize(messageLimit)))
@@ -55,6 +59,29 @@ func New(cfg config.Content) (*Client, error) {
 	}
 
 	return &Client{conn: conn, rpc: pb.NewContentServiceClient(conn), token: cfg.ServiceToken, timeout: cfg.Timeout}, nil
+}
+
+func contentCredentials(cfg config.Content) (credentials.TransportCredentials, error) {
+	if cfg.Insecure {
+		if cfg.CAFile != "" {
+			return nil, errors.New("content CA file requires TLS")
+		}
+
+		return insecure.NewCredentials(), nil
+	}
+	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+	if cfg.CAFile != "" {
+		pem, err := os.ReadFile(cfg.CAFile)
+		if err != nil {
+			return nil, errors.New("could not read the Content gRPC CA file")
+		}
+		tlsConfig.RootCAs = x509.NewCertPool()
+		if !tlsConfig.RootCAs.AppendCertsFromPEM(pem) {
+			return nil, errors.New("the Content gRPC CA file contains no certificates")
+		}
+	}
+
+	return credentials.NewTLS(tlsConfig), nil
 }
 
 func (c *Client) Close() error { return c.conn.Close() }
@@ -81,7 +108,7 @@ func call[Req, Resp any](ctx context.Context, c *Client, actor Actor, req *Req,
 }
 
 func rpcError(err error) error {
-	code := "SERVICE_UNAVAILABLE"
+	code := codeUnavailable
 	switch status.Code(err) {
 	case codes.NotFound:
 		code = "NOT_FOUND"

@@ -80,6 +80,7 @@ type Recommendations struct {
 type Content struct {
 	Address      string
 	ServiceToken string
+	CAFile       string
 	Timeout      time.Duration
 	Insecure     bool
 }

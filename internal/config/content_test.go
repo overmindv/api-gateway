@@ -10,6 +10,7 @@ func TestContentConfig(t *testing.T) {
 	t.Setenv("CONTENT_GRPC_SERVICE_TOKEN", "")
 	t.Setenv("CONTENT_GRPC_INSECURE", "")
 	t.Setenv("CONTENT_GRPC_TIMEOUT", "")
+	t.Setenv("CONTENT_GRPC_TLS_CA_FILE", "")
 	if disabled, err := loadContent(false); err != nil || disabled.Address != "" {
 		t.Errorf("content should be optional: %v", err)
 	}
@@ -32,6 +33,14 @@ func TestContentConfig(t *testing.T) {
 	t.Setenv("CONTENT_GRPC_TIMEOUT", "600ms")
 	if cfg, err := loadContent(false); err != nil || !cfg.Insecure || cfg.Timeout != 600*time.Millisecond {
 		t.Errorf("local config: %v", err)
+	}
+	t.Setenv("CONTENT_GRPC_TLS_CA_FILE", "ca.pem")
+	if _, err := loadContent(false); err == nil {
+		t.Error("CA file accepted with plaintext transport")
+	}
+	t.Setenv("CONTENT_GRPC_INSECURE", "false")
+	if cfg, err := loadContent(true); err != nil || cfg.CAFile != "ca.pem" {
+		t.Errorf("expected TLS config with private CA: %v", err)
 	}
 	t.Setenv("CONTENT_GRPC_ADDR", "https://content:9090")
 	if _, err := loadContent(false); err == nil {

@@ -29,5 +29,7 @@ Gateway нет: первая версия и изменения проходят
 `CONTENT_GRPC_SERVICE_TOKEN` от 32 до 256 печатных ASCII-символов без
 пробелов, совпадающий с токеном Content. Дедлайн
 `CONTENT_GRPC_TIMEOUT` по умолчанию 3 с, максимум 10 с. Gateway проверяет
-сертификат TLS. Для локального Compose, где Content слушает без TLS,
+имя сервера и сертификат TLS. Для частного центра сертификации укажи путь
+к его сертификату в `CONTENT_GRPC_TLS_CA_FILE`. Для локального Compose,
+где Content слушает без TLS,
 используй `CONTENT_GRPC_INSECURE=true`. В production эта настройка запрещена.
