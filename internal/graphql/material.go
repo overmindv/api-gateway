@@ -224,12 +224,6 @@ func materialModel(item *pb.ContentItem) *model.Material {
 	if item == nil {
 		return nil
 	}
-	attachments := make([]*model.MaterialAttachment, 0, len(item.Assets))
-	for _, a := range item.Assets {
-		attachments = append(attachments, &model.MaterialAttachment{
-			FileID: a.GetAssetId(), Kind: model.MaterialAssetKind(a.GetKind()), Title: a.GetTitle(), Position: int(a.GetPosition()),
-		})
-	}
 	tags := make([]string, 0, len(item.Tags))
 	for _, tag := range item.Tags {
 		tags = append(tags, tag.GetName())
@@ -240,8 +234,19 @@ func materialModel(item *pb.ContentItem) *model.Material {
 		Title: item.Title, Slug: item.Slug, Description: item.Description, AuthorID: materialOptional(item.CreatedBy),
 		Revision: materialRevisionModel(item.CurrentRevision), PublishedRevisionID: materialOptional(item.PublishedRevisionId),
 		PublishedAt: materialOptional(materialTimestamp(item.PublishedAt)), UpdatedAt: materialTimestamp(item.UpdatedAt),
-		Tags: tags, Attachments: attachments, Learning: materialLearningModel(item.Learning),
+		Tags: tags, Attachments: materialAttachmentModels(item.Assets), Learning: materialLearningModel(item.Learning),
 	}
+}
+
+func materialAttachmentModels(assets []*pb.ContentAsset) []*model.MaterialAttachment {
+	attachments := make([]*model.MaterialAttachment, 0, len(assets))
+	for _, a := range assets {
+		attachments = append(attachments, &model.MaterialAttachment{
+			FileID: a.GetAssetId(), Kind: model.MaterialAssetKind(a.GetKind()), Title: a.GetTitle(), Position: int(a.GetPosition()),
+		})
+	}
+
+	return attachments
 }
 
 func materialCatalogModel(page *pb.ListContentCatalogResponse) *model.MaterialCatalogPage {

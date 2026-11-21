@@ -52,6 +52,9 @@ func (r *mutationResolver) OpenMaterialChange(ctx context.Context, input model.O
 	req := &pb.OpenChangeProposalRequest{
 		ContentItemId: id, BaseRevisionId: revision, Source: input.Source, Message: input.Message,
 	}
+	if err == nil {
+		req.Attachments, err = proposalAttachments(input.Attachments)
+	}
 
 	return resolveProposal(ctx, r.Resolver, req, err, contentclient.ProposalService.OpenProposal,
 		func(resp *pb.OpenChangeProposalResponse) *model.MaterialChangeProposal {
@@ -63,6 +66,9 @@ func (r *mutationResolver) AppendMaterialChange(ctx context.Context, input model
 	id, revision, err := proposalWriteInput(input.ProposalID, input.ExpectedHeadID, input.Source, input.Message)
 	req := &pb.AppendChangeProposalRevisionRequest{
 		ProposalId: id, ExpectedHeadId: revision, Source: input.Source, Message: input.Message,
+	}
+	if err == nil {
+		req.Attachments, err = proposalAttachments(input.Attachments)
 	}
 
 	return resolveProposal(ctx, r.Resolver, req, err, contentclient.ProposalService.AppendProposal,
@@ -115,6 +121,15 @@ func proposalWriteInput(entityID, revisionID, source, message string) (string, s
 	return id, revision, nil
 }
 
+func proposalAttachments(input []*model.MaterialAttachmentInput) (*pb.AttachmentSet, error) {
+	assets, err := materialAttachments(input)
+	if err != nil || input == nil {
+		return nil, err
+	}
+
+	return &pb.AttachmentSet{Assets: assets}, nil
+}
+
 func proposalModel(item *pb.ChangeProposal) *model.MaterialChangeProposal {
 	head := item.GetHead()
 	if head == nil {
@@ -125,9 +140,11 @@ func proposalModel(item *pb.ChangeProposal) *model.MaterialChangeProposal {
 		ID: item.GetId(), MaterialID: item.GetContentItemId(), BaseRevisionID: item.GetBaseRevisionId(), AuthorID: item.GetAuthorId(),
 		Status: model.MaterialChangeStatus(item.GetStatus()), CreatedAt: materialTimestamp(item.GetCreatedAt()),
 		ClosedAt: materialOptional(materialTimestamp(item.GetClosedAt())), BaseOutdated: item.GetBaseOutdated(),
+		MergedRevisionID: materialOptional(item.GetMergedRevisionId()),
 		Head: &model.MaterialChangeRevision{
 			ID: head.GetId(), ParentRevisionID: materialOptional(head.GetParentRevisionId()), Ordinal: int(head.GetOrdinal()),
 			Source: head.GetSource(), Message: head.GetMessage(), CreatedAt: materialTimestamp(head.GetCreatedAt()),
+			Attachments: materialAttachmentModels(head.GetAssets()),
 		},
 	}
 }

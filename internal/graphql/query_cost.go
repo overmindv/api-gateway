@@ -22,6 +22,20 @@ func (s costSchema) Complexity(_ context.Context, object, field string, child in
 	if object == objectQuery && field == "materialChangeProposal" {
 		return 4000 + child, true
 	}
+	if object == objectQuery && field == "materialReviewStatus" {
+		return 4000 + child, true
+	}
+	if field == "body" && (object == "MaterialReviewThread" || object == "MaterialReviewReply") {
+		return 40 + child, true
+	}
+	if object == objectMutation {
+		switch field {
+		case "mergeMaterialChange", "rebaseMaterialChange":
+			return 6000 + child, true
+		case "submitMaterialReview", "createMaterialReviewThread", "replyToMaterialReviewThread", "setMaterialReviewThreadResolved":
+			return 2000 + child, true
+		}
+	}
 	definition := s.Schema().Types[object]
 	if definition == nil {
 		return 1 + child, true

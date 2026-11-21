@@ -42,6 +42,7 @@ func (e *Error) Error() string { return e.Code }
 
 const messageLimit = 512 << 10
 const codeUnavailable = "SERVICE_UNAVAILABLE"
+const codeMergeConflict = "MERGE_CONFLICT"
 
 type Client struct {
 	conn    *grpc.ClientConn
@@ -121,10 +122,17 @@ func rpcError(err error) error {
 		code = "INVALID_ARGUMENT"
 	case codes.Aborted:
 		code = "REVISION_CONFLICT"
+		if status.Convert(err).Message() == codeMergeConflict {
+			code = codeMergeConflict
+		}
 	case codes.AlreadyExists:
 		code = "ALREADY_EXISTS"
 	case codes.FailedPrecondition:
 		code = "FAILED_PRECONDITION"
+		switch message := status.Convert(err).Message(); message {
+		case "ATTACHMENTS_PENDING", "REVIEW_REQUIRED", "UNRESOLVED_REVIEW_THREADS":
+			code = message
+		}
 	case codes.ResourceExhausted:
 		code = "RESOURCE_EXHAUSTED"
 	case codes.DeadlineExceeded:

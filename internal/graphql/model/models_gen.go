@@ -12,10 +12,11 @@ import (
 )
 
 type AppendMaterialChangeInput struct {
-	ProposalID     string `json:"proposalId"`
-	ExpectedHeadID string `json:"expectedHeadId"`
-	Source         string `json:"source"`
-	Message        string `json:"message"`
+	ProposalID     string                     `json:"proposalId"`
+	ExpectedHeadID string                     `json:"expectedHeadId"`
+	Source         string                     `json:"source"`
+	Message        string                     `json:"message"`
+	Attachments    []*MaterialAttachmentInput `json:"attachments,omitempty"`
 }
 
 type AuthPayload struct {
@@ -84,6 +85,13 @@ type CreateMaterialDraftInput struct {
 	Tags        []string                   `json:"tags"`
 	Attachments []*MaterialAttachmentInput `json:"attachments,omitempty"`
 	Learning    *MaterialLearningInput     `json:"learning,omitempty"`
+}
+
+type CreateMaterialReviewThreadInput struct {
+	ProposalID string `json:"proposalId"`
+	RevisionID string `json:"revisionId"`
+	LineNumber int    `json:"lineNumber"`
+	Body       string `json:"body"`
 }
 
 type CreateMediaUploadInput struct {
@@ -430,24 +438,26 @@ type MaterialChangeHistoryPage struct {
 }
 
 type MaterialChangeProposal struct {
-	ID             string                  `json:"id"`
-	MaterialID     string                  `json:"materialId"`
-	BaseRevisionID string                  `json:"baseRevisionId"`
-	AuthorID       string                  `json:"authorId"`
-	Status         MaterialChangeStatus    `json:"status"`
-	Head           *MaterialChangeRevision `json:"head"`
-	CreatedAt      string                  `json:"createdAt"`
-	ClosedAt       *string                 `json:"closedAt,omitempty"`
-	BaseOutdated   bool                    `json:"baseOutdated"`
+	ID               string                  `json:"id"`
+	MaterialID       string                  `json:"materialId"`
+	BaseRevisionID   string                  `json:"baseRevisionId"`
+	AuthorID         string                  `json:"authorId"`
+	Status           MaterialChangeStatus    `json:"status"`
+	Head             *MaterialChangeRevision `json:"head"`
+	CreatedAt        string                  `json:"createdAt"`
+	ClosedAt         *string                 `json:"closedAt,omitempty"`
+	BaseOutdated     bool                    `json:"baseOutdated"`
+	MergedRevisionID *string                 `json:"mergedRevisionId,omitempty"`
 }
 
 type MaterialChangeRevision struct {
-	ID               string  `json:"id"`
-	ParentRevisionID *string `json:"parentRevisionId,omitempty"`
-	Ordinal          int     `json:"ordinal"`
-	Source           string  `json:"source"`
-	Message          string  `json:"message"`
-	CreatedAt        string  `json:"createdAt"`
+	ID               string                `json:"id"`
+	ParentRevisionID *string               `json:"parentRevisionId,omitempty"`
+	Ordinal          int                   `json:"ordinal"`
+	Source           string                `json:"source"`
+	Message          string                `json:"message"`
+	CreatedAt        string                `json:"createdAt"`
+	Attachments      []*MaterialAttachment `json:"attachments"`
 }
 
 type MaterialDraftMetadataInput struct {
@@ -465,6 +475,63 @@ type MaterialLearningInput struct {
 	TopicIds         []string `json:"topicIds"`
 	EstimatedMinutes int      `json:"estimatedMinutes"`
 	LearningOutcomes []string `json:"learningOutcomes"`
+}
+
+type MaterialMergeResult struct {
+	MaterialID          string `json:"materialId"`
+	PublishedRevisionID string `json:"publishedRevisionId"`
+}
+
+type MaterialReviewAssignment struct {
+	ReviewerID string `json:"reviewerId"`
+	Slot       int    `json:"slot"`
+}
+
+type MaterialReviewDecision struct {
+	ReviewerID string                     `json:"reviewerId"`
+	Decision   MaterialReviewDecisionKind `json:"decision"`
+	Reason     string                     `json:"reason"`
+	CreatedAt  string                     `json:"createdAt"`
+	Legacy     bool                       `json:"legacy"`
+}
+
+type MaterialReviewReply struct {
+	ID        string `json:"id"`
+	AuthorID  string `json:"authorId"`
+	Body      string `json:"body"`
+	CreatedAt string `json:"createdAt"`
+}
+
+type MaterialReviewReplyPage struct {
+	Items       []*MaterialReviewReply `json:"items"`
+	NextAfterID *string                `json:"nextAfterId,omitempty"`
+}
+
+type MaterialReviewStatus struct {
+	RevisionID  string                      `json:"revisionId"`
+	Current     bool                        `json:"current"`
+	Decisions   []*MaterialReviewDecision   `json:"decisions"`
+	Assignments []*MaterialReviewAssignment `json:"assignments"`
+	Outcome     MaterialReviewOutcome       `json:"outcome"`
+	WaitReason  *string                     `json:"waitReason,omitempty"`
+	TopicID     *string                     `json:"topicId,omitempty"`
+}
+
+type MaterialReviewThread struct {
+	ID         string  `json:"id"`
+	RevisionID string  `json:"revisionId"`
+	LineNumber int     `json:"lineNumber"`
+	AuthorID   string  `json:"authorId"`
+	Body       string  `json:"body"`
+	CreatedAt  string  `json:"createdAt"`
+	Resolved   bool    `json:"resolved"`
+	ResolvedAt *string `json:"resolvedAt,omitempty"`
+	ResolvedBy *string `json:"resolvedBy,omitempty"`
+}
+
+type MaterialReviewThreadPage struct {
+	Items       []*MaterialReviewThread `json:"items"`
+	NextAfterID *string                 `json:"nextAfterId,omitempty"`
 }
 
 type MaterialRevision struct {
@@ -549,10 +616,11 @@ type Mutation struct {
 }
 
 type OpenMaterialChangeInput struct {
-	MaterialID     string `json:"materialId"`
-	BaseRevisionID string `json:"baseRevisionId"`
-	Source         string `json:"source"`
-	Message        string `json:"message"`
+	MaterialID     string                     `json:"materialId"`
+	BaseRevisionID string                     `json:"baseRevisionId"`
+	Source         string                     `json:"source"`
+	Message        string                     `json:"message"`
+	Attachments    []*MaterialAttachmentInput `json:"attachments,omitempty"`
 }
 
 type PaginationInput struct {
@@ -711,6 +779,15 @@ type PublicUserConnection struct {
 type Query struct {
 }
 
+type RebaseMaterialChangeInput struct {
+	ProposalID     string                     `json:"proposalId"`
+	ExpectedHeadID string                     `json:"expectedHeadId"`
+	BaseRevisionID string                     `json:"baseRevisionId"`
+	Source         string                     `json:"source"`
+	Message        string                     `json:"message"`
+	Attachments    []*MaterialAttachmentInput `json:"attachments,omitempty"`
+}
+
 type RegisterInput struct {
 	Email     string  `json:"email"`
 	Password  string  `json:"password"`
@@ -777,6 +854,13 @@ type StartTaskCollectionInput struct {
 	PublishedTo       *string  `json:"publishedTo,omitempty"`
 	WebsiteUrls       []string `json:"websiteUrls,omitempty"`
 	MaxItemsPerSource *int     `json:"maxItemsPerSource,omitempty"`
+}
+
+type SubmitMaterialReviewInput struct {
+	ProposalID string                     `json:"proposalId"`
+	RevisionID string                     `json:"revisionId"`
+	Decision   MaterialReviewDecisionKind `json:"decision"`
+	Reason     string                     `json:"reason"`
 }
 
 type TaskCandidate struct {
@@ -1878,6 +1962,120 @@ func (e *MaterialProgress) UnmarshalJSON(b []byte) error {
 }
 
 func (e MaterialProgress) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MaterialReviewDecisionKind string
+
+const (
+	MaterialReviewDecisionKindApprove        MaterialReviewDecisionKind = "approve"
+	MaterialReviewDecisionKindRequestChanges MaterialReviewDecisionKind = "request_changes"
+)
+
+var AllMaterialReviewDecisionKind = []MaterialReviewDecisionKind{
+	MaterialReviewDecisionKindApprove,
+	MaterialReviewDecisionKindRequestChanges,
+}
+
+func (e MaterialReviewDecisionKind) IsValid() bool {
+	switch e {
+	case MaterialReviewDecisionKindApprove, MaterialReviewDecisionKindRequestChanges:
+		return true
+	}
+	return false
+}
+
+func (e MaterialReviewDecisionKind) String() string {
+	return string(e)
+}
+
+func (e *MaterialReviewDecisionKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialReviewDecisionKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialReviewDecisionKind", str)
+	}
+	return nil
+}
+
+func (e MaterialReviewDecisionKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialReviewDecisionKind) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialReviewDecisionKind) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MaterialReviewOutcome string
+
+const (
+	MaterialReviewOutcomeWaitingCandidates MaterialReviewOutcome = "waiting_candidates"
+	MaterialReviewOutcomePending           MaterialReviewOutcome = "pending"
+	MaterialReviewOutcomeApproved          MaterialReviewOutcome = "approved"
+	MaterialReviewOutcomeChangesRequested  MaterialReviewOutcome = "changes_requested"
+)
+
+var AllMaterialReviewOutcome = []MaterialReviewOutcome{
+	MaterialReviewOutcomeWaitingCandidates,
+	MaterialReviewOutcomePending,
+	MaterialReviewOutcomeApproved,
+	MaterialReviewOutcomeChangesRequested,
+}
+
+func (e MaterialReviewOutcome) IsValid() bool {
+	switch e {
+	case MaterialReviewOutcomeWaitingCandidates, MaterialReviewOutcomePending, MaterialReviewOutcomeApproved, MaterialReviewOutcomeChangesRequested:
+		return true
+	}
+	return false
+}
+
+func (e MaterialReviewOutcome) String() string {
+	return string(e)
+}
+
+func (e *MaterialReviewOutcome) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialReviewOutcome(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialReviewOutcome", str)
+	}
+	return nil
+}
+
+func (e MaterialReviewOutcome) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialReviewOutcome) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialReviewOutcome) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

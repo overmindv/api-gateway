@@ -7,6 +7,9 @@ import (
 )
 
 type ProposalService interface {
+	ReviewService
+	RebaseProposal(context.Context, Actor, *pb.RebaseChangeProposalRequest) (*pb.RebaseChangeProposalResponse, error)
+	MergeProposal(context.Context, Actor, *pb.MergeChangeProposalRequest) (*pb.MergeChangeProposalResponse, error)
 	OpenProposal(context.Context, Actor, *pb.OpenChangeProposalRequest) (*pb.OpenChangeProposalResponse, error)
 	GetProposal(context.Context, Actor, *pb.GetChangeProposalRequest) (*pb.GetChangeProposalResponse, error)
 	AppendProposal(context.Context, Actor, *pb.AppendChangeProposalRevisionRequest) (*pb.AppendChangeProposalRevisionResponse, error)
