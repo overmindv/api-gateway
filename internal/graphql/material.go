@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -95,6 +96,10 @@ func materialCreateRequest(input model.CreateMaterialDraftInput) (*pb.CreateCont
 			return nil, invalidMaterialInput()
 		}
 	}
+	assets, err := materialAttachments(input.Attachments)
+	if err != nil {
+		return nil, err
+	}
 	learning, err := materialLearningInput(input.Learning)
 	if err != nil {
 		return nil, err
@@ -102,7 +107,7 @@ func materialCreateRequest(input model.CreateMaterialDraftInput) (*pb.CreateCont
 
 	return &pb.CreateContentItemRequest{
 		Type: string(input.Type), Status: "draft", Title: input.Title, Slug: input.Slug, Description: input.Description,
-		Format: string(input.Format), Source: input.Source, Message: input.Message, Tags: input.Tags, Learning: learning,
+		Format: string(input.Format), Source: input.Source, Message: input.Message, Tags: input.Tags, Assets: assets, Learning: learning,
 	}, nil
 }
 
@@ -115,17 +120,69 @@ func materialSaveRequest(input model.SaveMaterialDraftInput) (*pb.CreateContentR
 	if err != nil {
 		return nil, err
 	}
-	if !validDraftText(input.Source, input.Message) {
+	if !validDraftText(input.Source, input.Message) || (input.Attachments != nil && input.Metadata == nil) {
 		return nil, invalidMaterialInput()
 	}
-
-	return &pb.CreateContentRevisionRequest{
+	assets, err := materialAttachments(input.Attachments)
+	if err != nil {
+		return nil, err
+	}
+	req := &pb.CreateContentRevisionRequest{
 		ContentItemId: id, ExpectedRevisionId: expected, Format: string(input.Format), Source: input.Source, Message: input.Message,
-	}, nil
+	}
+	if assets != nil {
+		req.Attachments = &pb.AttachmentSet{Assets: assets}
+	}
+
+	return req, nil
 }
 
 func validDraftText(source, message string) bool {
 	return len(source) <= 128<<10 && len(message) <= 1024
+}
+
+func materialDraftMetadata(input *model.MaterialDraftMetadataInput) (*pb.DraftMetadata, error) {
+	if input == nil {
+		return nil, nil
+	}
+	title := strings.TrimSpace(input.Title)
+	if title == "" || len(input.Title) > 256 || strings.IndexByte(title, 0) >= 0 || len(input.TopicIds) > 8 {
+		return nil, invalidMaterialInput()
+	}
+	topics, err := materialTopicIDs(input.TopicIds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.DraftMetadata{Title: title, TopicIds: topics}, nil
+}
+
+func materialAttachments(input []*model.MaterialAttachmentInput) ([]*pb.CreateContentAsset, error) {
+	if input == nil {
+		return nil, nil
+	}
+	if len(input) > 32 {
+		return nil, invalidMaterialInput()
+	}
+	assets := make([]*pb.CreateContentAsset, 0, len(input))
+	seen := make(map[string]struct{}, len(input))
+	for _, asset := range input {
+		if asset == nil || asset.Position < 0 || asset.Position > math.MaxInt32 ||
+			len(asset.Title) > 256 || strings.IndexByte(asset.Title, 0) >= 0 {
+			return nil, invalidMaterialInput()
+		}
+		id, err := materialID(asset.FileID)
+		if err != nil {
+			return nil, err
+		}
+		if _, exists := seen[id]; exists {
+			return nil, invalidMaterialInput()
+		}
+		seen[id] = struct{}{}
+		assets = append(assets, &pb.CreateContentAsset{AssetId: id, Kind: string(asset.Kind), Title: asset.Title, Position: int32(asset.Position)})
+	}
+
+	return assets, nil
 }
 
 func materialLearningInput(input *model.MaterialLearningInput) (*pb.ContentLearningMetadata, error) {
@@ -140,8 +197,19 @@ func materialLearningInput(input *model.MaterialLearningInput) (*pb.ContentLearn
 			return nil, invalidMaterialInput()
 		}
 	}
-	topics := make([]string, 0, len(input.TopicIds))
-	for _, raw := range input.TopicIds {
+	topics, err := materialTopicIDs(input.TopicIds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.ContentLearningMetadata{
+		TopicIds: topics, LearningOutcomes: input.LearningOutcomes, EstimatedMinutes: int32(input.EstimatedMinutes),
+	}, nil
+}
+
+func materialTopicIDs(input []string) ([]string, error) {
+	topics := make([]string, 0, len(input))
+	for _, raw := range input {
 		id, err := materialID(raw)
 		if err != nil {
 			return nil, err
@@ -149,9 +217,7 @@ func materialLearningInput(input *model.MaterialLearningInput) (*pb.ContentLearn
 		topics = append(topics, id)
 	}
 
-	return &pb.ContentLearningMetadata{
-		TopicIds: topics, LearningOutcomes: input.LearningOutcomes, EstimatedMinutes: int32(input.EstimatedMinutes),
-	}, nil
+	return topics, nil
 }
 
 func materialModel(item *pb.ContentItem) *model.Material {

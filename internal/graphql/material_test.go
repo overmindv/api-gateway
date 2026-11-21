@@ -93,12 +93,16 @@ func (materialRPCFixture) ListContentRevisionHistory(ctx context.Context, req *p
 }
 
 func (materialRPCFixture) CreateContentItem(ctx context.Context, req *pb.CreateContentItemRequest) (*pb.CreateContentItemResponse, error) {
-	if materialRPCActor(ctx) != materialOwner || req.CreatedBy != "" || req.Status != "draft" || len(req.Assets) != 0 ||
-		req.Source != "# New material" || req.GetLearning().GetEstimatedMinutes() != 25 {
+	if materialRPCActor(ctx) != materialOwner || req.GetCreatedBy() != "" || req.GetStatus() != "draft" ||
+		req.GetSource() != "# New material" || req.GetLearning().GetEstimatedMinutes() != 25 {
 		return nil, status.Error(codes.InvalidArgument, "unexpected create input")
 	}
+	item := materialFixture("draft", materialRevisionFixture(materialDraftID, req.GetSource()))
+	for _, asset := range req.GetAssets() {
+		item.Assets = append(item.Assets, &pb.ContentAsset{AssetId: asset.GetAssetId(), Kind: asset.GetKind(), Title: asset.GetTitle()})
+	}
 
-	return &pb.CreateContentItemResponse{Item: materialFixture("draft", materialRevisionFixture(materialDraftID, req.Source))}, nil
+	return &pb.CreateContentItemResponse{Item: item}, nil
 }
 
 func (materialRPCFixture) CreateContentRevision(ctx context.Context, req *pb.CreateContentRevisionRequest) (*pb.CreateContentRevisionResponse, error) {
@@ -113,6 +117,26 @@ func (materialRPCFixture) CreateContentRevision(ctx context.Context, req *pb.Cre
 	}
 
 	return &pb.CreateContentRevisionResponse{Revision: materialRevisionFixture(materialDraftID, req.Source)}, nil
+}
+
+func (f materialRPCFixture) SaveContentDraft(ctx context.Context, req *pb.SaveContentDraftRequest) (*pb.SaveContentDraftResponse, error) {
+	change := req.GetRevision()
+	if change.GetSource() == "Old server" {
+		return nil, status.Error(codes.Unimplemented, "private upstream details")
+	}
+	draft := req.GetDraftMetadata()
+	if draft.GetTitle() != "New title" || len(draft.GetTopicIds()) != 1 || draft.GetTopicIds()[0] != materialFixtureID {
+		return nil, status.Error(codes.InvalidArgument, "incorrect draft metadata")
+	}
+	if (change.GetSource() == "Clear") != (change.GetAttachments() != nil && len(change.GetAttachments().GetAssets()) == 0) {
+		return nil, status.Error(codes.InvalidArgument, "wrong attachment presence")
+	}
+	result, err := f.CreateContentRevision(ctx, change)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.SaveContentDraftResponse{Revision: result.GetRevision()}, nil
 }
 
 func materialRPCActor(ctx context.Context) string {
@@ -235,12 +259,24 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 	run(materialOwner, `{ materials(limit:51) { nextCursor } }`, `"code":"INVALID_ARGUMENT"`)
 	run(materialOwner, `mutation { createMaterialDraft(input:{type:note,title:"Go",slug:"go",source:"# New material",learning:{estimatedMinutes:25}}) { status } }`,
 		`"status":"draft"`)
+	createWithFile := `mutation { createMaterialDraft(input:{type:note,title:"Go",slug:"go",source:"# New material",
+		learning:{estimatedMinutes:25},attachments:[%s]}) { attachments { fileId kind } } }`
+	file := fmt.Sprintf(`{fileId:%q,kind:pdf,title:"sample.pdf"}`, materialPublishedID)
+	run(materialOwner, fmt.Sprintf(createWithFile, file), `"fileId":"`+materialPublishedID+`"`, `"kind":"pdf"`)
+	run(materialOwner, fmt.Sprintf(createWithFile, file+","+file), `"code":"INVALID_ARGUMENT"`)
 	save := `mutation { saveMaterialDraft(input:{materialId:%q,expectedRevisionId:%q,source:%q%s}) { source } }`
 	run(materialReader, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Keep", ""), `"code":"NOT_FOUND"`)
 	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialPublishedID, "Keep", ""), `"code":"REVISION_CONFLICT"`)
 	const validationCode = `"code":"GRAPHQL_VALIDATION_FAILED"`
-	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Clear", ",attachments:[]"), validationCode)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Clear", ",attachments:[]"), `"code":"INVALID_ARGUMENT"`)
 	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Keep", ""), `"source":"Keep"`)
+	fields := fmt.Sprintf(`,metadata:{title:"  New title  ",topicIds:[%q]}`, materialFixtureID)
+	run("", fmt.Sprintf(save, materialFixtureID, materialDraftID, "Keep", fields), `"code":"UNAUTHENTICATED"`)
+	run(materialReader, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Keep", fields), `"code":"NOT_FOUND"`)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Keep", fields), `"source":"Keep"`)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Clear", fields+",attachments:[]"), `"source":"Clear"`)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialPublishedID, "Clear", fields+",attachments:[]"), `"code":"REVISION_CONFLICT"`)
+	run(materialOwner, fmt.Sprintf(save, materialFixtureID, materialDraftID, "Old server", fields), `"code":"SERVICE_UNAVAILABLE"`)
 	publish := fmt.Sprintf(`mutation { publishMaterial(id:%q, expectedRevisionId:%q) { status } }`, materialFixtureID, materialDraftID)
 	run(materialOwner, publish, validationCode)
 	run(materialReader, fmt.Sprintf(`{ material(id:%q) { id } __typename }`, materialSlowID),

@@ -346,6 +346,12 @@ type Material {
 }
 
 input MaterialCatalogFilter { topicId: ID, authorId: ID, status: MaterialStatus }
+input MaterialAttachmentInput {
+  fileId: ID!
+  kind: MaterialAssetKind!
+  title: String! = ""
+  position: Int! = 0
+}
 input MaterialLearningInput {
   topicIds: [ID!]! = []
   estimatedMinutes: Int! = 0
@@ -360,7 +366,12 @@ input CreateMaterialDraftInput {
   source: String!
   message: String! = ""
   tags: [String!]! = []
+  attachments: [MaterialAttachmentInput!]
   learning: MaterialLearningInput
+}
+input MaterialDraftMetadataInput {
+  title: String!
+  topicIds: [ID!]!
 }
 input SaveMaterialDraftInput {
   materialId: ID!
@@ -368,6 +379,8 @@ input SaveMaterialDraftInput {
   format: MaterialFormat! = markdown
   source: String!
   message: String! = ""
+  attachments: [MaterialAttachmentInput!]
+  metadata: MaterialDraftMetadataInput
 }
 
 type Query {

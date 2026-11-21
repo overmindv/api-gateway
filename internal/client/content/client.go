@@ -31,7 +31,7 @@ type Service interface {
 	GetPublished(context.Context, Actor, *pb.GetPublishedContentItemRequest) (*pb.GetPublishedContentItemResponse, error)
 	Revisions(context.Context, Actor, *pb.ListContentRevisionHistoryRequest) (*pb.ListContentRevisionHistoryResponse, error)
 	CreateDraft(context.Context, Actor, *pb.CreateContentItemRequest) (*pb.CreateContentItemResponse, error)
-	SaveDraft(context.Context, Actor, *pb.CreateContentRevisionRequest) (*pb.CreateContentRevisionResponse, error)
+	SaveDraft(context.Context, Actor, *pb.CreateContentRevisionRequest, *pb.DraftMetadata) (*pb.ContentRevision, error)
 }
 
 type Error struct{ Code string }
@@ -154,6 +154,13 @@ func (c *Client) CreateDraft(ctx context.Context, actor Actor, req *pb.CreateCon
 	return call(ctx, c, actor, req, c.rpc.CreateContentItem)
 }
 
-func (c *Client) SaveDraft(ctx context.Context, actor Actor, req *pb.CreateContentRevisionRequest) (*pb.CreateContentRevisionResponse, error) {
-	return call(ctx, c, actor, req, c.rpc.CreateContentRevision)
+func (c *Client) SaveDraft(ctx context.Context, actor Actor, req *pb.CreateContentRevisionRequest, draft *pb.DraftMetadata) (*pb.ContentRevision, error) {
+	if draft == nil {
+		result, err := call(ctx, c, actor, req, c.rpc.CreateContentRevision)
+
+		return result.GetRevision(), err
+	}
+	result, err := call(ctx, c, actor, &pb.SaveContentDraftRequest{Revision: req, DraftMetadata: draft}, c.rpc.SaveContentDraft)
+
+	return result.GetRevision(), err
 }

@@ -107,15 +107,19 @@ func (r *mutationResolver) SaveMaterialDraft(ctx context.Context, input model.Sa
 	if err != nil {
 		return nil, err
 	}
-	result, err := client.SaveDraft(ctx, actor, req)
+	draft, err := materialDraftMetadata(input.Metadata)
 	if err != nil {
 		return nil, err
 	}
-	if result.GetRevision() == nil {
+	revision, err := client.SaveDraft(ctx, actor, req, draft)
+	if err != nil {
+		return nil, err
+	}
+	if revision == nil {
 		return nil, &contentclient.Error{Code: "SERVICE_UNAVAILABLE"}
 	}
 
-	return materialRevisionModel(result.GetRevision()), nil
+	return materialRevisionModel(revision), nil
 }
 
 func materialResult(item *pb.ContentItem) (*model.Material, error) {

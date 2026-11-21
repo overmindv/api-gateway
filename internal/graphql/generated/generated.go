@@ -4706,7 +4706,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputITTaskInput,
 		ec.unmarshalInputITTaskOptionInput,
 		ec.unmarshalInputLoginInput,
+		ec.unmarshalInputMaterialAttachmentInput,
 		ec.unmarshalInputMaterialCatalogFilter,
+		ec.unmarshalInputMaterialDraftMetadataInput,
 		ec.unmarshalInputMaterialLearningInput,
 		ec.unmarshalInputMediaFileFilter,
 		ec.unmarshalInputPaginationInput,
@@ -5166,6 +5168,12 @@ type Material {
 }
 
 input MaterialCatalogFilter { topicId: ID, authorId: ID, status: MaterialStatus }
+input MaterialAttachmentInput {
+  fileId: ID!
+  kind: MaterialAssetKind!
+  title: String! = ""
+  position: Int! = 0
+}
 input MaterialLearningInput {
   topicIds: [ID!]! = []
   estimatedMinutes: Int! = 0
@@ -5180,7 +5188,12 @@ input CreateMaterialDraftInput {
   source: String!
   message: String! = ""
   tags: [String!]! = []
+  attachments: [MaterialAttachmentInput!]
   learning: MaterialLearningInput
+}
+input MaterialDraftMetadataInput {
+  title: String!
+  topicIds: [ID!]!
 }
 input SaveMaterialDraftInput {
   materialId: ID!
@@ -5188,6 +5201,8 @@ input SaveMaterialDraftInput {
   format: MaterialFormat! = markdown
   source: String!
   message: String! = ""
+  attachments: [MaterialAttachmentInput!]
+  metadata: MaterialDraftMetadataInput
 }
 
 type Query {
@@ -28063,7 +28078,7 @@ func (ec *executionContext) unmarshalInputCreateMaterialDraftInput(ctx context.C
 		asMap["tags"] = []any{}
 	}
 
-	fieldsInOrder := [...]string{"type", "title", "slug", "description", "format", "source", "message", "tags", "learning"}
+	fieldsInOrder := [...]string{"type", "title", "slug", "description", "format", "source", "message", "tags", "attachments", "learning"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -28126,6 +28141,13 @@ func (ec *executionContext) unmarshalInputCreateMaterialDraftInput(ctx context.C
 				return it, err
 			}
 			it.Tags = data
+		case "attachments":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attachments"))
+			data, err := ec.unmarshalOMaterialAttachmentInput2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachmentInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Attachments = data
 		case "learning":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("learning"))
 			data, err := ec.unmarshalOMaterialLearningInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialLearningInput(ctx, v)
@@ -28872,6 +28894,61 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj an
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMaterialAttachmentInput(ctx context.Context, obj any) (model.MaterialAttachmentInput, error) {
+	var it model.MaterialAttachmentInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["title"]; !present {
+		asMap["title"] = ""
+	}
+	if _, present := asMap["position"]; !present {
+		asMap["position"] = 0
+	}
+
+	fieldsInOrder := [...]string{"fileId", "kind", "title", "position"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "fileId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FileID = data
+		case "kind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			data, err := ec.unmarshalNMaterialAssetKind2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAssetKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Kind = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "position":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("position"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Position = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMaterialCatalogFilter(ctx context.Context, obj any) (model.MaterialCatalogFilter, error) {
 	var it model.MaterialCatalogFilter
 	asMap := map[string]any{}
@@ -28907,6 +28984,40 @@ func (ec *executionContext) unmarshalInputMaterialCatalogFilter(ctx context.Cont
 				return it, err
 			}
 			it.Status = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMaterialDraftMetadataInput(ctx context.Context, obj any) (model.MaterialDraftMetadataInput, error) {
+	var it model.MaterialDraftMetadataInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"title", "topicIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "topicIds":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicIds"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TopicIds = data
 		}
 	}
 
@@ -29125,7 +29236,7 @@ func (ec *executionContext) unmarshalInputSaveMaterialDraftInput(ctx context.Con
 		asMap["message"] = ""
 	}
 
-	fieldsInOrder := [...]string{"materialId", "expectedRevisionId", "format", "source", "message"}
+	fieldsInOrder := [...]string{"materialId", "expectedRevisionId", "format", "source", "message", "attachments", "metadata"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29167,6 +29278,20 @@ func (ec *executionContext) unmarshalInputSaveMaterialDraftInput(ctx context.Con
 				return it, err
 			}
 			it.Message = data
+		case "attachments":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attachments"))
+			data, err := ec.unmarshalOMaterialAttachmentInput2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachmentInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Attachments = data
+		case "metadata":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadata"))
+			data, err := ec.unmarshalOMaterialDraftMetadataInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialDraftMetadataInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Metadata = data
 		}
 	}
 
@@ -37074,6 +37199,11 @@ func (ec *executionContext) marshalNMaterialAttachment2ᚖgithubᚗcomᚋovermin
 	return ec._MaterialAttachment(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNMaterialAttachmentInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachmentInput(ctx context.Context, v any) (*model.MaterialAttachmentInput, error) {
+	res, err := ec.unmarshalInputMaterialAttachmentInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNMaterialCatalogEntry2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogEntryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MaterialCatalogEntry) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -39517,6 +39647,24 @@ func (ec *executionContext) marshalOMaterial2ᚖgithubᚗcomᚋovermindvᚋapi�
 	return ec._Material(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOMaterialAttachmentInput2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachmentInputᚄ(ctx context.Context, v any) ([]*model.MaterialAttachmentInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.MaterialAttachmentInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNMaterialAttachmentInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialAttachmentInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) unmarshalOMaterialCatalogFilter2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogFilter(ctx context.Context, v any) (*model.MaterialCatalogFilter, error) {
 	if v == nil {
 		return nil, nil
@@ -39530,6 +39678,14 @@ func (ec *executionContext) marshalOMaterialCatalogPage2ᚖgithubᚗcomᚋovermi
 		return graphql.Null
 	}
 	return ec._MaterialCatalogPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOMaterialDraftMetadataInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialDraftMetadataInput(ctx context.Context, v any) (*model.MaterialDraftMetadataInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputMaterialDraftMetadataInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOMaterialLearning2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialLearning(ctx context.Context, sel ast.SelectionSet, v *model.MaterialLearning) graphql.Marshaler {
