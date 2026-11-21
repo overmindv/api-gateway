@@ -270,6 +270,7 @@ func materialRevisionModel(revision *pb.ContentRevision) *model.MaterialRevision
 	return &model.MaterialRevision{
 		ID: revision.Id, Number: int(revision.Revision), Source: revision.Source, Format: model.MaterialFormat(revision.Format),
 		Message: revision.Message, AuthorID: materialOptional(revision.CreatedBy), CreatedAt: materialTimestamp(revision.CreatedAt),
+		RestoredFromRevisionID: materialOptional(revision.GetRestoredFromRevisionId()),
 	}
 }
 
@@ -279,6 +280,7 @@ func materialHistoryModel(page *pb.ListContentRevisionHistoryResponse) *model.Ma
 		items = append(items, &model.MaterialRevisionSummary{
 			ID: row.GetId(), Number: int(row.GetRevision()), Format: model.MaterialFormat(row.GetFormat()), Message: row.GetMessage(),
 			AuthorID: materialOptional(row.GetCreatedBy()), CreatedAt: materialTimestamp(row.GetCreatedAt()),
+			RestoredFromRevisionID: materialOptional(row.GetRestoredFromRevisionId()),
 		})
 	}
 	var next *int

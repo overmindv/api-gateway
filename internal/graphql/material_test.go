@@ -161,6 +161,12 @@ func materialFixture(state string, revision *pb.ContentRevision) *pb.ContentItem
 
 func startMaterialRPC(t testing.TB, interceptor grpc.UnaryServerInterceptor, timeout time.Duration) *contentclient.Client {
 	t.Helper()
+
+	return startMaterialRPCWithModeration(t, interceptor, timeout, "")
+}
+
+func startMaterialRPCWithModeration(t testing.TB, interceptor grpc.UnaryServerInterceptor, timeout time.Duration, token string) *contentclient.Client {
+	t.Helper()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
@@ -171,6 +177,7 @@ func startMaterialRPC(t testing.TB, interceptor grpc.UnaryServerInterceptor, tim
 	t.Cleanup(server.Stop)
 	client, err := contentclient.New(config.Content{
 		Address: listener.Addr().String(), ServiceToken: materialFixtureToken, Timeout: timeout, Insecure: true,
+		ModerationToken: token,
 	})
 	if err != nil {
 		t.Fatal(err)

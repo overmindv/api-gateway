@@ -482,6 +482,13 @@ type MaterialMergeResult struct {
 	PublishedRevisionID string `json:"publishedRevisionId"`
 }
 
+type MaterialModerationState struct {
+	MaterialID          string `json:"materialId"`
+	PublishedRevisionID string `json:"publishedRevisionId"`
+	Version             string `json:"version"`
+	Hidden              bool   `json:"hidden"`
+}
+
 type MaterialReviewAssignment struct {
 	ReviewerID string `json:"reviewerId"`
 	Slot       int    `json:"slot"`
@@ -535,13 +542,14 @@ type MaterialReviewThreadPage struct {
 }
 
 type MaterialRevision struct {
-	ID        string         `json:"id"`
-	Number    int            `json:"number"`
-	Format    MaterialFormat `json:"format"`
-	Source    string         `json:"source"`
-	Message   string         `json:"message"`
-	AuthorID  *string        `json:"authorId,omitempty"`
-	CreatedAt string         `json:"createdAt"`
+	ID                     string         `json:"id"`
+	Number                 int            `json:"number"`
+	Format                 MaterialFormat `json:"format"`
+	Source                 string         `json:"source"`
+	Message                string         `json:"message"`
+	AuthorID               *string        `json:"authorId,omitempty"`
+	CreatedAt              string         `json:"createdAt"`
+	RestoredFromRevisionID *string        `json:"restoredFromRevisionId,omitempty"`
 }
 
 type MaterialRevisionPage struct {
@@ -550,12 +558,13 @@ type MaterialRevisionPage struct {
 }
 
 type MaterialRevisionSummary struct {
-	ID        string         `json:"id"`
-	Number    int            `json:"number"`
-	Format    MaterialFormat `json:"format"`
-	Message   string         `json:"message"`
-	AuthorID  *string        `json:"authorId,omitempty"`
-	CreatedAt string         `json:"createdAt"`
+	ID                     string         `json:"id"`
+	Number                 int            `json:"number"`
+	Format                 MaterialFormat `json:"format"`
+	Message                string         `json:"message"`
+	AuthorID               *string        `json:"authorId,omitempty"`
+	CreatedAt              string         `json:"createdAt"`
+	RestoredFromRevisionID *string        `json:"restoredFromRevisionId,omitempty"`
 }
 
 type MediaDownload struct {
@@ -845,6 +854,14 @@ type SearchResults struct {
 	Courses      []*Course        `json:"courses"`
 	Topics       []*Topic         `json:"topics"`
 	Tasks        []*ITTaskSummary `json:"tasks"`
+}
+
+type SetMaterialModerationInput struct {
+	MaterialID                  string                   `json:"materialId"`
+	ExpectedPublishedRevisionID string                   `json:"expectedPublishedRevisionId"`
+	ExpectedVersion             string                   `json:"expectedVersion"`
+	Action                      MaterialModerationAction `json:"action"`
+	Reason                      string                   `json:"reason"`
 }
 
 type StartTaskCollectionInput struct {
@@ -1905,6 +1922,61 @@ func (e *MaterialFormat) UnmarshalJSON(b []byte) error {
 }
 
 func (e MaterialFormat) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MaterialModerationAction string
+
+const (
+	MaterialModerationActionHide    MaterialModerationAction = "hide"
+	MaterialModerationActionRestore MaterialModerationAction = "restore"
+)
+
+var AllMaterialModerationAction = []MaterialModerationAction{
+	MaterialModerationActionHide,
+	MaterialModerationActionRestore,
+}
+
+func (e MaterialModerationAction) IsValid() bool {
+	switch e {
+	case MaterialModerationActionHide, MaterialModerationActionRestore:
+		return true
+	}
+	return false
+}
+
+func (e MaterialModerationAction) String() string {
+	return string(e)
+}
+
+func (e *MaterialModerationAction) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MaterialModerationAction(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MaterialModerationAction", str)
+	}
+	return nil
+}
+
+func (e MaterialModerationAction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MaterialModerationAction) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MaterialModerationAction) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

@@ -78,11 +78,12 @@ type Recommendations struct {
 }
 
 type Content struct {
-	Address      string
-	ServiceToken string
-	CAFile       string
-	Timeout      time.Duration
-	Insecure     bool
+	Address         string
+	ServiceToken    string
+	ModerationToken string
+	CAFile          string
+	Timeout         time.Duration
+	Insecure        bool
 }
 
 type JWT struct {
@@ -168,6 +169,10 @@ func Load() (Config, error) {
 	if token := cfg.Content.ServiceToken; token != "" && (token == cfg.JWT.Secret || token == cfg.Media.Token ||
 		token == cfg.Feed.Token || token == cfg.TaskHunter.Token || token == cfg.Recommendations.Token) {
 		return Config{}, fmt.Errorf("CONTENT_GRPC_SERVICE_TOKEN must be distinct from other credentials")
+	}
+	if token := cfg.Content.ModerationToken; token != "" && (token == cfg.JWT.Secret || token == cfg.Media.Token ||
+		token == cfg.Feed.Token || token == cfg.TaskHunter.Token || token == cfg.Recommendations.Token || token == cfg.Entities.GatewayToken) {
+		return Config{}, fmt.Errorf("CONTENT_GRPC_MODERATION_TOKEN must be distinct from other credentials")
 	}
 	cfg.Users.LoginContextSecret = cfg.JWT.Secret
 
