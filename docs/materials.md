@@ -32,6 +32,15 @@
 `FAILED_PRECONDITION`, `DEADLINE_EXCEEDED` и `SERVICE_UNAVAILABLE`.
 После `REVISION_CONFLICT` перечитай материал перед повтором операции.
 
+## Проверка черновиков
+
+CI запускает `bash scripts/test-content-contract.sh` с отдельным Postgres и
+версией Content из `go.mod`. Для локального запуска укажи
+`CONTENT_CONTRACT_DSN` на пустую базу `content_contract_test` на loopback.
+Скрипт применяет миграции и запускает Content на портах 19196 и 19197.
+Для проверки с локальной копией Content передай путь через
+`CONTENT_CONTRACT_SOURCE`. Тест не удаляет записи и не публикует черновик.
+
 ## Предложения правок
 
 - `openMaterialChange` принимает ID материала и опубликованной ревизии.
