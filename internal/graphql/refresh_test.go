@@ -98,7 +98,7 @@ func TestRejectedRefreshClearsCookiesButOutageDoesNot(t *testing.T) {
 	for _, rejected := range []bool{true, false} {
 		t.Run(fmt.Sprint(rejected), func(t *testing.T) {
 			t.Parallel()
-			var upstream error = errors.New("users down")
+			upstream := errors.New("users down")
 			if rejected {
 				upstream = &users.Error{Code: "UNAUTHENTICATED", Message: "revoked"}
 			}
