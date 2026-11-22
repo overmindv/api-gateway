@@ -51,7 +51,7 @@ func secureTransport(r *http.Request, proxies []netip.Prefix) bool {
 	if r.TLS != nil {
 		return true
 	}
-	if len(r.Header.Values("X-Forwarded-Proto")) != 1 || r.Header.Get("X-Forwarded-Proto") != "https" {
+	if len(r.Header.Values("X-Forwarded-Proto")) != 1 || r.Header.Get("X-Forwarded-Proto") != httpsScheme {
 		return false
 	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)

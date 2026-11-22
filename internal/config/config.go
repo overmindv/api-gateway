@@ -90,6 +90,9 @@ type JWT struct {
 	Secret       string
 	Issuer       string
 	AdminUserIDs []string
+	JWKSURL      string
+	Audience     string
+	LegacyUntil  time.Time
 }
 
 // Session описывает атрибуты httpOnly session cookie.
@@ -174,7 +177,9 @@ func Load() (Config, error) {
 		token == cfg.Feed.Token || token == cfg.TaskHunter.Token || token == cfg.Recommendations.Token || token == cfg.Entities.GatewayToken) {
 		return Config{}, fmt.Errorf("CONTENT_GRPC_MODERATION_TOKEN must be distinct from other credentials")
 	}
-	cfg.Users.LoginContextSecret = cfg.JWT.Secret
+	if err := configureJWKS(&cfg); err != nil {
+		return Config{}, err
+	}
 
 	if _, err := strconv.ParseUint(port, 10, 16); err != nil {
 		return Config{}, fmt.Errorf("PORT must be a valid TCP port: %w", err)
@@ -254,7 +259,7 @@ func Load() (Config, error) {
 		}
 	}
 
-	if cfg.JWT.Secret == "" {
+	if cfg.JWT.Secret == "" && cfg.JWT.JWKSURL == "" {
 		return Config{}, fmt.Errorf("JWT_SECRET must not be empty")
 	}
 

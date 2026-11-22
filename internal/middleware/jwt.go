@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
-	"errors"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,6 +18,9 @@ type JWTAuthenticator struct {
 	issuer       string
 	adminUserIDs map[string]struct{}
 	now          func() time.Time
+	jwks         *jwksCache
+	audience     string
+	legacyUntil  time.Time
 }
 
 type claims struct {
@@ -43,6 +46,10 @@ func NewJWTAuthenticator(secret, issuer string, adminUserIDLists ...[]string) *J
 }
 
 func (a *JWTAuthenticator) Parse(header string) (AuthInfo, error) {
+	return a.parse(context.Background(), header)
+}
+
+func (a *JWTAuthenticator) parse(ctx context.Context, header string) (AuthInfo, error) {
 	parts := strings.Fields(header)
 	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
 		return AuthInfo{}, apperror.ErrUnauthenticated
@@ -50,14 +57,16 @@ func (a *JWTAuthenticator) Parse(header string) (AuthInfo, error) {
 
 	parsedClaims := &claims{}
 
-	token, err := jwt.ParseWithClaims(parts[1], parsedClaims, func(token *jwt.Token) (any, error) {
-		if token.Method != jwt.SigningMethodHS256 {
-			return nil, errors.New("unexpected jwt signing method")
-		}
-
-		return a.secret, nil
-	}, jwt.WithIssuer(a.issuer), jwt.WithExpirationRequired(), jwt.WithIssuedAt(), jwt.WithTimeFunc(a.now))
+	methods := []string{"HS256"}
+	if a.jwks != nil {
+		methods = append(methods, "EdDSA")
+	}
+	token, err := jwt.ParseWithClaims(parts[1], parsedClaims, func(token *jwt.Token) (any, error) { return a.verificationKey(ctx, token) }, jwt.WithValidMethods(methods), jwt.WithIssuer(a.issuer), jwt.WithExpirationRequired(), jwt.WithIssuedAt(), jwt.WithTimeFunc(a.now))
 	if err != nil || !token.Valid || parsedClaims.Subject == "" {
+		return AuthInfo{}, apperror.ErrUnauthenticated
+	}
+	if a.jwks != nil && token.Method == jwt.SigningMethodEdDSA && (!slices.Contains(parsedClaims.Audience, a.audience) || parsedClaims.IssuedAt == nil ||
+		parsedClaims.ExpiresAt.Sub(parsedClaims.IssuedAt.Time) > 15*time.Minute || !parsedClaims.ExpiresAt.After(parsedClaims.IssuedAt.Time)) {
 		return AuthInfo{}, apperror.ErrUnauthenticated
 	}
 	roles := append([]string(nil), parsedClaims.Roles...)

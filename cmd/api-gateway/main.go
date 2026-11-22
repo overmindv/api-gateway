@@ -59,6 +59,14 @@ func main() {
 		contentService = client
 	}
 	authenticator := middleware.NewJWTAuthenticator(cfg.JWT.Secret, cfg.JWT.Issuer, cfg.JWT.AdminUserIDs)
+	if cfg.JWT.JWKSURL != "" {
+		asymmetric, signingErr := middleware.NewJWKSAuthenticator(cfg.JWT.JWKSURL, cfg.JWT.Issuer, cfg.JWT.Audience, cfg.JWT.Secret, cfg.JWT.LegacyUntil)
+		if signingErr != nil {
+			log.Error("initialize JWT verifier", "error", signingErr)
+			os.Exit(1)
+		}
+		authenticator = asymmetric
+	}
 	authenticator.SetSessionVerifier(usersService)
 	httpServer := server.NewWithRecommendations(cfg.HTTP, usersService, entitiesService, tasksService, taskHunterService, mediaService, feedService, recommendationsService, usersService, authenticator, cfg.Session.Secure, log, requestLog, contentService)
 
