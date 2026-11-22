@@ -40,7 +40,7 @@ func (a *JWTAuthenticator) SetSessionVerifier(verifier SessionVerifier) {
 
 // ParseContext проверяет локальную подпись до обращения к владельцу сессий.
 func (a *JWTAuthenticator) ParseContext(ctx context.Context, header string) (AuthInfo, error) {
-	info, err := a.Parse(header)
+	info, err := a.parse(ctx, header)
 	if err != nil || a.verifier == nil {
 		return info, err
 	}
