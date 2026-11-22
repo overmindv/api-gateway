@@ -223,6 +223,7 @@ type AuthPayload {
 }
 
 input RegisterInput {
+  refreshSession: Boolean = false
   email: String!
   password: String!
   username: String!
@@ -233,6 +234,7 @@ input RegisterInput {
 }
 
 input LoginInput {
+  refreshSession: Boolean = false
   email: String!
   password: String!
 }
@@ -569,6 +571,7 @@ type Query {
 }
 
 type Mutation {
+  refreshSession: String
   createMaterialDraft(input: CreateMaterialDraftInput!): Material
   saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
   openMaterialChange(input: OpenMaterialChangeInput!): MaterialChangeProposal

@@ -91,7 +91,7 @@ func errorCodeAndMessage(err error) (string, string) {
 		return "DEADLINE_EXCEEDED", genericActionMessage
 	}
 	if errors.Is(err, apperror.ErrUnauthenticated) {
-		return "UNAUTHENTICATED", genericActionMessage
+		return codeUnauthenticated, genericActionMessage
 	}
 	if errors.Is(err, apperror.ErrPermissionDenied) {
 		return "PERMISSION_DENIED", genericActionMessage
@@ -133,3 +133,5 @@ func errorCodeAndMessage(err error) (string, string) {
 
 	return "INTERNAL_SERVER_ERROR", genericActionMessage
 }
+
+const codeUnauthenticated = "UNAUTHENTICATED"

@@ -70,6 +70,7 @@ func (a *JWTAuthenticator) Parse(header string) (AuthInfo, error) {
 
 	return AuthInfo{
 		UserID:    parsedClaims.Subject,
+		ExpiresAt: parsedClaims.ExpiresAt.Time,
 		sessionID: parsedClaims.ID,
 		Token:     parts[1],
 		Roles:     roles,

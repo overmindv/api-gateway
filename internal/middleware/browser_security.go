@@ -37,7 +37,8 @@ func BrowserSecurity(cfg BrowserSecurityConfig, next http.Handler) http.Handler 
 		}
 		origin := r.Header.Get("Origin")
 		_, cookieErr := r.Cookie(SessionCookieName)
-		if len(r.Header.Values("Origin")) > 1 || (origin != "" && !origins[origin]) || (origin == "" && cookieErr == nil) {
+		_, refreshErr := r.Cookie(RefreshCookieName)
+		if len(r.Header.Values("Origin")) > 1 || (origin != "" && !origins[origin]) || (origin == "" && (cookieErr == nil || refreshErr == nil)) {
 			browserError(w, "ORIGIN_NOT_ALLOWED")
 
 			return

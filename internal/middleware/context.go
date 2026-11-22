@@ -1,11 +1,15 @@
 package middleware
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type requestIDKey struct{}
 type authKey struct{}
 
 type AuthInfo struct {
+	ExpiresAt    time.Time
 	authority    *JWTAuthenticator
 	sessionID    string
 	freshSession bool

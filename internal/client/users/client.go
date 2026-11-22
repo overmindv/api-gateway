@@ -48,7 +48,7 @@ func (c *Client) Register(ctx context.Context, input RegisterInput) (*AuthPayloa
 		Register *AuthPayload `json:"register"`
 	}
 
-	err := c.call(ctx, "Register", `mutation Register($input: RegisterInput!) { register(input: $input) { token expiresAt user { `+userFields+` } } }`, map[string]any{"input": input}, false, &data)
+	err := c.call(ctx, "Register", `mutation Register($input: RegisterInput!) { register(input: $input) { token expiresAt refreshToken refreshExpiresAt user { `+userFields+` } } }`, map[string]any{"input": input}, false, &data)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (c *Client) Login(ctx context.Context, input LoginInput) (*AuthPayload, err
 		Login *AuthPayload `json:"login"`
 	}
 
-	err := c.call(ctx, "Login", `mutation Login($input: LoginInput!) { login(input: $input) { token expiresAt user { `+userFields+` } } }`, map[string]any{"input": input}, false, &data)
+	err := c.call(ctx, "Login", `mutation Login($input: LoginInput!) { login(input: $input) { token expiresAt refreshToken refreshExpiresAt user { `+userFields+` } } }`, map[string]any{"input": input}, false, &data)
 	if err != nil {
 		return nil, err
 	}

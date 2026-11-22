@@ -116,3 +116,28 @@ func signTestToken(t *testing.T, secret, issuer, subject string, issuedAt, expir
 
 	return value
 }
+
+func TestRefreshCookieAndOrigin(t *testing.T) {
+	t.Parallel()
+	handler := BrowserSecurity(BrowserSecurityConfig{AllowedOrigins: []string{"https://app.example"}}, SessionCookie(SessionConfig{Secure: true}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if RefreshToken(r.Context()) != "old" {
+			t.Error("missing refresh context")
+		}
+		SetRefreshToken(r.Context(), "new", time.Hour)
+		w.WriteHeader(http.StatusNoContent)
+	})))
+	request := httptest.NewRequest(http.MethodPost, "/graphql", nil)
+	request.AddCookie(&http.Cookie{Name: RefreshCookieName, Value: "old"})
+	rejected := httptest.NewRecorder()
+	handler.ServeHTTP(rejected, request)
+	if rejected.Code != http.StatusForbidden {
+		t.Fatalf("refresh cookie without origin: %d", rejected.Code)
+	}
+	request.Header.Set("Origin", "https://app.example")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	cookies := response.Result().Cookies()
+	if len(cookies) != 1 || cookies[0].Name != RefreshCookieName || !cookies[0].HttpOnly || !cookies[0].Secure || cookies[0].SameSite != http.SameSiteLaxMode {
+		t.Fatal("unsafe refresh cookie")
+	}
+}

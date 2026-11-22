@@ -10,6 +10,8 @@ import (
 // это устраняет кражу JWT через XSS из localStorage.
 const SessionCookieName = "ovm_session"
 
+const RefreshCookieName = "ovm_refresh"
+
 // SessionConfig описывает атрибуты session cookie.
 type SessionConfig struct {
 	Secure bool
@@ -20,15 +22,20 @@ type sessionKey struct{}
 
 // sessionState накапливает решение о cookie во время обработки запроса.
 type sessionState struct {
-	token  string
-	maxAge time.Duration
-	clear  bool
+	incomingRefresh string
+	refreshToken    string
+	refreshMaxAge   time.Duration
+	refreshClear    bool
+	token           string
+	maxAge          time.Duration
+	clear           bool
 }
 
 // SetSessionToken помечает ответ, чтобы SessionCookie выставил httpOnly cookie с токеном.
 // Вызывается login/register resolver после успешной аутентификации.
 func SetSessionToken(ctx context.Context, token string, maxAge time.Duration) {
 	if state, ok := ctx.Value(sessionKey{}).(*sessionState); ok {
+		state.clear = false
 		state.token = token
 		state.maxAge = maxAge
 	}
@@ -39,6 +46,7 @@ func SetSessionToken(ctx context.Context, token string, maxAge time.Duration) {
 func ClearSessionToken(ctx context.Context) {
 	if state, ok := ctx.Value(sessionKey{}).(*sessionState); ok {
 		state.clear = true
+		state.refreshClear = true
 	}
 }
 
@@ -48,6 +56,9 @@ func ClearSessionToken(ctx context.Context) {
 func SessionCookie(cfg SessionConfig, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		state := &sessionState{}
+		if cookie, err := r.Cookie(RefreshCookieName); err == nil {
+			state.incomingRefresh = cookie.Value
+		}
 		sw := &sessionResponseWriter{ResponseWriter: w, state: state, secure: cfg.Secure}
 		next.ServeHTTP(sw, r.WithContext(context.WithValue(r.Context(), sessionKey{}, state)))
 
@@ -78,6 +89,7 @@ func (w *sessionResponseWriter) commitHeaders() {
 		return
 	}
 	w.committed = true
+	w.Header().Set("Cache-Control", "no-store")
 
 	var cookie *http.Cookie
 	switch {
@@ -98,6 +110,15 @@ func (w *sessionResponseWriter) commitHeaders() {
 		http.SetCookie(w.ResponseWriter, cookie)
 	}
 
+	if w.state.refreshClear || w.state.refreshToken != "" {
+		cookie := &http.Cookie{Name: RefreshCookieName, Value: w.state.refreshToken, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: w.secure, MaxAge: int(w.state.refreshMaxAge.Seconds())}
+		if w.state.refreshClear {
+			cookie.Value = ""
+			cookie.MaxAge = -1
+			cookie.Expires = time.Unix(1, 0)
+		}
+		http.SetCookie(w.ResponseWriter, cookie)
+	}
 	status := w.status
 	if status == 0 {
 		status = http.StatusOK
@@ -115,5 +136,31 @@ func (w *sessionResponseWriter) Flush() {
 	w.commitHeaders()
 	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
+	}
+}
+
+// RefreshToken доступен только серверному resolver, не GraphQL payload.
+func RefreshToken(ctx context.Context) string {
+	if state, ok := ctx.Value(sessionKey{}).(*sessionState); ok {
+		return state.incomingRefresh
+	}
+
+	return ""
+}
+
+// SetRefreshToken заменяет refresh cookie после успешной rotation.
+func SetRefreshToken(ctx context.Context, token string, maxAge time.Duration) {
+	if state, ok := ctx.Value(sessionKey{}).(*sessionState); ok {
+		state.incomingRefresh = token
+		state.refreshToken = token
+		state.refreshMaxAge = maxAge
+		state.refreshClear = false
+	}
+}
+
+// ClearRefreshToken удаляет прежнюю family cookie при входе в другую учётную запись.
+func ClearRefreshToken(ctx context.Context) {
+	if state, ok := ctx.Value(sessionKey{}).(*sessionState); ok {
+		state.refreshClear = true
 	}
 }
