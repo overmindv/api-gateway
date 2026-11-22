@@ -65,7 +65,7 @@ func TestServerRejectsCookieCSRFBeforeMutation(t *testing.T) {
 	req.Header.Set("Origin", "https://learn.example")
 	result := httptest.NewRecorder()
 	srv.http.Handler.ServeHTTP(result, req)
-	if result.Code != 200 || len(result.Result().Cookies()) != 1 {
+	if result.Code != 200 || len(result.Result().Cookies()) != 2 {
 		t.Fatalf("same origin failed: %d %s", result.Code, result.Body.String())
 	}
 }
