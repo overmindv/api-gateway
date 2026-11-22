@@ -44,24 +44,28 @@ type PublicUser struct {
 }
 
 type AuthPayload struct {
-	User      *User  `json:"user"`
-	Token     string `json:"token"`
-	ExpiresAt string `json:"expiresAt"`
+	RefreshToken     string `json:"refreshToken"`
+	RefreshExpiresAt string `json:"refreshExpiresAt"`
+	User             *User  `json:"user"`
+	Token            string `json:"token"`
+	ExpiresAt        string `json:"expiresAt"`
 }
 
 type RegisterInput struct {
-	Email     string  `json:"email"`
-	Password  string  `json:"password"`
-	Username  string  `json:"username"`
-	FirstName string  `json:"firstName"`
-	LastName  string  `json:"lastName"`
-	BirthDate *string `json:"birthDate,omitempty"`
-	Phone     string  `json:"phone"`
+	RefreshSession bool    `json:"refreshSession,omitempty"`
+	Email          string  `json:"email"`
+	Password       string  `json:"password"`
+	Username       string  `json:"username"`
+	FirstName      string  `json:"firstName"`
+	LastName       string  `json:"lastName"`
+	BirthDate      *string `json:"birthDate,omitempty"`
+	Phone          string  `json:"phone"`
 }
 
 type LoginInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	RefreshSession bool   `json:"refreshSession,omitempty"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
 }
 
 type UpdateUserInput struct {
