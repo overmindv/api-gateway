@@ -358,8 +358,9 @@ type LearningPlan struct {
 }
 
 type LoginInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	RefreshSession *bool  `json:"refreshSession,omitempty"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
 }
 
 type Material struct {
@@ -798,13 +799,14 @@ type RebaseMaterialChangeInput struct {
 }
 
 type RegisterInput struct {
-	Email     string  `json:"email"`
-	Password  string  `json:"password"`
-	Username  string  `json:"username"`
-	FirstName *string `json:"firstName,omitempty"`
-	LastName  *string `json:"lastName,omitempty"`
-	BirthDate *string `json:"birthDate,omitempty"`
-	Phone     *string `json:"phone,omitempty"`
+	RefreshSession *bool   `json:"refreshSession,omitempty"`
+	Email          string  `json:"email"`
+	Password       string  `json:"password"`
+	Username       string  `json:"username"`
+	FirstName      *string `json:"firstName,omitempty"`
+	LastName       *string `json:"lastName,omitempty"`
+	BirthDate      *string `json:"birthDate,omitempty"`
+	Phone          *string `json:"phone,omitempty"`
 }
 
 type SaveMaterialDraftInput struct {

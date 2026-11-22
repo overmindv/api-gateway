@@ -18,7 +18,8 @@ import (
 // Register is the resolver for the register field.
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (*model.AuthPayload, error) {
 	response, err := r.Users.Register(ctx, users.RegisterInput{
-		Email: input.Email, Password: input.Password, Username: input.Username,
+		RefreshSession: boolValue(input.RefreshSession),
+		Email:          input.Email, Password: input.Password, Username: input.Username,
 		FirstName: stringValue(input.FirstName), LastName: stringValue(input.LastName), BirthDate: input.BirthDate, Phone: stringValue(input.Phone),
 	})
 	if err != nil {
@@ -28,14 +29,14 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		return nil, errors.New("users returned an empty registration response")
 	}
 
-	middleware.SetSessionToken(ctx, response.Token, sessionMaxAge(response.ExpiresAt))
+	setBrowserCredentials(ctx, response)
 
 	return toAuthPayload(response), nil
 }
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error) {
-	response, err := r.Users.Login(ctx, users.LoginInput{Email: input.Email, Password: input.Password})
+	response, err := r.Users.Login(ctx, users.LoginInput{Email: input.Email, Password: input.Password, RefreshSession: boolValue(input.RefreshSession)})
 	if err != nil {
 		return nil, err
 	}
@@ -43,17 +44,27 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 		return nil, errors.New("users returned an empty login response")
 	}
 
-	middleware.SetSessionToken(ctx, response.Token, sessionMaxAge(response.ExpiresAt))
+	setBrowserCredentials(ctx, response)
 
 	return toAuthPayload(response), nil
 }
 
 // Logout is the resolver for the logout field.
 func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
-	middleware.ClearSessionToken(ctx)
+	token := middleware.RefreshToken(ctx)
+	if token != "" {
+		service, ok := r.Users.(users.RefreshService)
+		if !ok {
+			return false, errors.New("refresh service unavailable")
+		}
+		if err := service.RevokeRefreshSession(ctx, token); err != nil {
+			return false, err
+		}
+	}
 	if err := middleware.RevokeAuth(ctx); err != nil {
 		return false, err
 	}
+	middleware.ClearSessionToken(ctx)
 
 	return true, nil
 }
@@ -827,3 +838,8 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// RefreshSession обновляет браузерные credentials без выдачи secrets.
+func (r *mutationResolver) RefreshSession(ctx context.Context) (*string, error) {
+	return r.ensureBrowserSession(ctx)
+}

@@ -506,6 +506,7 @@ type ComplexityRoot struct {
 		OpenMaterialChange              func(childComplexity int, input model.OpenMaterialChangeInput) int
 		RebaseMaterialChange            func(childComplexity int, input model.RebaseMaterialChangeInput) int
 		RefreshLearningPlan             func(childComplexity int, id string, revision int) int
+		RefreshSession                  func(childComplexity int) int
 		Register                        func(childComplexity int, input model.RegisterInput) int
 		RejectTaskCandidate             func(childComplexity int, id string, expectedRevision int, reason *string) int
 		RemoveLearningPlanTask          func(childComplexity int, id string, revision int, taskID string) int
@@ -930,6 +931,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
+	RefreshSession(ctx context.Context) (*string, error)
 	CreateMaterialDraft(ctx context.Context, input model.CreateMaterialDraftInput) (*model.Material, error)
 	SaveMaterialDraft(ctx context.Context, input model.SaveMaterialDraftInput) (*model.MaterialRevision, error)
 	OpenMaterialChange(ctx context.Context, input model.OpenMaterialChangeInput) (*model.MaterialChangeProposal, error)
@@ -3160,6 +3162,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RefreshLearningPlan(childComplexity, args["id"].(string), args["revision"].(int)), true
+	case "Mutation.refreshSession":
+		if e.complexity.Mutation.RefreshSession == nil {
+			break
+		}
+
+		return e.complexity.Mutation.RefreshSession(childComplexity), true
 	case "Mutation.register":
 		if e.complexity.Mutation.Register == nil {
 			break
@@ -5863,6 +5871,7 @@ type AuthPayload {
 }
 
 input RegisterInput {
+  refreshSession: Boolean = false
   email: String!
   password: String!
   username: String!
@@ -5873,6 +5882,7 @@ input RegisterInput {
 }
 
 input LoginInput {
+  refreshSession: Boolean = false
   email: String!
   password: String!
 }
@@ -6209,6 +6219,7 @@ type Query {
 }
 
 type Mutation {
+  refreshSession: String
   createMaterialDraft(input: CreateMaterialDraftInput!): Material
   saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
   openMaterialChange(input: OpenMaterialChangeInput!): MaterialChangeProposal
@@ -16597,6 +16608,35 @@ func (ec *executionContext) fieldContext_MediaUploadPart_expiresAt(_ context.Con
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_refreshSession(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_refreshSession,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Mutation().RefreshSession(ctx)
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_refreshSession(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -33494,13 +33534,24 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj an
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"email", "password"}
+	if _, present := asMap["refreshSession"]; !present {
+		asMap["refreshSession"] = false
+	}
+
+	fieldsInOrder := [...]string{"refreshSession", "email", "password"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "refreshSession":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("refreshSession"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RefreshSession = data
 		case "email":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -33902,6 +33953,9 @@ func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj
 		asMap[k] = v
 	}
 
+	if _, present := asMap["refreshSession"]; !present {
+		asMap["refreshSession"] = false
+	}
 	if _, present := asMap["firstName"]; !present {
 		asMap["firstName"] = ""
 	}
@@ -33912,13 +33966,20 @@ func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj
 		asMap["phone"] = ""
 	}
 
-	fieldsInOrder := [...]string{"email", "password", "username", "firstName", "lastName", "birthDate", "phone"}
+	fieldsInOrder := [...]string{"refreshSession", "email", "password", "username", "firstName", "lastName", "birthDate", "phone"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
 			continue
 		}
 		switch k {
+		case "refreshSession":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("refreshSession"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RefreshSession = data
 		case "email":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -37791,6 +37852,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "refreshSession":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_refreshSession(ctx, field)
+			})
 		case "createMaterialDraft":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createMaterialDraft(ctx, field)
