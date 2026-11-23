@@ -84,6 +84,33 @@ func TestLearnerOperationsDoNotExposeUserIDArgument(t *testing.T) {
 	}
 }
 
+func TestLearnerMutationPreservesIdempotencyConflictWithoutPrivateMessage(t *testing.T) {
+	t.Parallel()
+
+	var calls int
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		if calls == 1 {
+			_, _ = io.WriteString(w, `{"availability":{"weekly_minutes":60,"timezone":"UTC","version":1,"updated_at":"2026-11-23T10:00:00Z"}}`)
+
+			return
+		}
+		w.WriteHeader(http.StatusConflict)
+		_, _ = io.WriteString(w, `{"code":"IDEMPOTENCY_CONFLICT","message":"private database detail"}`)
+	}))
+	defer upstream.Close()
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	client := recommendations.New(upstream.URL, "service-secret", time.Second, log)
+	handler := HandlerWithRecommendationsAndMetrics(nil, nil, nil, nil, nil, nil, client, log, nil)
+	body := `{"query":"mutation { first:saveLearnerProfile(input:{weeklyMinutes:60,timezone:\"UTC\"},expectedVersion:0,requestId:\"same-key\"){availability{version}} second:saveLearnerProfile(input:{weeklyMinutes:120,timezone:\"UTC\"},expectedVersion:0,requestId:\"same-key\"){availability{version}} }"}`
+	response := learnerGraphQLRequest(t, handler, body, learnerTestActor)
+	if calls != 2 || !strings.Contains(response, `"code":"IDEMPOTENCY_CONFLICT"`) || strings.Contains(response, "private database detail") {
+		t.Fatalf("calls=%d response=%s", calls, response)
+	}
+}
+
 func learnerGraphQLRequest(t *testing.T, handler http.Handler, body, actor string) string {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/graphql", bytes.NewBufferString(body))

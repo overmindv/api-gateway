@@ -1007,7 +1007,7 @@ type LearnerStudyPlan {
   freshness: LearnerStudyPlanFreshness
   pausedAt: String
   nextStep: Int
-  blockedReason: String!
+  blockedReason: String
   goalDemonstrated: Boolean!
 }
 
@@ -1039,8 +1039,8 @@ type LearnerStudyPlanFeedbackReceipt {
 
 type LearnerStudyPlanReason {
   code: String!
-  topicId: ID!
-  minutes: Int!
+  topicId: ID
+  minutes: Int
   message: String!
 }
 

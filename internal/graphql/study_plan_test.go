@@ -42,15 +42,30 @@ func TestLearningPlanExplanationPreservesReasonAndEvidenceReference(t *testing.T
 			t.Fatalf("unexpected URI %s", r.URL.RequestURI())
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"plan_version":4,"stale":false,"steps":[{"ordinal":1,"reasons":[{"code":"topic_gap","topic_id":"topic-id","message":"Gap"}],"evidence":{"topic_id":"topic-id","score_bps":3500,"sample_count":2,"last_evidence_at":"2026-11-23T09:00:00Z","uncertainty":"sufficient_for_policy","ref":{"watermark":"evidence-watermark","policy_revision":"mastery-v1","captured_at":"2026-11-23T09:30:00Z"}}}],"limits":[]}`)
+		_, _ = io.WriteString(w, `{"plan_version":4,"stale":false,"steps":[{"ordinal":1,"reasons":[{"code":"topic_gap","topic_id":"topic-id","message":"Gap"},{"code":"time_fit","minutes":20,"message":"Fits"}],"evidence":{"topic_id":"topic-id","score_bps":3500,"sample_count":2,"last_evidence_at":"2026-11-23T09:00:00Z","uncertainty":"sufficient_for_policy","ref":{"watermark":"evidence-watermark","policy_revision":"mastery-v1","captured_at":"2026-11-23T09:30:00Z"}}}],"limits":[]}`)
 	}))
 	defer upstream.Close()
 
-	response := studyPlanGraphQL(t, upstream.URL, `{ learningPlanExplanation(goalId:"goal-id", planVersion:4) { steps { ordinal reasons { code topicId } evidence { scoreBps ref { watermark policyRevision } } } } }`)
-	for _, want := range []string{`"code":"topic_gap"`, `"topicId":"topic-id"`, `"scoreBps":3500`, `"watermark":"evidence-watermark"`, `"policyRevision":"mastery-v1"`} {
+	response := studyPlanGraphQL(t, upstream.URL, `{ learningPlanExplanation(goalId:"goal-id", planVersion:4) { steps { ordinal reasons { code topicId minutes } evidence { scoreBps ref { watermark policyRevision } } } } }`)
+	for _, want := range []string{`{"code":"topic_gap","topicId":"topic-id","minutes":null}`, `{"code":"time_fit","topicId":null,"minutes":20}`, `"scoreBps":3500`, `"watermark":"evidence-watermark"`, `"policyRevision":"mastery-v1"`} {
 		if !strings.Contains(response, want) {
 			t.Fatalf("missing %s in %s", want, response)
 		}
+	}
+}
+
+func TestCurrentLearningPlanPreservesMissingBlockedReason(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, strings.Replace(studyPlanFallbackFixture, `,"blocked_reason":"catalog_unavailable"`, "", 1))
+	}))
+	defer upstream.Close()
+
+	response := studyPlanGraphQL(t, upstream.URL, `{ currentLearningPlan(goalId:"goal-id") { blockedReason } }`)
+	if !strings.Contains(response, `"blockedReason":null`) || strings.Contains(response, `"errors"`) {
+		t.Fatalf("missing blocked reason was synthesized: %s", response)
 	}
 }
 

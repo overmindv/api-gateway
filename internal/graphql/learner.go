@@ -10,11 +10,11 @@ import (
 )
 
 func (r *queryResolver) LearnerGoalTemplates(ctx context.Context) ([]*model.LearnerGoalTemplate, error) {
-	auth, service, err := learnerService(ctx, r.Resolver)
+	_, service, err := learnerService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	values, err := service.GoalTemplates(ctx, auth.UserID)
+	values, err := service.GoalTemplates(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -27,11 +27,11 @@ func (r *queryResolver) LearnerGoalTemplates(ctx context.Context) ([]*model.Lear
 }
 
 func (r *queryResolver) LearnerProfile(ctx context.Context) (*model.LearnerProfile, error) {
-	auth, service, err := learnerService(ctx, r.Resolver)
+	_, service, err := learnerService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.GetLearnerProfile(ctx, auth.UserID)
+	value, err := service.GetLearnerProfile(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +40,11 @@ func (r *queryResolver) LearnerProfile(ctx context.Context) (*model.LearnerProfi
 }
 
 func (r *queryResolver) LearnerGoals(ctx context.Context) ([]*model.LearnerGoal, error) {
-	auth, service, err := learnerService(ctx, r.Resolver)
+	_, service, err := learnerService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	values, err := service.ListLearnerGoals(ctx, auth.UserID)
+	values, err := service.ListLearnerGoals(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -57,11 +57,11 @@ func (r *queryResolver) LearnerGoals(ctx context.Context) ([]*model.LearnerGoal,
 }
 
 func (r *queryResolver) LearnerGoal(ctx context.Context, id string) (*model.LearnerGoal, error) {
-	auth, service, err := learnerService(ctx, r.Resolver)
+	_, service, err := learnerService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.GetLearnerGoal(ctx, id, auth.UserID)
+	value, err := service.GetLearnerGoal(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -70,11 +70,11 @@ func (r *queryResolver) LearnerGoal(ctx context.Context, id string) (*model.Lear
 }
 
 func (r *queryResolver) LearnerDiagnostic(ctx context.Context, goalID string) (*model.LearnerDiagnosticSession, error) {
-	auth, service, err := diagnosticService(ctx, r.Resolver)
+	_, service, err := diagnosticService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.GetDiagnostic(ctx, goalID, auth.UserID)
+	value, err := service.GetDiagnostic(ctx, goalID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +83,11 @@ func (r *queryResolver) LearnerDiagnostic(ctx context.Context, goalID string) (*
 }
 
 func (r *mutationResolver) SaveLearnerProfile(ctx context.Context, input model.LearnerAvailabilityInput, expectedVersion int, requestID string) (*model.LearnerProfile, error) {
-	auth, service, err := learnerService(ctx, r.Resolver)
+	_, service, err := learnerService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.SaveLearnerProfile(ctx, recommendations.AvailabilityInput{WeeklyMinutes: input.WeeklyMinutes, Timezone: input.Timezone}, requestID, int64(expectedVersion), auth.UserID)
+	value, err := service.SaveLearnerProfile(ctx, recommendations.AvailabilityInput{WeeklyMinutes: input.WeeklyMinutes, Timezone: input.Timezone}, requestID, int64(expectedVersion))
 	if err != nil {
 		return nil, err
 	}
@@ -96,11 +96,11 @@ func (r *mutationResolver) SaveLearnerProfile(ctx context.Context, input model.L
 }
 
 func (r *mutationResolver) CreateLearnerGoal(ctx context.Context, input model.LearnerGoalInput, requestID string) (*model.LearnerGoal, error) {
-	auth, service, err := learnerService(ctx, r.Resolver)
+	_, service, err := learnerService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.CreateLearnerGoal(ctx, learnerGoalInput(input), requestID, auth.UserID)
+	value, err := service.CreateLearnerGoal(ctx, learnerGoalInput(input), requestID)
 	if err != nil {
 		return nil, err
 	}
@@ -109,11 +109,11 @@ func (r *mutationResolver) CreateLearnerGoal(ctx context.Context, input model.Le
 }
 
 func (r *mutationResolver) UpdateLearnerGoal(ctx context.Context, id string, input model.LearnerGoalInput, expectedVersion int, requestID string) (*model.LearnerGoal, error) {
-	auth, service, err := learnerService(ctx, r.Resolver)
+	_, service, err := learnerService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.UpdateLearnerGoal(ctx, id, learnerGoalInput(input), requestID, int64(expectedVersion), auth.UserID)
+	value, err := service.UpdateLearnerGoal(ctx, id, learnerGoalInput(input), requestID, int64(expectedVersion))
 	if err != nil {
 		return nil, err
 	}
@@ -122,11 +122,11 @@ func (r *mutationResolver) UpdateLearnerGoal(ctx context.Context, id string, inp
 }
 
 func (r *mutationResolver) DeleteLearnerGoal(ctx context.Context, id string, expectedVersion int, requestID string) (bool, error) {
-	auth, service, err := learnerService(ctx, r.Resolver)
+	_, service, err := learnerService(ctx, r.Resolver)
 	if err != nil {
 		return false, err
 	}
-	if err := service.DeleteLearnerGoal(ctx, id, requestID, int64(expectedVersion), auth.UserID); err != nil {
+	if err := service.DeleteLearnerGoal(ctx, id, requestID, int64(expectedVersion)); err != nil {
 		return false, err
 	}
 
@@ -134,11 +134,11 @@ func (r *mutationResolver) DeleteLearnerGoal(ctx context.Context, id string, exp
 }
 
 func (r *mutationResolver) StartLearnerDiagnostic(ctx context.Context, goalID string, goalVersion int, budgetMinutes int) (*model.LearnerDiagnosticSession, error) {
-	auth, service, err := diagnosticService(ctx, r.Resolver)
+	_, service, err := diagnosticService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.StartDiagnostic(ctx, goalID, recommendations.DiagnosticStartInput{GoalVersion: int64(goalVersion), BudgetMinutes: budgetMinutes}, auth.UserID)
+	value, err := service.StartDiagnostic(ctx, goalID, recommendations.DiagnosticStartInput{GoalVersion: int64(goalVersion), BudgetMinutes: budgetMinutes})
 	if err != nil {
 		return nil, err
 	}
@@ -147,11 +147,11 @@ func (r *mutationResolver) StartLearnerDiagnostic(ctx context.Context, goalID st
 }
 
 func (r *mutationResolver) SkipLearnerDiagnostic(ctx context.Context, goalID string, goalVersion int) (*model.LearnerDiagnosticSession, error) {
-	auth, service, err := diagnosticService(ctx, r.Resolver)
+	_, service, err := diagnosticService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.SkipDiagnostic(ctx, goalID, recommendations.DiagnosticSkipInput{GoalVersion: int64(goalVersion)}, auth.UserID)
+	value, err := service.SkipDiagnostic(ctx, goalID, recommendations.DiagnosticSkipInput{GoalVersion: int64(goalVersion)})
 	if err != nil {
 		return nil, err
 	}
@@ -160,11 +160,11 @@ func (r *mutationResolver) SkipLearnerDiagnostic(ctx context.Context, goalID str
 }
 
 func (r *mutationResolver) FinalizeLearnerDiagnostic(ctx context.Context, goalID string, goalVersion int, sessionID string, allowPartial bool) (*model.LearnerDiagnosticSession, error) {
-	auth, service, err := diagnosticService(ctx, r.Resolver)
+	_, service, err := diagnosticService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.FinalizeDiagnostic(ctx, goalID, recommendations.DiagnosticFinalizeInput{GoalVersion: int64(goalVersion), SessionID: sessionID, AllowPartial: allowPartial}, auth.UserID)
+	value, err := service.FinalizeDiagnostic(ctx, goalID, recommendations.DiagnosticFinalizeInput{GoalVersion: int64(goalVersion), SessionID: sessionID, AllowPartial: allowPartial})
 	if err != nil {
 		return nil, err
 	}

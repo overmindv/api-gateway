@@ -95,7 +95,7 @@ func TestPracticePlanHidesUpstreamDetailsAndRejectsRedirect(t *testing.T) {
 	}
 }
 
-func TestPracticePlanPreservesSafeUpstreamErrorCode(t *testing.T) {
+func TestPracticePlanKeepsStatusDerivedErrorCode(t *testing.T) {
 	t.Parallel()
 
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -110,8 +110,59 @@ func TestPracticePlanPreservesSafeUpstreamErrorCode(t *testing.T) {
 	if !errors.As(err, &upstreamErr) {
 		t.Fatalf("error = %v, want recommendations.Error", err)
 	}
-	if upstreamErr.Code != codeVersionConflict {
-		t.Fatalf("code = %q, want VERSION_CONFLICT", upstreamErr.Code)
+	if upstreamErr.Code != codeConflict {
+		t.Fatalf("code = %q, want CONFLICT", upstreamErr.Code)
+	}
+}
+
+func TestLegacyGoalDoesNotTrustUpstreamPermissionCode(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = io.WriteString(w, `{"code":"PERMISSION_DENIED","message":"private"}`)
+	}))
+	defer upstream.Close()
+
+	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	_, err := client.GetGoal(context.Background(), "user")
+	var upstreamErr *Error
+	if !errors.As(err, &upstreamErr) || upstreamErr.Code != codeServiceUnavailable {
+		t.Fatalf("error = %v, want SERVICE_UNAVAILABLE", err)
+	}
+}
+
+func TestLearnerCallRejectsUnknownUpstreamCode(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		_, _ = io.WriteString(w, `{"code":"FUTURE_CONFLICT","message":"private"}`)
+	}))
+	defer upstream.Close()
+
+	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: testLearnerActor, Token: "jwt"})
+	_, err := client.SaveLearnerProfile(ctx, AvailabilityInput{WeeklyMinutes: 60, Timezone: "UTC"}, "request-id", 1)
+	var upstreamErr *Error
+	if !errors.As(err, &upstreamErr) || upstreamErr.Code != codeServiceUnavailable {
+		t.Fatalf("error = %v, want SERVICE_UNAVAILABLE", err)
+	}
+}
+
+func TestLearnerClientRequiresAuthenticatedContextBeforeUpstream(t *testing.T) {
+	t.Parallel()
+
+	var calls int
+	upstream := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls++ }))
+	defer upstream.Close()
+
+	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if _, err := client.GetLearnerProfile(context.Background()); err == nil {
+		t.Fatal("GetLearnerProfile without JWT context succeeded")
+	}
+	if calls != 0 {
+		t.Fatalf("upstream calls = %d, want 0", calls)
 	}
 }
 
@@ -151,19 +202,20 @@ func TestLearnerClientForwardsActorAndConcurrencyMetadata(t *testing.T) {
 	defer upstream.Close()
 
 	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if templates, err := client.GoalTemplates(context.Background(), testLearnerActor); err != nil || len(templates) != 1 || !templates[0].SuggestsDeadline {
+	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: testLearnerActor, Token: "jwt"})
+	if templates, err := client.GoalTemplates(ctx); err != nil || len(templates) != 1 || !templates[0].SuggestsDeadline {
 		t.Fatalf("templates = %+v, err = %v", templates, err)
 	}
-	profile, err := client.SaveLearnerProfile(context.Background(), AvailabilityInput{WeeklyMinutes: 180, Timezone: "Europe/Madrid"}, "profile-write", 4, testLearnerActor)
+	profile, err := client.SaveLearnerProfile(ctx, AvailabilityInput{WeeklyMinutes: 180, Timezone: "Europe/Madrid"}, "profile-write", 4)
 	if err != nil || profile.Availability == nil || profile.Availability.Version != 5 {
 		t.Fatalf("profile = %+v, err = %v", profile, err)
 	}
 	input := LearnerGoalInput{Title: "Exam", TargetTopics: []string{"topic-id"}, WeeklyMinutes: 120, Active: true, Languages: []string{}, Formats: []string{}, SelfAssessments: []SelfAssessment{}}
-	goal, err := client.CreateLearnerGoal(context.Background(), input, "goal-write", testLearnerActor)
+	goal, err := client.CreateLearnerGoal(ctx, input, "goal-write")
 	if err != nil || goal.Version != 1 {
 		t.Fatalf("created goal = %+v, err = %v", goal, err)
 	}
-	goal, err = client.UpdateLearnerGoal(context.Background(), "goal-id", input, "goal-update", 1, testLearnerActor)
+	goal, err = client.UpdateLearnerGoal(ctx, "goal-id", input, "goal-update", 1)
 	if err != nil || goal.Version != 2 {
 		t.Fatalf("updated goal = %+v, err = %v", goal, err)
 	}
@@ -187,8 +239,9 @@ func TestDiagnosticStartIsRepeatableForTheSameActor(t *testing.T) {
 	defer upstream.Close()
 
 	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: testLearnerActor, Token: "jwt"})
 	for range 2 {
-		session, err := client.StartDiagnostic(context.Background(), "goal-id", DiagnosticStartInput{GoalVersion: 2, BudgetMinutes: 10}, testLearnerActor)
+		session, err := client.StartDiagnostic(ctx, "goal-id", DiagnosticStartInput{GoalVersion: 2, BudgetMinutes: 10})
 		if err != nil || session.ID != "session-id" || session.StopRule.PolicyVersion != "diagnostic-v1" {
 			t.Fatalf("session = %+v, err = %v", session, err)
 		}
@@ -238,21 +291,22 @@ func TestStudyPlanClientUsesVersionedRoutesAndIdempotency(t *testing.T) {
 	defer upstream.Close()
 
 	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if _, err := client.CurrentStudyPlan(context.Background(), "goal-id", testLearnerActor); err != nil {
+	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: testLearnerActor, Token: "jwt"})
+	if _, err := client.CurrentStudyPlan(ctx, "goal-id"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.GenerateStudyPlan(context.Background(), "goal-id", StudyPlanGenerationInput{GoalVersion: 2, AvailabilityVersion: 3, PlanVersion: 4}, "generation-id", testLearnerActor); err != nil {
+	if _, err := client.GenerateStudyPlan(ctx, "goal-id", StudyPlanGenerationInput{GoalVersion: 2, AvailabilityVersion: 3, PlanVersion: 4}, "generation-id"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.ExplainStudyPlan(context.Background(), "goal-id", 4, testLearnerActor); err != nil {
+	if _, err := client.ExplainStudyPlan(ctx, "goal-id", 4); err != nil {
 		t.Fatal(err)
 	}
 	ordinal := 2
-	if _, err := client.SubmitStudyPlanFeedback(context.Background(), "goal-id", StudyPlanFeedbackInput{PlanVersion: 4, Action: "skip", Ordinal: &ordinal}, "feedback-id", testLearnerActor); err != nil {
+	if _, err := client.SubmitStudyPlanFeedback(ctx, "goal-id", StudyPlanFeedbackInput{PlanVersion: 4, Action: "skip", Ordinal: &ordinal}, "feedback-id"); err != nil {
 		t.Fatal(err)
 	}
-	for _, call := range []func(context.Context, string, int64, int, string) (StudyPlan, error){client.StartStudyPlanStep, client.CompleteStudyPlanStepActivity, client.RecordStudyPlanStepAssessment} {
-		if _, err := call(context.Background(), "goal-id", 4, 2, testLearnerActor); err != nil {
+	for _, call := range []func(context.Context, string, int64, int) (StudyPlan, error){client.StartStudyPlanStep, client.CompleteStudyPlanStepActivity, client.RecordStudyPlanStepAssessment} {
+		if _, err := call(ctx, "goal-id", 4, 2); err != nil {
 			t.Fatal(err)
 		}
 	}

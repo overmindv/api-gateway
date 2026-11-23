@@ -77,24 +77,24 @@ type DiagnosticFinalizeInput struct {
 }
 
 type DiagnosticService interface {
-	GetDiagnostic(context.Context, string, string) (DiagnosticSession, error)
-	StartDiagnostic(context.Context, string, DiagnosticStartInput, string) (DiagnosticSession, error)
-	SkipDiagnostic(context.Context, string, DiagnosticSkipInput, string) (DiagnosticSession, error)
-	FinalizeDiagnostic(context.Context, string, DiagnosticFinalizeInput, string) (DiagnosticSession, error)
+	GetDiagnostic(context.Context, string) (DiagnosticSession, error)
+	StartDiagnostic(context.Context, string, DiagnosticStartInput) (DiagnosticSession, error)
+	SkipDiagnostic(context.Context, string, DiagnosticSkipInput) (DiagnosticSession, error)
+	FinalizeDiagnostic(context.Context, string, DiagnosticFinalizeInput) (DiagnosticSession, error)
 }
 
-func (c *Client) GetDiagnostic(ctx context.Context, goalID, actor string) (DiagnosticSession, error) {
-	return learnerCall[DiagnosticSession](c, ctx, http.MethodGet, learnerGoalPath(goalID)+"/diagnostic", nil, actor)
+func (c *Client) GetDiagnostic(ctx context.Context, goalID string) (DiagnosticSession, error) {
+	return learnerCall[DiagnosticSession](c, ctx, http.MethodGet, learnerGoalPath(goalID)+"/diagnostic", nil)
 }
 
-func (c *Client) StartDiagnostic(ctx context.Context, goalID string, input DiagnosticStartInput, actor string) (DiagnosticSession, error) {
-	return learnerCall[DiagnosticSession](c, ctx, http.MethodPut, learnerGoalPath(goalID)+"/diagnostic", input, actor)
+func (c *Client) StartDiagnostic(ctx context.Context, goalID string, input DiagnosticStartInput) (DiagnosticSession, error) {
+	return learnerCall[DiagnosticSession](c, ctx, http.MethodPut, learnerGoalPath(goalID)+"/diagnostic", input)
 }
 
-func (c *Client) SkipDiagnostic(ctx context.Context, goalID string, input DiagnosticSkipInput, actor string) (DiagnosticSession, error) {
-	return learnerCall[DiagnosticSession](c, ctx, http.MethodPut, learnerGoalPath(goalID)+"/diagnostic/skip", input, actor)
+func (c *Client) SkipDiagnostic(ctx context.Context, goalID string, input DiagnosticSkipInput) (DiagnosticSession, error) {
+	return learnerCall[DiagnosticSession](c, ctx, http.MethodPut, learnerGoalPath(goalID)+"/diagnostic/skip", input)
 }
 
-func (c *Client) FinalizeDiagnostic(ctx context.Context, goalID string, input DiagnosticFinalizeInput, actor string) (DiagnosticSession, error) {
-	return learnerCall[DiagnosticSession](c, ctx, http.MethodPut, learnerGoalPath(goalID)+"/diagnostic/finalize", input, actor)
+func (c *Client) FinalizeDiagnostic(ctx context.Context, goalID string, input DiagnosticFinalizeInput) (DiagnosticSession, error) {
+	return learnerCall[DiagnosticSession](c, ctx, http.MethodPut, learnerGoalPath(goalID)+"/diagnostic/finalize", input)
 }

@@ -11,11 +11,11 @@ import (
 )
 
 func (r *queryResolver) CurrentLearningPlan(ctx context.Context, goalID string) (*model.LearnerStudyPlan, error) {
-	auth, service, err := studyPlanService(ctx, r.Resolver)
+	_, service, err := studyPlanService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.CurrentStudyPlan(ctx, goalID, auth.UserID)
+	value, err := service.CurrentStudyPlan(ctx, goalID)
 	if err != nil {
 		return nil, err
 	}
@@ -24,11 +24,11 @@ func (r *queryResolver) CurrentLearningPlan(ctx context.Context, goalID string) 
 }
 
 func (r *queryResolver) LearningPlanExplanation(ctx context.Context, goalID string, planVersion int) (*model.LearnerStudyPlanExplanation, error) {
-	auth, service, err := studyPlanService(ctx, r.Resolver)
+	_, service, err := studyPlanService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.ExplainStudyPlan(ctx, goalID, int64(planVersion), auth.UserID)
+	value, err := service.ExplainStudyPlan(ctx, goalID, int64(planVersion))
 	if err != nil {
 		return nil, err
 	}
@@ -37,11 +37,11 @@ func (r *queryResolver) LearningPlanExplanation(ctx context.Context, goalID stri
 }
 
 func (r *mutationResolver) GenerateLearningPlan(ctx context.Context, goalID string, goalVersion int, availabilityVersion int, planVersion int, requestID string) (*model.LearnerStudyPlan, error) {
-	auth, service, err := studyPlanService(ctx, r.Resolver)
+	_, service, err := studyPlanService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.GenerateStudyPlan(ctx, goalID, recommendations.StudyPlanGenerationInput{GoalVersion: int64(goalVersion), AvailabilityVersion: int64(availabilityVersion), PlanVersion: int64(planVersion)}, requestID, auth.UserID)
+	value, err := service.GenerateStudyPlan(ctx, goalID, recommendations.StudyPlanGenerationInput{GoalVersion: int64(goalVersion), AvailabilityVersion: int64(availabilityVersion), PlanVersion: int64(planVersion)}, requestID)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +50,11 @@ func (r *mutationResolver) GenerateLearningPlan(ctx context.Context, goalID stri
 }
 
 func (r *mutationResolver) SubmitLearningPlanFeedback(ctx context.Context, goalID string, input model.LearnerStudyPlanFeedbackInput, requestID string) (*model.LearnerStudyPlanFeedbackReceipt, error) {
-	auth, service, err := studyPlanService(ctx, r.Resolver)
+	_, service, err := studyPlanService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := service.SubmitStudyPlanFeedback(ctx, goalID, recommendations.StudyPlanFeedbackInput{PlanVersion: int64(input.PlanVersion), Action: strings.ToLower(input.Action.String()), Ordinal: input.Ordinal, WeeklyMinutes: input.WeeklyMinutes}, requestID, auth.UserID)
+	value, err := service.SubmitStudyPlanFeedback(ctx, goalID, recommendations.StudyPlanFeedbackInput{PlanVersion: int64(input.PlanVersion), Action: strings.ToLower(input.Action.String()), Ordinal: input.Ordinal, WeeklyMinutes: input.WeeklyMinutes}, requestID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,29 +63,29 @@ func (r *mutationResolver) SubmitLearningPlanFeedback(ctx context.Context, goalI
 }
 
 func (r *mutationResolver) StartLearningPlanStep(ctx context.Context, goalID string, planVersion int, ordinal int) (*model.LearnerStudyPlan, error) {
-	return r.updateStudyPlanProgress(ctx, goalID, planVersion, ordinal, func(service recommendations.StudyPlanService, actor string) (recommendations.StudyPlan, error) {
-		return service.StartStudyPlanStep(ctx, goalID, int64(planVersion), ordinal, actor)
+	return r.updateStudyPlanProgress(ctx, func(service recommendations.StudyPlanService) (recommendations.StudyPlan, error) {
+		return service.StartStudyPlanStep(ctx, goalID, int64(planVersion), ordinal)
 	})
 }
 
 func (r *mutationResolver) CompleteLearningPlanStepActivity(ctx context.Context, goalID string, planVersion int, ordinal int) (*model.LearnerStudyPlan, error) {
-	return r.updateStudyPlanProgress(ctx, goalID, planVersion, ordinal, func(service recommendations.StudyPlanService, actor string) (recommendations.StudyPlan, error) {
-		return service.CompleteStudyPlanStepActivity(ctx, goalID, int64(planVersion), ordinal, actor)
+	return r.updateStudyPlanProgress(ctx, func(service recommendations.StudyPlanService) (recommendations.StudyPlan, error) {
+		return service.CompleteStudyPlanStepActivity(ctx, goalID, int64(planVersion), ordinal)
 	})
 }
 
 func (r *mutationResolver) RecordLearningPlanStepAssessment(ctx context.Context, goalID string, planVersion int, ordinal int) (*model.LearnerStudyPlan, error) {
-	return r.updateStudyPlanProgress(ctx, goalID, planVersion, ordinal, func(service recommendations.StudyPlanService, actor string) (recommendations.StudyPlan, error) {
-		return service.RecordStudyPlanStepAssessment(ctx, goalID, int64(planVersion), ordinal, actor)
+	return r.updateStudyPlanProgress(ctx, func(service recommendations.StudyPlanService) (recommendations.StudyPlan, error) {
+		return service.RecordStudyPlanStepAssessment(ctx, goalID, int64(planVersion), ordinal)
 	})
 }
 
-func (r *mutationResolver) updateStudyPlanProgress(ctx context.Context, _ string, _ int, _ int, write func(recommendations.StudyPlanService, string) (recommendations.StudyPlan, error)) (*model.LearnerStudyPlan, error) {
-	auth, service, err := studyPlanService(ctx, r.Resolver)
+func (r *mutationResolver) updateStudyPlanProgress(ctx context.Context, write func(recommendations.StudyPlanService) (recommendations.StudyPlan, error)) (*model.LearnerStudyPlan, error) {
+	_, service, err := studyPlanService(ctx, r.Resolver)
 	if err != nil {
 		return nil, err
 	}
-	value, err := write(service, auth.UserID)
+	value, err := write(service)
 	if err != nil {
 		return nil, err
 	}

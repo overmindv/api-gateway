@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"strconv"
 	"time"
-
-	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
 type StudyPlanFactors struct {
@@ -120,7 +118,7 @@ type StudyPlan struct {
 	Freshness           *StudyPlanFreshness     `json:"freshness,omitempty"`
 	PausedAt            *time.Time              `json:"paused_at,omitempty"`
 	NextStep            *int                    `json:"next_step"`
-	BlockedReason       string                  `json:"blocked_reason,omitempty"`
+	BlockedReason       *string                 `json:"blocked_reason,omitempty"`
 	GoalDemonstrated    bool                    `json:"goal_demonstrated"`
 }
 
@@ -147,10 +145,10 @@ type StudyPlanFeedbackReceipt struct {
 }
 
 type StudyPlanReason struct {
-	Code    string `json:"code"`
-	TopicID string `json:"topic_id,omitempty"`
-	Minutes int    `json:"minutes,omitempty"`
-	Message string `json:"message"`
+	Code    string  `json:"code"`
+	TopicID *string `json:"topic_id,omitempty"`
+	Minutes *int    `json:"minutes,omitempty"`
+	Message string  `json:"message"`
 }
 
 type StudyPlanEvidenceRef struct {
@@ -198,61 +196,51 @@ type StudyPlanExplanation struct {
 }
 
 type StudyPlanService interface {
-	CurrentStudyPlan(context.Context, string, string) (StudyPlan, error)
-	GenerateStudyPlan(context.Context, string, StudyPlanGenerationInput, string, string) (StudyPlan, error)
-	ExplainStudyPlan(context.Context, string, int64, string) (StudyPlanExplanation, error)
-	SubmitStudyPlanFeedback(context.Context, string, StudyPlanFeedbackInput, string, string) (StudyPlanFeedbackReceipt, error)
-	StartStudyPlanStep(context.Context, string, int64, int, string) (StudyPlan, error)
-	CompleteStudyPlanStepActivity(context.Context, string, int64, int, string) (StudyPlan, error)
-	RecordStudyPlanStepAssessment(context.Context, string, int64, int, string) (StudyPlan, error)
+	CurrentStudyPlan(context.Context, string) (StudyPlan, error)
+	GenerateStudyPlan(context.Context, string, StudyPlanGenerationInput, string) (StudyPlan, error)
+	ExplainStudyPlan(context.Context, string, int64) (StudyPlanExplanation, error)
+	SubmitStudyPlanFeedback(context.Context, string, StudyPlanFeedbackInput, string) (StudyPlanFeedbackReceipt, error)
+	StartStudyPlanStep(context.Context, string, int64, int) (StudyPlan, error)
+	CompleteStudyPlanStepActivity(context.Context, string, int64, int) (StudyPlan, error)
+	RecordStudyPlanStepAssessment(context.Context, string, int64, int) (StudyPlan, error)
 }
 
-func (c *Client) CurrentStudyPlan(ctx context.Context, goalID, actor string) (StudyPlan, error) {
-	return learnerCall[StudyPlan](c, ctx, http.MethodGet, studyPlanPath(goalID), nil, actor)
+func (c *Client) CurrentStudyPlan(ctx context.Context, goalID string) (StudyPlan, error) {
+	return learnerCall[StudyPlan](c, ctx, http.MethodGet, studyPlanPath(goalID), nil)
 }
 
-func (c *Client) GenerateStudyPlan(ctx context.Context, goalID string, input StudyPlanGenerationInput, requestID, actor string) (StudyPlan, error) {
-	value, err := httpx.DoJSONWithHeaders[StudyPlan](c.hx, ctx, http.MethodPut, studyPlanPath(goalID), input, httpx.Actor{UserID: actor}, httpx.Header{Name: "Idempotency-Key", Value: requestID})
-	if err != nil {
-		return StudyPlan{}, goalError(err)
-	}
-
-	return value, nil
+func (c *Client) GenerateStudyPlan(ctx context.Context, goalID string, input StudyPlanGenerationInput, requestID string) (StudyPlan, error) {
+	return learnerWrite[StudyPlan](c, ctx, http.MethodPut, studyPlanPath(goalID), input, requestID, nil)
 }
 
-func (c *Client) ExplainStudyPlan(ctx context.Context, goalID string, planVersion int64, actor string) (StudyPlanExplanation, error) {
+func (c *Client) ExplainStudyPlan(ctx context.Context, goalID string, planVersion int64) (StudyPlanExplanation, error) {
 	query := url.Values{"plan_version": []string{strconv.FormatInt(planVersion, 10)}}
 
-	return learnerCall[StudyPlanExplanation](c, ctx, http.MethodGet, studyPlanPath(goalID)+"/explanation?"+query.Encode(), nil, actor)
+	return learnerCall[StudyPlanExplanation](c, ctx, http.MethodGet, studyPlanPath(goalID)+"/explanation?"+query.Encode(), nil)
 }
 
-func (c *Client) SubmitStudyPlanFeedback(ctx context.Context, goalID string, input StudyPlanFeedbackInput, requestID, actor string) (StudyPlanFeedbackReceipt, error) {
-	value, err := httpx.DoJSONWithHeaders[StudyPlanFeedbackReceipt](c.hx, ctx, http.MethodPost, studyPlanPath(goalID)+"/feedback", input, httpx.Actor{UserID: actor}, httpx.Header{Name: "Idempotency-Key", Value: requestID})
-	if err != nil {
-		return StudyPlanFeedbackReceipt{}, goalError(err)
-	}
-
-	return value, nil
+func (c *Client) SubmitStudyPlanFeedback(ctx context.Context, goalID string, input StudyPlanFeedbackInput, requestID string) (StudyPlanFeedbackReceipt, error) {
+	return learnerWrite[StudyPlanFeedbackReceipt](c, ctx, http.MethodPost, studyPlanPath(goalID)+"/feedback", input, requestID, nil)
 }
 
-func (c *Client) StartStudyPlanStep(ctx context.Context, goalID string, planVersion int64, ordinal int, actor string) (StudyPlan, error) {
-	return c.studyPlanProgress(ctx, goalID, planVersion, ordinal, "start", actor)
+func (c *Client) StartStudyPlanStep(ctx context.Context, goalID string, planVersion int64, ordinal int) (StudyPlan, error) {
+	return c.studyPlanProgress(ctx, goalID, planVersion, ordinal, "start")
 }
 
-func (c *Client) CompleteStudyPlanStepActivity(ctx context.Context, goalID string, planVersion int64, ordinal int, actor string) (StudyPlan, error) {
-	return c.studyPlanProgress(ctx, goalID, planVersion, ordinal, "activity", actor)
+func (c *Client) CompleteStudyPlanStepActivity(ctx context.Context, goalID string, planVersion int64, ordinal int) (StudyPlan, error) {
+	return c.studyPlanProgress(ctx, goalID, planVersion, ordinal, "activity")
 }
 
-func (c *Client) RecordStudyPlanStepAssessment(ctx context.Context, goalID string, planVersion int64, ordinal int, actor string) (StudyPlan, error) {
-	return c.studyPlanProgress(ctx, goalID, planVersion, ordinal, "assessment", actor)
+func (c *Client) RecordStudyPlanStepAssessment(ctx context.Context, goalID string, planVersion int64, ordinal int) (StudyPlan, error) {
+	return c.studyPlanProgress(ctx, goalID, planVersion, ordinal, "assessment")
 }
 
-func (c *Client) studyPlanProgress(ctx context.Context, goalID string, planVersion int64, ordinal int, action, actor string) (StudyPlan, error) {
+func (c *Client) studyPlanProgress(ctx context.Context, goalID string, planVersion int64, ordinal int, action string) (StudyPlan, error) {
 	path := studyPlanPath(goalID) + "/steps/" + strconv.Itoa(ordinal) + "/" + action
 
 	return learnerCall[StudyPlan](c, ctx, http.MethodPut, path, struct {
 		PlanVersion int64 `json:"plan_version"`
-	}{PlanVersion: planVersion}, actor)
+	}{PlanVersion: planVersion})
 }
 
 func studyPlanPath(goalID string) string { return learnerGoalPath(goalID) + "/study-plan" }

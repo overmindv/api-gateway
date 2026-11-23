@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/overmindv/api-gateway/internal/client/httpx"
+	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
 type GoalTemplate struct {
@@ -67,54 +68,60 @@ type LearnerGoal struct {
 }
 
 type LearnerService interface {
-	GoalTemplates(context.Context, string) ([]GoalTemplate, error)
-	GetLearnerProfile(context.Context, string) (LearnerProfile, error)
-	SaveLearnerProfile(context.Context, AvailabilityInput, string, int64, string) (LearnerProfile, error)
-	ListLearnerGoals(context.Context, string) ([]LearnerGoal, error)
-	GetLearnerGoal(context.Context, string, string) (LearnerGoal, error)
-	CreateLearnerGoal(context.Context, LearnerGoalInput, string, string) (LearnerGoal, error)
-	UpdateLearnerGoal(context.Context, string, LearnerGoalInput, string, int64, string) (LearnerGoal, error)
-	DeleteLearnerGoal(context.Context, string, string, int64, string) error
+	GoalTemplates(context.Context) ([]GoalTemplate, error)
+	GetLearnerProfile(context.Context) (LearnerProfile, error)
+	SaveLearnerProfile(context.Context, AvailabilityInput, string, int64) (LearnerProfile, error)
+	ListLearnerGoals(context.Context) ([]LearnerGoal, error)
+	GetLearnerGoal(context.Context, string) (LearnerGoal, error)
+	CreateLearnerGoal(context.Context, LearnerGoalInput, string) (LearnerGoal, error)
+	UpdateLearnerGoal(context.Context, string, LearnerGoalInput, string, int64) (LearnerGoal, error)
+	DeleteLearnerGoal(context.Context, string, string, int64) error
 }
 
-func (c *Client) GoalTemplates(ctx context.Context, actor string) ([]GoalTemplate, error) {
-	return learnerCall[[]GoalTemplate](c, ctx, http.MethodGet, "/v1/learner/goal-templates", nil, actor)
+func (c *Client) GoalTemplates(ctx context.Context) ([]GoalTemplate, error) {
+	return learnerCall[[]GoalTemplate](c, ctx, http.MethodGet, "/v1/learner/goal-templates", nil)
 }
 
-func (c *Client) GetLearnerProfile(ctx context.Context, actor string) (LearnerProfile, error) {
-	return learnerCall[LearnerProfile](c, ctx, http.MethodGet, "/v1/learner/profile", nil, actor)
+func (c *Client) GetLearnerProfile(ctx context.Context) (LearnerProfile, error) {
+	return learnerCall[LearnerProfile](c, ctx, http.MethodGet, "/v1/learner/profile", nil)
 }
 
-func (c *Client) SaveLearnerProfile(ctx context.Context, input AvailabilityInput, requestID string, expectedVersion int64, actor string) (LearnerProfile, error) {
-	return learnerWrite[LearnerProfile](c, ctx, http.MethodPut, "/v1/learner/profile", input, requestID, &expectedVersion, actor)
+func (c *Client) SaveLearnerProfile(ctx context.Context, input AvailabilityInput, requestID string, expectedVersion int64) (LearnerProfile, error) {
+	return learnerWrite[LearnerProfile](c, ctx, http.MethodPut, "/v1/learner/profile", input, requestID, &expectedVersion)
 }
 
-func (c *Client) ListLearnerGoals(ctx context.Context, actor string) ([]LearnerGoal, error) {
-	return learnerCall[[]LearnerGoal](c, ctx, http.MethodGet, "/v1/learner/goals", nil, actor)
+func (c *Client) ListLearnerGoals(ctx context.Context) ([]LearnerGoal, error) {
+	return learnerCall[[]LearnerGoal](c, ctx, http.MethodGet, "/v1/learner/goals", nil)
 }
 
-func (c *Client) GetLearnerGoal(ctx context.Context, id, actor string) (LearnerGoal, error) {
-	return learnerCall[LearnerGoal](c, ctx, http.MethodGet, learnerGoalPath(id), nil, actor)
+func (c *Client) GetLearnerGoal(ctx context.Context, id string) (LearnerGoal, error) {
+	return learnerCall[LearnerGoal](c, ctx, http.MethodGet, learnerGoalPath(id), nil)
 }
 
-func (c *Client) CreateLearnerGoal(ctx context.Context, input LearnerGoalInput, requestID, actor string) (LearnerGoal, error) {
-	return learnerWrite[LearnerGoal](c, ctx, http.MethodPost, "/v1/learner/goals", input, requestID, nil, actor)
+func (c *Client) CreateLearnerGoal(ctx context.Context, input LearnerGoalInput, requestID string) (LearnerGoal, error) {
+	return learnerWrite[LearnerGoal](c, ctx, http.MethodPost, "/v1/learner/goals", input, requestID, nil)
 }
 
-func (c *Client) UpdateLearnerGoal(ctx context.Context, id string, input LearnerGoalInput, requestID string, expectedVersion int64, actor string) (LearnerGoal, error) {
-	return learnerWrite[LearnerGoal](c, ctx, http.MethodPut, learnerGoalPath(id), input, requestID, &expectedVersion, actor)
+func (c *Client) UpdateLearnerGoal(ctx context.Context, id string, input LearnerGoalInput, requestID string, expectedVersion int64) (LearnerGoal, error) {
+	return learnerWrite[LearnerGoal](c, ctx, http.MethodPut, learnerGoalPath(id), input, requestID, &expectedVersion)
 }
 
-func (c *Client) DeleteLearnerGoal(ctx context.Context, id, requestID string, expectedVersion int64, actor string) error {
-	_, err := learnerWrite[struct{}](c, ctx, http.MethodDelete, learnerGoalPath(id), nil, requestID, &expectedVersion, actor)
+func (c *Client) DeleteLearnerGoal(ctx context.Context, id, requestID string, expectedVersion int64) error {
+	_, err := learnerWrite[struct{}](c, ctx, http.MethodDelete, learnerGoalPath(id), nil, requestID, &expectedVersion)
 
 	return err
 }
 
 func learnerGoalPath(id string) string { return "/v1/learner/goals/" + url.PathEscape(id) }
 
-func learnerCall[T any](c *Client, ctx context.Context, method, path string, input any, actor string) (T, error) {
-	value, err := httpx.DoJSON[T](c.hx, ctx, method, path, input, httpx.Actor{UserID: actor})
+func learnerCall[T any](c *Client, ctx context.Context, method, path string, input any) (T, error) {
+	auth, err := middleware.RequireAuth(ctx)
+	if err != nil {
+		var zero T
+
+		return zero, err
+	}
+	value, err := httpx.DoJSON[T](c.learnerHx, ctx, method, path, input, httpx.Actor{UserID: auth.UserID})
 	if err != nil {
 		var zero T
 
@@ -124,12 +131,18 @@ func learnerCall[T any](c *Client, ctx context.Context, method, path string, inp
 	return value, nil
 }
 
-func learnerWrite[T any](c *Client, ctx context.Context, method, path string, input any, requestID string, expectedVersion *int64, actor string) (T, error) {
+func learnerWrite[T any](c *Client, ctx context.Context, method, path string, input any, requestID string, expectedVersion *int64) (T, error) {
 	headers := []httpx.Header{{Name: "Idempotency-Key", Value: requestID}}
 	if expectedVersion != nil {
 		headers = append(headers, httpx.Header{Name: "X-Expected-Version", Value: strconv.FormatInt(*expectedVersion, 10)})
 	}
-	value, err := httpx.DoJSONWithHeaders[T](c.hx, ctx, method, path, input, httpx.Actor{UserID: actor}, headers...)
+	auth, err := middleware.RequireAuth(ctx)
+	if err != nil {
+		var zero T
+
+		return zero, err
+	}
+	value, err := httpx.DoJSONWithHeaders[T](c.learnerHx, ctx, method, path, input, httpx.Actor{UserID: auth.UserID}, headers...)
 	if err != nil {
 		var zero T
 

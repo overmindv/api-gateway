@@ -97,3 +97,21 @@ func TestPracticePlanOperationLimitPreservesExistingQueries(t *testing.T) {
 		t.Fatalf("unrelated query changed: %s", body)
 	}
 }
+
+func TestGenerateLearningPlanRejectsAliasFanoutBeforeUpstream(t *testing.T) {
+	t.Parallel()
+
+	var calls atomic.Int64
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer upstream.Close()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	handler := HandlerWithRecommendationsAndMetrics(nil, nil, nil, nil, nil, nil, recommendations.New(upstream.URL, "service-token", time.Second, log), log, nil)
+	field := `generateLearningPlan(goalId:"goal-id",goalVersion:1,availabilityVersion:1,planVersion:0,requestId:"request-id"){version}`
+	body := practiceOperationRequest(t, handler, `mutation { first:`+field+` second:`+field+` }`, "", nil)
+	if !strings.Contains(body, `"code":"OPERATION_LIMIT_EXCEEDED"`) || calls.Load() != 0 {
+		t.Fatalf("fanout must fail before upstream: calls=%d response=%s", calls.Load(), body)
+	}
+}

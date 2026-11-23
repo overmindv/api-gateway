@@ -485,7 +485,7 @@ type LearnerStudyPlan struct {
 	Freshness           *LearnerStudyPlanFreshness      `json:"freshness,omitempty"`
 	PausedAt            *string                         `json:"pausedAt,omitempty"`
 	NextStep            *int                            `json:"nextStep,omitempty"`
-	BlockedReason       string                          `json:"blockedReason"`
+	BlockedReason       *string                         `json:"blockedReason,omitempty"`
 	GoalDemonstrated    bool                            `json:"goalDemonstrated"`
 }
 
@@ -607,10 +607,10 @@ type LearnerStudyPlanRankingPolicy struct {
 }
 
 type LearnerStudyPlanReason struct {
-	Code    string `json:"code"`
-	TopicID string `json:"topicId"`
-	Minutes int    `json:"minutes"`
-	Message string `json:"message"`
+	Code    string  `json:"code"`
+	TopicID *string `json:"topicId,omitempty"`
+	Minutes *int    `json:"minutes,omitempty"`
+	Message string  `json:"message"`
 }
 
 type LearnerStudyPlanStepExplanation struct {

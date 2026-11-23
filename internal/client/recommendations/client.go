@@ -14,6 +14,7 @@ import (
 
 const (
 	codeInvalidArgument    = "INVALID_ARGUMENT"
+	codeConflict           = "CONFLICT"
 	codeNotFound           = "NOT_FOUND"
 	codeServiceUnavailable = "SERVICE_UNAVAILABLE"
 	codeVersionConflict    = "VERSION_CONFLICT"
@@ -110,7 +111,8 @@ type Item struct {
 
 // Error не сохраняет текст upstream-ошибки: он не должен попасть в логи и GraphQL.
 type Error struct {
-	Code string `json:"code"`
+	Code           string `json:"-"`
+	acceptUpstream bool
 }
 
 func (e *Error) Error() string { return e.Code }
@@ -122,7 +124,7 @@ func (e *Error) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return err
 	}
-	if safeRecommendationCode(payload.Code) {
+	if e.acceptUpstream && safeRecommendationCode(payload.Code) {
 		e.Code = payload.Code
 	}
 
@@ -150,18 +152,22 @@ type GoalService interface {
 	SaveGoal(context.Context, GoalInput, string) (Goal, error)
 	DeleteGoal(context.Context, string) error
 }
-type Client struct{ hx *httpx.Client }
+type Client struct {
+	hx        *httpx.Client
+	learnerHx *httpx.Client
+}
 
 func New(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client {
 	client := &http.Client{Timeout: timeout, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
 
-	return &Client{hx: httpx.New("recommendations", baseURL, client, log, func(status int) error {
+	serviceHeader := httpx.Header{Name: "Authorization", Value: "Bearer " + token}
+	legacy := httpx.New("recommendations", baseURL, client, log, func(status int) error {
 		code := codeServiceUnavailable
 		switch status {
 		case http.StatusBadRequest:
 			code = codeInvalidArgument
 		case http.StatusConflict:
-			code = "CONFLICT"
+			code = codeConflict
 		case http.StatusTooManyRequests:
 			code = "LIMIT_REACHED"
 		case http.StatusNotFound:
@@ -169,7 +175,12 @@ func New(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client
 		}
 
 		return &Error{Code: code}
-	}, httpx.Header{Name: "Authorization", Value: "Bearer " + token})}
+	}, serviceHeader)
+	learner := httpx.New("recommendations", baseURL, client, log, func(int) error {
+		return &Error{Code: codeServiceUnavailable, acceptUpstream: true}
+	}, serviceHeader)
+
+	return &Client{hx: legacy, learnerHx: learner}
 }
 
 func (c *Client) GetGoal(ctx context.Context, userID string) (*Goal, error) {

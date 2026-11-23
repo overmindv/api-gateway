@@ -8310,7 +8310,7 @@ type LearnerStudyPlan {
   freshness: LearnerStudyPlanFreshness
   pausedAt: String
   nextStep: Int
-  blockedReason: String!
+  blockedReason: String
   goalDemonstrated: Boolean!
 }
 
@@ -8342,8 +8342,8 @@ type LearnerStudyPlanFeedbackReceipt {
 
 type LearnerStudyPlanReason {
   code: String!
-  topicId: ID!
-  minutes: Int!
+  topicId: ID
+  minutes: Int
   message: String!
 }
 
@@ -16846,9 +16846,9 @@ func (ec *executionContext) _LearnerStudyPlan_blockedReason(ctx context.Context,
 			return obj.BlockedReason, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalOString2ᚖstring,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -19062,9 +19062,9 @@ func (ec *executionContext) _LearnerStudyPlanReason_topicId(ctx context.Context,
 			return obj.TopicID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalOID2ᚖstring,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -19091,9 +19091,9 @@ func (ec *executionContext) _LearnerStudyPlanReason_minutes(ctx context.Context,
 			return obj.Minutes, nil
 		},
 		nil,
-		ec.marshalNInt2int,
+		ec.marshalOInt2ᚖint,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -46417,9 +46417,6 @@ func (ec *executionContext) _LearnerStudyPlan(ctx context.Context, sel ast.Selec
 			out.Values[i] = ec._LearnerStudyPlan_nextStep(ctx, field, obj)
 		case "blockedReason":
 			out.Values[i] = ec._LearnerStudyPlan_blockedReason(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "goalDemonstrated":
 			out.Values[i] = ec._LearnerStudyPlan_goalDemonstrated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -47224,14 +47221,8 @@ func (ec *executionContext) _LearnerStudyPlanReason(ctx context.Context, sel ast
 			}
 		case "topicId":
 			out.Values[i] = ec._LearnerStudyPlanReason_topicId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "minutes":
 			out.Values[i] = ec._LearnerStudyPlanReason_minutes(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "message":
 			out.Values[i] = ec._LearnerStudyPlanReason_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

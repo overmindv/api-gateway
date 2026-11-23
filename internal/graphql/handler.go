@@ -136,7 +136,7 @@ func limitPracticePlanOperation(ctx context.Context, next gqlgen.OperationHandle
 		}
 		count := 0
 		for _, field := range gqlgen.CollectFields(operation, operation.Operation.SelectionSet, []string{root}) {
-			if field.Name != "practicePlan" && field.Name != "learningPlan" && field.Name != "externalTaskSearch" && field.Name != "savedLearningPlan" && field.Name != "myLearningPlans" && field.Name != "saveLearningPlan" && field.Name != "refreshLearningPlan" && field.Name != "cloneLearningPlan" && field.Name != "updateLearningMaterial" && field.Name != "setLearningPlanPublic" && field.Name != "removeLearningPlanTask" {
+			if field.Name != "practicePlan" && field.Name != "learningPlan" && field.Name != "generateLearningPlan" && field.Name != "externalTaskSearch" && field.Name != "savedLearningPlan" && field.Name != "myLearningPlans" && field.Name != "saveLearningPlan" && field.Name != "refreshLearningPlan" && field.Name != "cloneLearningPlan" && field.Name != "updateLearningMaterial" && field.Name != "setLearningPlanPublic" && field.Name != "removeLearningPlanTask" {
 				continue
 			}
 			count++

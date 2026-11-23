@@ -155,8 +155,7 @@ func doWithBody[T any](c *Client, ctx context.Context, method, path string, body
 func (c *Client) setOperationHeaders(req *http.Request, headers []Header) {
 	for _, header := range headers {
 		name := http.CanonicalHeaderKey(strings.TrimSpace(header.Name))
-		if name == "" || name == "Accept" || name == "Authorization" || name == "Content-Type" ||
-			name == middleware.RequestIDHeader || name == "X-User-Id" || name == "X-User-Roles" {
+		if name != "Idempotency-Key" && name != "X-Expected-Version" {
 			continue
 		}
 		if req.Header.Get(name) == "" {
