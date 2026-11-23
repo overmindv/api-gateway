@@ -272,6 +272,7 @@ type ComplexityRoot struct {
 		Slug       func(childComplexity int) int
 		Status     func(childComplexity int) int
 		Title      func(childComplexity int) int
+		Type       func(childComplexity int) int
 	}
 
 	MaterialCatalogPage struct {
@@ -779,6 +780,7 @@ type ComplexityRoot struct {
 
 	SearchResults struct {
 		Courses      func(childComplexity int) int
+		Materials    func(childComplexity int) int
 		Programs     func(childComplexity int) int
 		Tasks        func(childComplexity int) int
 		Topics       func(childComplexity int) int
@@ -2035,6 +2037,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.MaterialCatalogEntry.Title(childComplexity), true
+	case "MaterialCatalogEntry.type":
+		if e.complexity.MaterialCatalogEntry.Type == nil {
+			break
+		}
+
+		return e.complexity.MaterialCatalogEntry.Type(childComplexity), true
 
 	case "MaterialCatalogPage.items":
 		if e.complexity.MaterialCatalogPage.Items == nil {
@@ -4831,6 +4839,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.SearchResults.Courses(childComplexity), true
+	case "SearchResults.materials":
+		if e.complexity.SearchResults.Materials == nil {
+			break
+		}
+
+		return e.complexity.SearchResults.Materials(childComplexity), true
 	case "SearchResults.programs":
 		if e.complexity.SearchResults.Programs == nil {
 			break
@@ -5933,6 +5947,7 @@ type SearchResults {
   courses: [Course!]!
   topics: [Topic!]!
   tasks: [ITTaskSummary!]!
+  materials: [MaterialCatalogEntry!]!
 }
 
 enum MaterialStatus { draft published archived }
@@ -5947,6 +5962,7 @@ type MaterialLearning {
 }
 type MaterialCatalogEntry {
   id: ID!
+  type: MaterialType!
   title: String!
   slug: String!
   status: MaterialStatus!
@@ -12729,6 +12745,35 @@ func (ec *executionContext) fieldContext_MaterialCatalogEntry_id(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _MaterialCatalogEntry_type(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialCatalogEntry_type,
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
+		nil,
+		ec.marshalNMaterialType2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialType,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialCatalogEntry_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialCatalogEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MaterialType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MaterialCatalogEntry_title(ctx context.Context, field graphql.CollectedField, obj *model.MaterialCatalogEntry) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -12966,6 +13011,8 @@ func (ec *executionContext) fieldContext_MaterialCatalogPage_items(_ context.Con
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_MaterialCatalogEntry_id(ctx, field)
+			case "type":
+				return ec.fieldContext_MaterialCatalogEntry_type(ctx, field)
 			case "title":
 				return ec.fieldContext_MaterialCatalogEntry_title(ctx, field)
 			case "slug":
@@ -24514,6 +24561,8 @@ func (ec *executionContext) fieldContext_Query_search(ctx context.Context, field
 				return ec.fieldContext_SearchResults_topics(ctx, field)
 			case "tasks":
 				return ec.fieldContext_SearchResults_tasks(ctx, field)
+			case "materials":
+				return ec.fieldContext_SearchResults_materials(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SearchResults", field.Name)
 		},
@@ -27710,6 +27759,55 @@ func (ec *executionContext) fieldContext_SearchResults_tasks(_ context.Context, 
 				return ec.fieldContext_ITTaskSummary_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ITTaskSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SearchResults_materials(ctx context.Context, field graphql.CollectedField, obj *model.SearchResults) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_SearchResults_materials,
+		func(ctx context.Context) (any, error) {
+			return obj.Materials, nil
+		},
+		nil,
+		ec.marshalNMaterialCatalogEntry2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialCatalogEntryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_SearchResults_materials(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SearchResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialCatalogEntry_id(ctx, field)
+			case "type":
+				return ec.fieldContext_MaterialCatalogEntry_type(ctx, field)
+			case "title":
+				return ec.fieldContext_MaterialCatalogEntry_title(ctx, field)
+			case "slug":
+				return ec.fieldContext_MaterialCatalogEntry_slug(ctx, field)
+			case "status":
+				return ec.fieldContext_MaterialCatalogEntry_status(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialCatalogEntry_authorId(ctx, field)
+			case "revisionId":
+				return ec.fieldContext_MaterialCatalogEntry_revisionId(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialCatalogEntry_createdAt(ctx, field)
+			case "learning":
+				return ec.fieldContext_MaterialCatalogEntry_learning(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialCatalogEntry", field.Name)
 		},
 	}
 	return fc, nil
@@ -36383,6 +36481,11 @@ func (ec *executionContext) _MaterialCatalogEntry(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "type":
+			out.Values[i] = ec._MaterialCatalogEntry_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "title":
 			out.Values[i] = ec._MaterialCatalogEntry_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -40861,6 +40964,11 @@ func (ec *executionContext) _SearchResults(ctx context.Context, sel ast.Selectio
 			}
 		case "tasks":
 			out.Values[i] = ec._SearchResults_tasks(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "materials":
+			out.Values[i] = ec._SearchResults_materials(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

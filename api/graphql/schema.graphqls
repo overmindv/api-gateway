@@ -285,6 +285,7 @@ type SearchResults {
   courses: [Course!]!
   topics: [Topic!]!
   tasks: [ITTaskSummary!]!
+  materials: [MaterialCatalogEntry!]!
 }
 
 enum MaterialStatus { draft published archived }
@@ -299,6 +300,7 @@ type MaterialLearning {
 }
 type MaterialCatalogEntry {
   id: ID!
+  type: MaterialType!
   title: String!
   slug: String!
   status: MaterialStatus!

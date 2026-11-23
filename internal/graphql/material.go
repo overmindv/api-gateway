@@ -253,7 +253,7 @@ func materialCatalogModel(page *pb.ListContentCatalogResponse) *model.MaterialCa
 	items := make([]*model.MaterialCatalogEntry, 0, len(page.GetEntries()))
 	for _, row := range page.GetEntries() {
 		items = append(items, &model.MaterialCatalogEntry{
-			ID: row.GetId(), Title: row.GetTitle(), Slug: row.GetSlug(), Status: model.MaterialStatus(row.GetStatus()),
+			ID: row.GetId(), Type: model.MaterialType(row.GetType()), Title: row.GetTitle(), Slug: row.GetSlug(), Status: model.MaterialStatus(row.GetStatus()),
 			AuthorID: materialOptional(row.GetAuthorId()), RevisionID: materialOptional(row.GetRevisionId()),
 			CreatedAt: materialTimestamp(row.GetCreatedAt()), Learning: materialLearningModel(row.GetLearning()),
 		})

@@ -396,6 +396,7 @@ type MaterialAttachmentInput struct {
 
 type MaterialCatalogEntry struct {
 	ID         string            `json:"id"`
+	Type       MaterialType      `json:"type"`
 	Title      string            `json:"title"`
 	Slug       string            `json:"slug"`
 	Status     MaterialStatus    `json:"status"`
@@ -851,11 +852,12 @@ type SavedLearningTask struct {
 }
 
 type SearchResults struct {
-	Universities []*University    `json:"universities"`
-	Programs     []*Program       `json:"programs"`
-	Courses      []*Course        `json:"courses"`
-	Topics       []*Topic         `json:"topics"`
-	Tasks        []*ITTaskSummary `json:"tasks"`
+	Universities []*University           `json:"universities"`
+	Programs     []*Program              `json:"programs"`
+	Courses      []*Course               `json:"courses"`
+	Topics       []*Topic                `json:"topics"`
+	Tasks        []*ITTaskSummary        `json:"tasks"`
+	Materials    []*MaterialCatalogEntry `json:"materials"`
 }
 
 type SetMaterialModerationInput struct {

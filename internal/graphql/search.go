@@ -4,9 +4,12 @@ import (
 	"context"
 	"sync"
 
+	contentclient "github.com/overmindv/api-gateway/internal/client/content"
 	"github.com/overmindv/api-gateway/internal/client/entities"
 	"github.com/overmindv/api-gateway/internal/client/tasks"
 	"github.com/overmindv/api-gateway/internal/graphql/model"
+	"github.com/overmindv/api-gateway/internal/middleware"
+	pb "github.com/overmindv/content/pkg/api/content"
 )
 
 // optionsForQuery собирает параметры поиска для каталога: только активные элементы.
@@ -14,8 +17,8 @@ func optionsForQuery(query string, limit int) entities.ListOptions {
 	return entities.ListOptions{Search: query, Status: statusActive, Limit: limit}
 }
 
-// Search — единый поиск по каталогу и опубликованным задачам. Результаты собраны по видам.
-// Каждый вид опрашивается параллельно; сбой одного источника не скрывает остальные результаты.
+// Search — единый поиск по каталогу, опубликованным задачам и доступным материалам.
+// Каждый вид опрашивается параллельно; сбой источника возвращается как ошибка всего поиска.
 func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*model.SearchResults, error) {
 	if limit <= 0 || limit > 50 {
 		limit = 5
@@ -27,10 +30,13 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 			Courses:      []*model.Course{},
 			Topics:       []*model.Topic{},
 			Tasks:        []*model.ITTaskSummary{},
+			Materials:    []*model.MaterialCatalogEntry{},
 		}, nil
 	}
+	pageSize := int32(limit) //nolint:gosec // limit нормализован до диапазона 1..50 выше
 
 	result := &model.SearchResults{}
+	errCh := make(chan error, 6)
 	var wg sync.WaitGroup
 	wg.Add(5)
 
@@ -39,6 +45,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		items, err := r.Catalog.ListUniversities(ctx, optionsForQuery(query, limit))
 		if err != nil {
 			r.Log.With("kind", "universities", "err", err).Error("search failed for kind")
+			errCh <- err
 
 			return
 		}
@@ -51,6 +58,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		items, err := r.Catalog.ListPrograms(ctx, "", optionsForQuery(query, limit))
 		if err != nil {
 			r.Log.With("kind", "programs", "err", err).Error("search failed for kind")
+			errCh <- err
 
 			return
 		}
@@ -61,6 +69,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		items, err := r.Catalog.ListCourses(ctx, "", optionsForQuery(query, limit))
 		if err != nil {
 			r.Log.With("kind", "courses", "err", err).Error("search failed for kind")
+			errCh <- err
 
 			return
 		}
@@ -71,6 +80,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		items, err := r.Catalog.ListTopics(ctx, "", optionsForQuery(query, limit))
 		if err != nil {
 			r.Log.With("kind", "topics", "err", err).Error("search failed for kind")
+			errCh <- err
 
 			return
 		}
@@ -81,13 +91,38 @@ func (r *queryResolver) Search(ctx context.Context, query string, limit int) (*m
 		list, err := r.Tasks.ListPublished(ctx, tasks.TaskFilter{Search: query, Limit: limit})
 		if err != nil {
 			r.Log.With("kind", "tasks", "err", err).Error("search failed for kind")
+			errCh <- err
 
 			return
 		}
 		result.Tasks = taskListModel(list).Items
 	}()
+	if auth, err := middleware.RequireAuth(ctx); err == nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if r.Content == nil {
+				errCh <- &contentclient.Error{Code: "SERVICE_UNAVAILABLE"}
+
+				return
+			}
+			page, listErr := r.Content.List(ctx, contentclient.Actor{UserID: auth.UserID, RequestID: middleware.RequestID(ctx)},
+				&pb.ListContentCatalogRequest{Status: statusPublished, PageSize: pageSize, Search: query})
+			if listErr != nil {
+				r.Log.With("kind", "materials", "err", listErr).Error("search failed for kind")
+				errCh <- listErr
+
+				return
+			}
+			result.Materials = materialCatalogModel(page).Items
+		}()
+	}
 
 	wg.Wait()
+	close(errCh)
+	if err := <-errCh; err != nil {
+		return nil, err
+	}
 
 	ensureEmpty(result)
 
@@ -110,6 +145,9 @@ func ensureEmpty(result *model.SearchResults) {
 	}
 	if result.Tasks == nil {
 		result.Tasks = []*model.ITTaskSummary{}
+	}
+	if result.Materials == nil {
+		result.Materials = []*model.MaterialCatalogEntry{}
 	}
 }
 
