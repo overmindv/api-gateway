@@ -3,6 +3,7 @@ package graphql
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -88,8 +89,22 @@ func TestLearnerMutationPreservesIdempotencyConflictWithoutPrivateMessage(t *tes
 	t.Parallel()
 
 	var calls int
-	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls++
+		if key := r.Header.Get("Idempotency-Key"); key != "same-key" {
+			t.Fatalf("call %d Idempotency-Key = %q, want same-key", calls, key)
+		}
+		var input recommendations.AvailabilityInput
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+			t.Fatal(err)
+		}
+		wantMinutes := 60
+		if calls == 2 {
+			wantMinutes = 120
+		}
+		if input.WeeklyMinutes != wantMinutes || input.Timezone != "UTC" {
+			t.Fatalf("call %d input = %+v, want weekly_minutes=%d timezone=UTC", calls, input, wantMinutes)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		if calls == 1 {
 			_, _ = io.WriteString(w, `{"availability":{"weekly_minutes":60,"timezone":"UTC","version":1,"updated_at":"2026-11-23T10:00:00Z"}}`)
