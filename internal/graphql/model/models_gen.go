@@ -460,6 +460,187 @@ type LearnerSelfAssessmentInput struct {
 	Level   string `json:"level"`
 }
 
+type LearnerStudyPlan struct {
+	GoalID              string                          `json:"goalId"`
+	Version             int                             `json:"version"`
+	GoalVersion         int                             `json:"goalVersion"`
+	AvailabilityVersion int                             `json:"availabilityVersion"`
+	TargetTopics        []string                        `json:"targetTopics"`
+	PlannerVersion      string                          `json:"plannerVersion"`
+	RankingAlgorithm    string                          `json:"rankingAlgorithm"`
+	RankingPolicy       *LearnerStudyPlanRankingPolicy  `json:"rankingPolicy"`
+	EvidenceWatermark   string                          `json:"evidenceWatermark"`
+	EvidencePolicy      *LearnerStudyPlanEvidencePolicy `json:"evidencePolicy"`
+	CreatedAt           string                          `json:"createdAt"`
+	Timezone            string                          `json:"timezone"`
+	WeeklyMinutes       int                             `json:"weeklyMinutes"`
+	HorizonLimited      bool                            `json:"horizonLimited"`
+	Weeks               []*LearnerStudyPlanWeek         `json:"weeks"`
+	UnmetOutcomes       []*LearnerStudyPlanUnmetOutcome `json:"unmetOutcomes"`
+	CoverageGaps        []*LearnerStudyPlanUnmetOutcome `json:"coverageGaps"`
+	Guidance            *LearnerStudyPlanGuidance       `json:"guidance,omitempty"`
+	Suggestions         []*LearnerStudyPlanSuggestion   `json:"suggestions"`
+	Current             bool                            `json:"current"`
+	Stale               bool                            `json:"stale"`
+	Freshness           *LearnerStudyPlanFreshness      `json:"freshness,omitempty"`
+	PausedAt            *string                         `json:"pausedAt,omitempty"`
+	NextStep            *int                            `json:"nextStep,omitempty"`
+	BlockedReason       string                          `json:"blockedReason"`
+	GoalDemonstrated    bool                            `json:"goalDemonstrated"`
+}
+
+type LearnerStudyPlanAlternative struct {
+	Kind             string `json:"kind"`
+	ResourceID       string `json:"resourceId"`
+	RevisionID       string `json:"revisionId"`
+	EstimatedMinutes int    `json:"estimatedMinutes"`
+}
+
+type LearnerStudyPlanAssessment struct {
+	Verdict  string `json:"verdict"`
+	GradedAt string `json:"gradedAt"`
+}
+
+type LearnerStudyPlanEvidence struct {
+	TopicID        string                       `json:"topicId"`
+	ScoreBps       *int                         `json:"scoreBps,omitempty"`
+	SampleCount    int                          `json:"sampleCount"`
+	LastEvidenceAt *string                      `json:"lastEvidenceAt,omitempty"`
+	Uncertainty    string                       `json:"uncertainty"`
+	Ref            *LearnerStudyPlanEvidenceRef `json:"ref,omitempty"`
+}
+
+type LearnerStudyPlanEvidencePolicy struct {
+	Revision         string `json:"revision"`
+	Algorithm        string `json:"algorithm"`
+	GapMaxBps        int    `json:"gapMaxBps"`
+	DemonstratedBps  int    `json:"demonstratedBps"`
+	MinWeightedTasks int    `json:"minWeightedTasks"`
+}
+
+type LearnerStudyPlanEvidenceRef struct {
+	Watermark      string `json:"watermark"`
+	PolicyRevision string `json:"policyRevision"`
+	CapturedAt     string `json:"capturedAt"`
+}
+
+type LearnerStudyPlanExplanation struct {
+	PlanVersion int                                `json:"planVersion"`
+	Stale       bool                               `json:"stale"`
+	Steps       []*LearnerStudyPlanStepExplanation `json:"steps"`
+	Limits      []*LearnerStudyPlanLimit           `json:"limits"`
+	Freshness   *LearnerStudyPlanFreshness         `json:"freshness,omitempty"`
+}
+
+type LearnerStudyPlanFactors struct {
+	Gap        int `json:"gap"`
+	Difficulty int `json:"difficulty"`
+	Duration   int `json:"duration"`
+	Variety    int `json:"variety"`
+	DueReview  int `json:"dueReview"`
+}
+
+type LearnerStudyPlanFeedbackInput struct {
+	PlanVersion   int                            `json:"planVersion"`
+	Action        LearnerStudyPlanFeedbackAction `json:"action"`
+	Ordinal       *int                           `json:"ordinal,omitempty"`
+	WeeklyMinutes *int                           `json:"weeklyMinutes,omitempty"`
+}
+
+type LearnerStudyPlanFeedbackReceipt struct {
+	RequestID     string                         `json:"requestId"`
+	PlanVersion   int                            `json:"planVersion"`
+	Action        LearnerStudyPlanFeedbackAction `json:"action"`
+	Ordinal       *int                           `json:"ordinal,omitempty"`
+	WeeklyMinutes *int                           `json:"weeklyMinutes,omitempty"`
+	AcceptedAt    string                         `json:"acceptedAt"`
+}
+
+type LearnerStudyPlanFreshness struct {
+	Status           string  `json:"status"`
+	CheckedAt        *string `json:"checkedAt,omitempty"`
+	EntitiesSyncedAt *string `json:"entitiesSyncedAt,omitempty"`
+	TasksSyncedAt    *string `json:"tasksSyncedAt,omitempty"`
+	ContentSyncedAt  *string `json:"contentSyncedAt,omitempty"`
+}
+
+type LearnerStudyPlanGuidance struct {
+	Basis               string `json:"basis"`
+	TemplateVersion     string `json:"templateVersion"`
+	VerifiedTopics      int    `json:"verifiedTopics"`
+	RecommendDiagnostic bool   `json:"recommendDiagnostic"`
+}
+
+type LearnerStudyPlanItem struct {
+	Kind                string                      `json:"kind"`
+	ResourceID          string                      `json:"resourceId"`
+	RevisionID          string                      `json:"revisionId"`
+	TopicID             string                      `json:"topicId"`
+	EstimatedMinutes    int                         `json:"estimatedMinutes"`
+	Score               int                         `json:"score"`
+	Components          *LearnerStudyPlanFactors    `json:"components"`
+	Stage               string                      `json:"stage"`
+	RequiresChecks      []string                    `json:"requiresChecks"`
+	Superseded          bool                        `json:"superseded"`
+	Ordinal             int                         `json:"ordinal"`
+	ActivityStartedAt   *string                     `json:"activityStartedAt,omitempty"`
+	ActivityCompletedAt *string                     `json:"activityCompletedAt,omitempty"`
+	Assessment          *LearnerStudyPlanAssessment `json:"assessment,omitempty"`
+	Skipped             bool                        `json:"skipped"`
+}
+
+type LearnerStudyPlanLimit struct {
+	TopicID string `json:"topicId"`
+	Stage   string `json:"stage"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+type LearnerStudyPlanRankingPolicy struct {
+	Version             string                   `json:"version"`
+	TargetBps           int                      `json:"targetBps"`
+	UnknownGapBps       int                      `json:"unknownGapBps"`
+	PrerequisiteMinBps  int                      `json:"prerequisiteMinBps"`
+	MediumDifficultyBps int                      `json:"mediumDifficultyBps"`
+	HardDifficultyBps   int                      `json:"hardDifficultyBps"`
+	Weights             *LearnerStudyPlanFactors `json:"weights"`
+}
+
+type LearnerStudyPlanReason struct {
+	Code    string `json:"code"`
+	TopicID string `json:"topicId"`
+	Minutes int    `json:"minutes"`
+	Message string `json:"message"`
+}
+
+type LearnerStudyPlanStepExplanation struct {
+	Ordinal     int                          `json:"ordinal"`
+	Reasons     []*LearnerStudyPlanReason    `json:"reasons"`
+	Evidence    *LearnerStudyPlanEvidence    `json:"evidence"`
+	Alternative *LearnerStudyPlanAlternative `json:"alternative,omitempty"`
+}
+
+type LearnerStudyPlanSuggestion struct {
+	Kind     string   `json:"kind"`
+	TopicIds []string `json:"topicIds"`
+	Deadline string   `json:"deadline"`
+}
+
+type LearnerStudyPlanUnmetOutcome struct {
+	TopicID   string   `json:"topicId"`
+	Stage     string   `json:"stage"`
+	Reason    string   `json:"reason"`
+	BlockedBy []string `json:"blockedBy"`
+}
+
+type LearnerStudyPlanWeek struct {
+	From            string                  `json:"from"`
+	Through         string                  `json:"through"`
+	CapacityMinutes int                     `json:"capacityMinutes"`
+	PlannedMinutes  int                     `json:"plannedMinutes"`
+	Items           []*LearnerStudyPlanItem `json:"items"`
+}
+
 type LearnerTopicSkill struct {
 	TopicID string `json:"topicId"`
 	State   string `json:"state"`
@@ -1879,6 +2060,71 @@ func (e *ITTaskType) UnmarshalJSON(b []byte) error {
 }
 
 func (e ITTaskType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type LearnerStudyPlanFeedbackAction string
+
+const (
+	LearnerStudyPlanFeedbackActionTooEasy     LearnerStudyPlanFeedbackAction = "TOO_EASY"
+	LearnerStudyPlanFeedbackActionTooHard     LearnerStudyPlanFeedbackAction = "TOO_HARD"
+	LearnerStudyPlanFeedbackActionNotRelevant LearnerStudyPlanFeedbackAction = "NOT_RELEVANT"
+	LearnerStudyPlanFeedbackActionSkip        LearnerStudyPlanFeedbackAction = "SKIP"
+	LearnerStudyPlanFeedbackActionPause       LearnerStudyPlanFeedbackAction = "PAUSE"
+	LearnerStudyPlanFeedbackActionResume      LearnerStudyPlanFeedbackAction = "RESUME"
+	LearnerStudyPlanFeedbackActionSetBudget   LearnerStudyPlanFeedbackAction = "SET_BUDGET"
+)
+
+var AllLearnerStudyPlanFeedbackAction = []LearnerStudyPlanFeedbackAction{
+	LearnerStudyPlanFeedbackActionTooEasy,
+	LearnerStudyPlanFeedbackActionTooHard,
+	LearnerStudyPlanFeedbackActionNotRelevant,
+	LearnerStudyPlanFeedbackActionSkip,
+	LearnerStudyPlanFeedbackActionPause,
+	LearnerStudyPlanFeedbackActionResume,
+	LearnerStudyPlanFeedbackActionSetBudget,
+}
+
+func (e LearnerStudyPlanFeedbackAction) IsValid() bool {
+	switch e {
+	case LearnerStudyPlanFeedbackActionTooEasy, LearnerStudyPlanFeedbackActionTooHard, LearnerStudyPlanFeedbackActionNotRelevant, LearnerStudyPlanFeedbackActionSkip, LearnerStudyPlanFeedbackActionPause, LearnerStudyPlanFeedbackActionResume, LearnerStudyPlanFeedbackActionSetBudget:
+		return true
+	}
+	return false
+}
+
+func (e LearnerStudyPlanFeedbackAction) String() string {
+	return string(e)
+}
+
+func (e *LearnerStudyPlanFeedbackAction) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = LearnerStudyPlanFeedbackAction(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid LearnerStudyPlanFeedbackAction", str)
+	}
+	return nil
+}
+
+func (e LearnerStudyPlanFeedbackAction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *LearnerStudyPlanFeedbackAction) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e LearnerStudyPlanFeedbackAction) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

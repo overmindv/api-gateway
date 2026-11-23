@@ -195,3 +195,79 @@ func TestDiagnosticStartIsRepeatableForTheSameActor(t *testing.T) {
 		t.Fatalf("calls = %d, want 2", calls)
 	}
 }
+
+func TestStudyPlanClientUsesVersionedRoutesAndIdempotency(t *testing.T) {
+	t.Parallel()
+
+	seen := map[string]bool{}
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-User-ID") != "jwt-user" {
+			t.Fatalf("actor = %q, want jwt-user", r.Header.Get("X-User-ID"))
+		}
+		key := r.Method + " " + r.URL.RequestURI()
+		seen[key] = true
+		w.Header().Set("Content-Type", "application/json")
+		switch key {
+		case "GET /v1/learner/goals/goal-id/study-plan":
+			_, _ = io.WriteString(w, studyPlanFallbackFixture)
+		case "PUT /v1/learner/goals/goal-id/study-plan":
+			if r.Header.Get("Idempotency-Key") != "generation-id" {
+				t.Fatalf("generation idempotency key = %q", r.Header.Get("Idempotency-Key"))
+			}
+			assertJSONBody(t, r, `{"goal_version":2,"availability_version":3,"plan_version":4}`)
+			_, _ = io.WriteString(w, studyPlanFallbackFixture)
+		case "GET /v1/learner/goals/goal-id/study-plan/explanation?plan_version=4":
+			_, _ = io.WriteString(w, `{"plan_version":4,"stale":false,"steps":[],"limits":[]}`)
+		case "POST /v1/learner/goals/goal-id/study-plan/feedback":
+			if r.Header.Get("Idempotency-Key") != "feedback-id" {
+				t.Fatalf("feedback idempotency key = %q", r.Header.Get("Idempotency-Key"))
+			}
+			assertJSONBody(t, r, `{"plan_version":4,"action":"skip","ordinal":2,"weekly_minutes":null}`)
+			_, _ = io.WriteString(w, `{"request_id":"feedback-id","plan_version":4,"action":"skip","ordinal":2,"accepted_at":"2026-11-23T10:00:00Z"}`)
+		case "PUT /v1/learner/goals/goal-id/study-plan/steps/2/start",
+			"PUT /v1/learner/goals/goal-id/study-plan/steps/2/activity",
+			"PUT /v1/learner/goals/goal-id/study-plan/steps/2/assessment":
+			assertJSONBody(t, r, `{"plan_version":4}`)
+			_, _ = io.WriteString(w, studyPlanFallbackFixture)
+		default:
+			t.Fatalf("unexpected study-plan request %s", key)
+		}
+	}))
+	defer upstream.Close()
+
+	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if _, err := client.CurrentStudyPlan(context.Background(), "goal-id", "jwt-user"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.GenerateStudyPlan(context.Background(), "goal-id", StudyPlanGenerationInput{GoalVersion: 2, AvailabilityVersion: 3, PlanVersion: 4}, "generation-id", "jwt-user"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ExplainStudyPlan(context.Background(), "goal-id", 4, "jwt-user"); err != nil {
+		t.Fatal(err)
+	}
+	ordinal := 2
+	if _, err := client.SubmitStudyPlanFeedback(context.Background(), "goal-id", StudyPlanFeedbackInput{PlanVersion: 4, Action: "skip", Ordinal: &ordinal}, "feedback-id", "jwt-user"); err != nil {
+		t.Fatal(err)
+	}
+	for _, call := range []func(context.Context, string, int64, int, string) (StudyPlan, error){client.StartStudyPlanStep, client.CompleteStudyPlanStepActivity, client.RecordStudyPlanStepAssessment} {
+		if _, err := call(context.Background(), "goal-id", 4, 2, "jwt-user"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(seen) != 7 {
+		t.Fatalf("unique requests = %d, want 7: %v", len(seen), seen)
+	}
+}
+
+func assertJSONBody(t *testing.T, r *http.Request, want string) {
+	t.Helper()
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != want {
+		t.Fatalf("body = %s, want %s", data, want)
+	}
+}
+
+const studyPlanFallbackFixture = `{"goal_id":"goal-id","version":4,"goal_version":2,"availability_version":3,"target_topics":["topic-id"],"planner_version":"learning-plan-v1","ranking_algorithm":"resource-ranking-v1","ranking_policy":{"policy_version":"policy-v1","target_bps":8000,"unknown_gap_bps":5000,"prerequisite_min_bps":6000,"medium_difficulty_bps":4000,"hard_difficulty_bps":7000,"weights":{"gap":1,"difficulty":1,"duration":1,"variety":1,"due_review":1}},"evidence_watermark":"watermark","evidence_policy":{"revision":"mastery-v1","algorithm":"weighted-v1","gap_max_bps":3000,"demonstrated_min_bps":8000,"min_weighted_tasks":2},"created_at":"2026-11-23T10:00:00Z","timezone":"Europe/Madrid","weekly_minutes":120,"horizon_limited":false,"weeks":[],"unmet_outcomes":[],"suggestions":[],"current":true,"stale":false,"freshness":{"status":"unavailable"},"next_step":null,"blocked_reason":"catalog_unavailable","goal_demonstrated":false}`

@@ -529,6 +529,8 @@ type Query {
   learnerGoals: [LearnerGoal!]!
   learnerGoal(id: ID!): LearnerGoal!
   learnerDiagnostic(goalId: ID!): LearnerDiagnosticSession!
+  currentLearningPlan(goalId: ID!): LearnerStudyPlan!
+  learningPlanExplanation(goalId: ID!, planVersion: Int!): LearnerStudyPlanExplanation!
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
   learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
@@ -599,6 +601,11 @@ type Mutation {
   startLearnerDiagnostic(goalId: ID!, goalVersion: Int!, budgetMinutes: Int! = 0): LearnerDiagnosticSession!
   skipLearnerDiagnostic(goalId: ID!, goalVersion: Int!): LearnerDiagnosticSession!
   finalizeLearnerDiagnostic(goalId: ID!, goalVersion: Int!, sessionId: ID!, allowPartial: Boolean! = false): LearnerDiagnosticSession!
+  generateLearningPlan(goalId: ID!, goalVersion: Int!, availabilityVersion: Int!, planVersion: Int!, requestId: ID!): LearnerStudyPlan!
+  submitLearningPlanFeedback(goalId: ID!, input: LearnerStudyPlanFeedbackInput!, requestId: ID!): LearnerStudyPlanFeedbackReceipt!
+  startLearningPlanStep(goalId: ID!, planVersion: Int!, ordinal: Int!): LearnerStudyPlan!
+  completeLearningPlanStepActivity(goalId: ID!, planVersion: Int!, ordinal: Int!): LearnerStudyPlan!
+  recordLearningPlanStepAssessment(goalId: ID!, planVersion: Int!, ordinal: Int!): LearnerStudyPlan!
   saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
   removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
   updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!
@@ -888,4 +895,195 @@ type LearnerDiagnosticSession {
   skippedAt: String
   finalizedAt: String
   report: LearnerDiagnosticReport
+}
+
+type LearnerStudyPlanFactors {
+  gap: Int!
+  difficulty: Int!
+  duration: Int!
+  variety: Int!
+  dueReview: Int!
+}
+
+type LearnerStudyPlanRankingPolicy {
+  version: String!
+  targetBps: Int!
+  unknownGapBps: Int!
+  prerequisiteMinBps: Int!
+  mediumDifficultyBps: Int!
+  hardDifficultyBps: Int!
+  weights: LearnerStudyPlanFactors!
+}
+
+type LearnerStudyPlanEvidencePolicy {
+  revision: String!
+  algorithm: String!
+  gapMaxBps: Int!
+  demonstratedBps: Int!
+  minWeightedTasks: Int!
+}
+
+type LearnerStudyPlanAssessment {
+  verdict: String!
+  gradedAt: String!
+}
+
+type LearnerStudyPlanItem {
+  kind: String!
+  resourceId: ID!
+  revisionId: ID!
+  topicId: ID!
+  estimatedMinutes: Int!
+  score: Int!
+  components: LearnerStudyPlanFactors!
+  stage: String!
+  requiresChecks: [ID!]!
+  superseded: Boolean!
+  ordinal: Int!
+  activityStartedAt: String
+  activityCompletedAt: String
+  assessment: LearnerStudyPlanAssessment
+  skipped: Boolean!
+}
+
+type LearnerStudyPlanWeek {
+  from: String!
+  through: String!
+  capacityMinutes: Int!
+  plannedMinutes: Int!
+  items: [LearnerStudyPlanItem!]!
+}
+
+type LearnerStudyPlanUnmetOutcome {
+  topicId: ID!
+  stage: String!
+  reason: String!
+  blockedBy: [ID!]!
+}
+
+type LearnerStudyPlanSuggestion {
+  kind: String!
+  topicIds: [ID!]!
+  deadline: String!
+}
+
+type LearnerStudyPlanGuidance {
+  basis: String!
+  templateVersion: String!
+  verifiedTopics: Int!
+  recommendDiagnostic: Boolean!
+}
+
+type LearnerStudyPlanFreshness {
+  status: String!
+  checkedAt: String
+  entitiesSyncedAt: String
+  tasksSyncedAt: String
+  contentSyncedAt: String
+}
+
+type LearnerStudyPlan {
+  goalId: ID!
+  version: Int!
+  goalVersion: Int!
+  availabilityVersion: Int!
+  targetTopics: [ID!]!
+  plannerVersion: String!
+  rankingAlgorithm: String!
+  rankingPolicy: LearnerStudyPlanRankingPolicy!
+  evidenceWatermark: String!
+  evidencePolicy: LearnerStudyPlanEvidencePolicy!
+  createdAt: String!
+  timezone: String!
+  weeklyMinutes: Int!
+  horizonLimited: Boolean!
+  weeks: [LearnerStudyPlanWeek!]!
+  unmetOutcomes: [LearnerStudyPlanUnmetOutcome!]!
+  coverageGaps: [LearnerStudyPlanUnmetOutcome!]!
+  guidance: LearnerStudyPlanGuidance
+  suggestions: [LearnerStudyPlanSuggestion!]!
+  current: Boolean!
+  stale: Boolean!
+  freshness: LearnerStudyPlanFreshness
+  pausedAt: String
+  nextStep: Int
+  blockedReason: String!
+  goalDemonstrated: Boolean!
+}
+
+enum LearnerStudyPlanFeedbackAction {
+  TOO_EASY
+  TOO_HARD
+  NOT_RELEVANT
+  SKIP
+  PAUSE
+  RESUME
+  SET_BUDGET
+}
+
+input LearnerStudyPlanFeedbackInput {
+  planVersion: Int!
+  action: LearnerStudyPlanFeedbackAction!
+  ordinal: Int
+  weeklyMinutes: Int
+}
+
+type LearnerStudyPlanFeedbackReceipt {
+  requestId: ID!
+  planVersion: Int!
+  action: LearnerStudyPlanFeedbackAction!
+  ordinal: Int
+  weeklyMinutes: Int
+  acceptedAt: String!
+}
+
+type LearnerStudyPlanReason {
+  code: String!
+  topicId: ID!
+  minutes: Int!
+  message: String!
+}
+
+type LearnerStudyPlanEvidenceRef {
+  watermark: String!
+  policyRevision: String!
+  capturedAt: String!
+}
+
+type LearnerStudyPlanEvidence {
+  topicId: ID!
+  scoreBps: Int
+  sampleCount: Int!
+  lastEvidenceAt: String
+  uncertainty: String!
+  ref: LearnerStudyPlanEvidenceRef
+}
+
+type LearnerStudyPlanAlternative {
+  kind: String!
+  resourceId: ID!
+  revisionId: ID!
+  estimatedMinutes: Int!
+}
+
+type LearnerStudyPlanStepExplanation {
+  ordinal: Int!
+  reasons: [LearnerStudyPlanReason!]!
+  evidence: LearnerStudyPlanEvidence!
+  alternative: LearnerStudyPlanAlternative
+}
+
+type LearnerStudyPlanLimit {
+  topicId: ID!
+  stage: String!
+  code: String!
+  message: String!
+}
+
+type LearnerStudyPlanExplanation {
+  planVersion: Int!
+  stale: Boolean!
+  steps: [LearnerStudyPlanStepExplanation!]!
+  limits: [LearnerStudyPlanLimit!]!
+  freshness: LearnerStudyPlanFreshness
 }
