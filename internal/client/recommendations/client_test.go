@@ -3,6 +3,7 @@ package recommendations
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -89,5 +90,25 @@ func TestPracticePlanHidesUpstreamDetailsAndRejectsRedirect(t *testing.T) {
 	}
 	if strings.Contains(logs.String(), "secret upstream") {
 		t.Fatal("logged upstream private message")
+	}
+}
+
+func TestPracticePlanPreservesSafeUpstreamErrorCode(t *testing.T) {
+	t.Parallel()
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		_, _ = io.WriteString(w, `{"code":"VERSION_CONFLICT","message":"private detail"}`)
+	}))
+	defer upstream.Close()
+
+	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	_, err := client.PracticePlan(context.Background(), Request{}, "user")
+	var upstreamErr *Error
+	if !errors.As(err, &upstreamErr) {
+		t.Fatalf("error = %v, want recommendations.Error", err)
+	}
+	if upstreamErr.Code != "VERSION_CONFLICT" {
+		t.Fatalf("code = %q, want VERSION_CONFLICT", upstreamErr.Code)
 	}
 }

@@ -89,6 +89,13 @@ func New(name, baseURL string, httpClient *http.Client, log *slog.Logger, newErr
 // DoJSON выполняет типизированный REST-запрос, кодируя input как JSON-тело.
 // Если input == nil, тело и Content-Type не добавляются.
 func DoJSON[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor) (T, error) {
+	return DoJSONWithHeaders[T](c, ctx, method, path, input, actor)
+}
+
+// DoJSONWithHeaders выполняет JSON-запрос и добавляет заголовки конкретной
+// операции, например Idempotency-Key и X-Expected-Version. Заголовки доверия
+// (actor, service authorization и request ID) остаются под контролем gateway.
+func DoJSONWithHeaders[T any](c *Client, ctx context.Context, method, path string, input any, actor Actor, headers ...Header) (T, error) {
 	var body io.Reader
 	contentType := ""
 	if input != nil {
@@ -102,12 +109,16 @@ func DoJSON[T any](c *Client, ctx context.Context, method, path string, input an
 		contentType = "application/json"
 	}
 
-	return DoWithBody[T](c, ctx, method, path, body, contentType, actor)
+	return doWithBody[T](c, ctx, method, path, body, contentType, actor, headers)
 }
 
 // DoWithBody выполняет типизированный REST-запрос с уже подготовленным телом
 // (например, multipart) и явным Content-Type.
 func DoWithBody[T any](c *Client, ctx context.Context, method, path string, body io.Reader, contentType string, actor Actor) (T, error) {
+	return doWithBody[T](c, ctx, method, path, body, contentType, actor, nil)
+}
+
+func doWithBody[T any](c *Client, ctx context.Context, method, path string, body io.Reader, contentType string, actor Actor, headers []Header) (T, error) {
 	var zero T
 
 	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, body)
@@ -115,6 +126,7 @@ func DoWithBody[T any](c *Client, ctx context.Context, method, path string, body
 		return zero, fmt.Errorf("create %s request: %w", c.name, err)
 	}
 	c.setHeaders(req, middleware.RequestID(ctx), contentType, actor)
+	c.setOperationHeaders(req, headers)
 
 	started := time.Now()
 	response, err := c.http.Do(req)
@@ -138,6 +150,19 @@ func DoWithBody[T any](c *Client, ctx context.Context, method, path string, body
 	c.log.InfoContext(ctx, c.name+" http call", "request_id", middleware.RequestID(ctx), "method", method, "path", path, "status", response.StatusCode, "duration", time.Since(started))
 
 	return zero, nil
+}
+
+func (c *Client) setOperationHeaders(req *http.Request, headers []Header) {
+	for _, header := range headers {
+		name := http.CanonicalHeaderKey(strings.TrimSpace(header.Name))
+		if name == "" || name == "Accept" || name == "Authorization" || name == "Content-Type" ||
+			name == middleware.RequestIDHeader || name == "X-User-Id" || name == "X-User-Roles" {
+			continue
+		}
+		if req.Header.Get(name) == "" {
+			req.Header.Set(name, header.Value)
+		}
+	}
 }
 
 // Health проверяет готовность сервиса по HTTP-статусу /ready.

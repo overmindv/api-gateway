@@ -104,7 +104,7 @@ type Item struct {
 
 // Error не сохраняет текст upstream-ошибки: он не должен попасть в логи и GraphQL.
 type Error struct {
-	Code string `json:"-"`
+	Code string `json:"code"`
 }
 
 func (e *Error) Error() string { return e.Code }
