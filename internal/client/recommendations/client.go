@@ -12,7 +12,12 @@ import (
 	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
-const codeNotFound = "NOT_FOUND"
+const (
+	codeInvalidArgument    = "INVALID_ARGUMENT"
+	codeNotFound           = "NOT_FOUND"
+	codeServiceUnavailable = "SERVICE_UNAVAILABLE"
+	codeVersionConflict    = "VERSION_CONFLICT"
+)
 
 type Request struct {
 	Goal           string     `json:"goal,omitempty"`
@@ -128,8 +133,8 @@ func safeRecommendationCode(code string) bool {
 	switch code {
 	case "BUDGET_EXCEEDED", "DIAGNOSTIC_BUDGET", "DIAGNOSTIC_NOT_STARTED", "DIAGNOSTIC_SESSION_CHANGED",
 		"DIAGNOSTIC_TASK_UNAVAILABLE", "GOAL_LIMIT", "GRADE_PENDING", "IDEMPOTENCY_CONFLICT", "INFEASIBLE_GOAL",
-		"INVALID_ARGUMENT", "NOT_FOUND", "PERMISSION_DENIED", "PLAN_LIMIT", "PROFILE_REQUIRED", "RESOURCE_UNAVAILABLE",
-		"REVIEW_NOT_DUE", "SERVICE_UNAVAILABLE", "STEP_BLOCKED", "UNKNOWN_TEMPLATE", "UNKNOWN_TOPIC", "VERSION_CONFLICT", "WRITE_LIMIT":
+		codeInvalidArgument, codeNotFound, "PERMISSION_DENIED", "PLAN_LIMIT", "PROFILE_REQUIRED", "RESOURCE_UNAVAILABLE",
+		"REVIEW_NOT_DUE", codeServiceUnavailable, "STEP_BLOCKED", "UNKNOWN_TEMPLATE", "UNKNOWN_TOPIC", codeVersionConflict, "WRITE_LIMIT":
 		return true
 	default:
 		return false
@@ -151,10 +156,10 @@ func New(baseURL, token string, timeout time.Duration, log *slog.Logger) *Client
 	client := &http.Client{Timeout: timeout, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
 
 	return &Client{hx: httpx.New("recommendations", baseURL, client, log, func(status int) error {
-		code := "SERVICE_UNAVAILABLE"
+		code := codeServiceUnavailable
 		switch status {
 		case http.StatusBadRequest:
-			code = "INVALID_ARGUMENT"
+			code = codeInvalidArgument
 		case http.StatusConflict:
 			code = "CONFLICT"
 		case http.StatusTooManyRequests:
@@ -205,7 +210,7 @@ func goalError(err error) error {
 		return upstream
 	}
 
-	return &Error{Code: "SERVICE_UNAVAILABLE"}
+	return &Error{Code: codeServiceUnavailable}
 }
 
 func (c *Client) PracticePlan(ctx context.Context, input Request, userID string) (Plan, error) {
@@ -216,7 +221,7 @@ func (c *Client) PracticePlan(ctx context.Context, input Request, userID string)
 			return Plan{}, upstream
 		}
 
-		return Plan{}, &Error{Code: "SERVICE_UNAVAILABLE"}
+		return Plan{}, &Error{Code: codeServiceUnavailable}
 	}
 
 	return plan, nil

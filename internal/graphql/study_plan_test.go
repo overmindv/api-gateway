@@ -12,11 +12,13 @@ import (
 	"github.com/overmindv/api-gateway/internal/client/recommendations"
 )
 
+const learnerStudyPlanPath = "/v1/learner/goals/goal-id/study-plan"
+
 func TestCurrentLearningPlanPreservesUnavailableCatalogFallbackExactly(t *testing.T) {
 	t.Parallel()
 
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet || r.URL.Path != "/v1/learner/goals/goal-id/study-plan" || r.Header.Get("X-User-ID") != "jwt-user" {
+		if r.Method != http.MethodGet || r.URL.Path != learnerStudyPlanPath || r.Header.Get("X-User-ID") != learnerTestActor {
 			t.Fatalf("unexpected request %s %s actor=%q", r.Method, r.URL.Path, r.Header.Get("X-User-ID"))
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -58,7 +60,7 @@ func TestLearningPlanWritesPreserveStaleRevisionAndDoNotTreatClickAsOutcome(t *t
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
-		case "/v1/learner/goals/goal-id/study-plan":
+		case learnerStudyPlanPath:
 			if r.Header.Get("Idempotency-Key") != "generation-id" {
 				t.Fatalf("missing generation idempotency key")
 			}
@@ -88,7 +90,7 @@ func studyPlanGraphQL(t *testing.T, upstreamURL, operation string) string {
 	client := recommendations.New(upstreamURL, "service-secret", time.Second, log)
 	handler := HandlerWithRecommendationsAndMetrics(nil, nil, nil, nil, nil, nil, client, log, nil)
 
-	return learnerGraphQLRequest(t, handler, `{"query":`+strconvQuote(operation)+`}`, "jwt-user")
+	return learnerGraphQLRequest(t, handler, `{"query":`+strconvQuote(operation)+`}`, learnerTestActor)
 }
 
 func strconvQuote(value string) string {

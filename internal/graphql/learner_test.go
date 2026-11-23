@@ -15,6 +15,8 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
+const learnerTestActor = "jwt-user"
+
 func TestLearnerGoalMutationUsesOnlyJWTActorAndConcurrencyArguments(t *testing.T) {
 	t.Parallel()
 
@@ -22,7 +24,7 @@ func TestLearnerGoalMutationUsesOnlyJWTActorAndConcurrencyArguments(t *testing.T
 		if r.Method != http.MethodPut || r.URL.Path != "/v1/learner/goals/goal-id" {
 			t.Fatalf("unexpected upstream request %s %s", r.Method, r.URL.Path)
 		}
-		if r.Header.Get("X-User-ID") != "jwt-user" || r.Header.Get("Idempotency-Key") != "request-id" || r.Header.Get("X-Expected-Version") != "3" {
+		if r.Header.Get("X-User-ID") != learnerTestActor || r.Header.Get("Idempotency-Key") != "request-id" || r.Header.Get("X-Expected-Version") != "3" {
 			t.Fatalf("wrong authority/concurrency headers: %v", r.Header)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -33,7 +35,7 @@ func TestLearnerGoalMutationUsesOnlyJWTActorAndConcurrencyArguments(t *testing.T
 	client := recommendations.New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	handler := HandlerWithRecommendationsAndMetrics(nil, nil, nil, nil, nil, nil, client, slog.New(slog.NewTextHandler(io.Discard, nil)), nil)
 	body := `{"query":"mutation { updateLearnerGoal(id:\"goal-id\", input:{title:\"Exam\",targetTopics:[\"topic-id\"],weeklyMinutes:120,active:true,languages:[],formats:[],selfAssessments:[]}, expectedVersion:3, requestId:\"request-id\") { id version skills { topicId state } } }"}`
-	response := learnerGraphQLRequest(t, handler, body, "jwt-user")
+	response := learnerGraphQLRequest(t, handler, body, learnerTestActor)
 	if !strings.Contains(response, `"version":4`) || !strings.Contains(response, `"topicId":"topic-id"`) || strings.Contains(response, `"errors"`) {
 		t.Fatalf("unexpected GraphQL response: %s", response)
 	}
@@ -43,7 +45,7 @@ func TestLearnerDiagnosticPreservesSuccessfulStatesAndEvidenceTraceability(t *te
 	t.Parallel()
 
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("X-User-ID") != "jwt-user" {
+		if r.Header.Get("X-User-ID") != learnerTestActor {
 			t.Fatalf("actor = %q, want jwt-user", r.Header.Get("X-User-ID"))
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -60,11 +62,11 @@ func TestLearnerDiagnosticPreservesSuccessfulStatesAndEvidenceTraceability(t *te
 
 	client := recommendations.New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	handler := HandlerWithRecommendationsAndMetrics(nil, nil, nil, nil, nil, nil, client, slog.New(slog.NewTextHandler(io.Discard, nil)), nil)
-	skipped := learnerGraphQLRequest(t, handler, `{"query":"mutation { skipLearnerDiagnostic(goalId:\"goal-id\", goalVersion:2) { status tasks { taskId } } }"}`, "jwt-user")
+	skipped := learnerGraphQLRequest(t, handler, `{"query":"mutation { skipLearnerDiagnostic(goalId:\"goal-id\", goalVersion:2) { status tasks { taskId } } }"}`, learnerTestActor)
 	if !strings.Contains(skipped, `"status":"skipped"`) || !strings.Contains(skipped, `"tasks":[]`) {
 		t.Fatalf("unexpected skipped response: %s", skipped)
 	}
-	finalized := learnerGraphQLRequest(t, handler, `{"query":"mutation { finalizeLearnerDiagnostic(goalId:\"goal-id\", goalVersion:2, sessionId:\"session-id\", allowPartial:true) { report { outcomes { submissionId eventId correctionVersion } } } }"}`, "jwt-user")
+	finalized := learnerGraphQLRequest(t, handler, `{"query":"mutation { finalizeLearnerDiagnostic(goalId:\"goal-id\", goalVersion:2, sessionId:\"session-id\", allowPartial:true) { report { outcomes { submissionId eventId correctionVersion } } } }"}`, learnerTestActor)
 	for _, want := range []string{`"submissionId":"submission-id"`, `"eventId":"event-id"`, `"correctionVersion":7`} {
 		if !strings.Contains(finalized, want) {
 			t.Fatalf("missing %s in %s", want, finalized)
@@ -76,7 +78,7 @@ func TestLearnerOperationsDoNotExposeUserIDArgument(t *testing.T) {
 	t.Parallel()
 
 	handler := Handler(nil, nil, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	response := learnerGraphQLRequest(t, handler, `{"query":"{ learnerProfile(userId:\"other-user\") { availability { version } } }"}`, "jwt-user")
+	response := learnerGraphQLRequest(t, handler, `{"query":"{ learnerProfile(userId:\"other-user\") { availability { version } } }"}`, learnerTestActor)
 	if !strings.Contains(response, `"code":"GRAPHQL_VALIDATION_FAILED"`) {
 		t.Fatalf("expected schema to reject userId, got %s", response)
 	}

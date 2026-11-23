@@ -15,6 +15,8 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
+const testLearnerActor = "jwt-user"
+
 func TestPracticePlanUsesServiceTokenAndMinimalContract(t *testing.T) {
 	t.Parallel()
 
@@ -108,7 +110,7 @@ func TestPracticePlanPreservesSafeUpstreamErrorCode(t *testing.T) {
 	if !errors.As(err, &upstreamErr) {
 		t.Fatalf("error = %v, want recommendations.Error", err)
 	}
-	if upstreamErr.Code != "VERSION_CONFLICT" {
+	if upstreamErr.Code != codeVersionConflict {
 		t.Fatalf("code = %q, want VERSION_CONFLICT", upstreamErr.Code)
 	}
 }
@@ -119,7 +121,7 @@ func TestLearnerClientForwardsActorAndConcurrencyMetadata(t *testing.T) {
 	requests := 0
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests++
-		if got := r.Header.Get("X-User-ID"); got != "jwt-user" {
+		if got := r.Header.Get("X-User-ID"); got != testLearnerActor {
 			t.Fatalf("X-User-ID = %q, want jwt-user", got)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -149,19 +151,19 @@ func TestLearnerClientForwardsActorAndConcurrencyMetadata(t *testing.T) {
 	defer upstream.Close()
 
 	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if templates, err := client.GoalTemplates(context.Background(), "jwt-user"); err != nil || len(templates) != 1 || !templates[0].SuggestsDeadline {
+	if templates, err := client.GoalTemplates(context.Background(), testLearnerActor); err != nil || len(templates) != 1 || !templates[0].SuggestsDeadline {
 		t.Fatalf("templates = %+v, err = %v", templates, err)
 	}
-	profile, err := client.SaveLearnerProfile(context.Background(), AvailabilityInput{WeeklyMinutes: 180, Timezone: "Europe/Madrid"}, "profile-write", 4, "jwt-user")
+	profile, err := client.SaveLearnerProfile(context.Background(), AvailabilityInput{WeeklyMinutes: 180, Timezone: "Europe/Madrid"}, "profile-write", 4, testLearnerActor)
 	if err != nil || profile.Availability == nil || profile.Availability.Version != 5 {
 		t.Fatalf("profile = %+v, err = %v", profile, err)
 	}
 	input := LearnerGoalInput{Title: "Exam", TargetTopics: []string{"topic-id"}, WeeklyMinutes: 120, Active: true, Languages: []string{}, Formats: []string{}, SelfAssessments: []SelfAssessment{}}
-	goal, err := client.CreateLearnerGoal(context.Background(), input, "goal-write", "jwt-user")
+	goal, err := client.CreateLearnerGoal(context.Background(), input, "goal-write", testLearnerActor)
 	if err != nil || goal.Version != 1 {
 		t.Fatalf("created goal = %+v, err = %v", goal, err)
 	}
-	goal, err = client.UpdateLearnerGoal(context.Background(), "goal-id", input, "goal-update", 1, "jwt-user")
+	goal, err = client.UpdateLearnerGoal(context.Background(), "goal-id", input, "goal-update", 1, testLearnerActor)
 	if err != nil || goal.Version != 2 {
 		t.Fatalf("updated goal = %+v, err = %v", goal, err)
 	}
@@ -176,7 +178,7 @@ func TestDiagnosticStartIsRepeatableForTheSameActor(t *testing.T) {
 	calls := 0
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls++
-		if r.Method != http.MethodPut || r.URL.Path != "/v1/learner/goals/goal-id/diagnostic" || r.Header.Get("X-User-ID") != "jwt-user" {
+		if r.Method != http.MethodPut || r.URL.Path != "/v1/learner/goals/goal-id/diagnostic" || r.Header.Get("X-User-ID") != testLearnerActor {
 			t.Fatalf("unexpected request %s %s actor=%q", r.Method, r.URL.Path, r.Header.Get("X-User-ID"))
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -186,7 +188,7 @@ func TestDiagnosticStartIsRepeatableForTheSameActor(t *testing.T) {
 
 	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	for range 2 {
-		session, err := client.StartDiagnostic(context.Background(), "goal-id", DiagnosticStartInput{GoalVersion: 2, BudgetMinutes: 10}, "jwt-user")
+		session, err := client.StartDiagnostic(context.Background(), "goal-id", DiagnosticStartInput{GoalVersion: 2, BudgetMinutes: 10}, testLearnerActor)
 		if err != nil || session.ID != "session-id" || session.StopRule.PolicyVersion != "diagnostic-v1" {
 			t.Fatalf("session = %+v, err = %v", session, err)
 		}
@@ -201,7 +203,7 @@ func TestStudyPlanClientUsesVersionedRoutesAndIdempotency(t *testing.T) {
 
 	seen := map[string]bool{}
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("X-User-ID") != "jwt-user" {
+		if r.Header.Get("X-User-ID") != testLearnerActor {
 			t.Fatalf("actor = %q, want jwt-user", r.Header.Get("X-User-ID"))
 		}
 		key := r.Method + " " + r.URL.RequestURI()
@@ -236,21 +238,21 @@ func TestStudyPlanClientUsesVersionedRoutesAndIdempotency(t *testing.T) {
 	defer upstream.Close()
 
 	client := New(upstream.URL, "service-secret", time.Second, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if _, err := client.CurrentStudyPlan(context.Background(), "goal-id", "jwt-user"); err != nil {
+	if _, err := client.CurrentStudyPlan(context.Background(), "goal-id", testLearnerActor); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.GenerateStudyPlan(context.Background(), "goal-id", StudyPlanGenerationInput{GoalVersion: 2, AvailabilityVersion: 3, PlanVersion: 4}, "generation-id", "jwt-user"); err != nil {
+	if _, err := client.GenerateStudyPlan(context.Background(), "goal-id", StudyPlanGenerationInput{GoalVersion: 2, AvailabilityVersion: 3, PlanVersion: 4}, "generation-id", testLearnerActor); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.ExplainStudyPlan(context.Background(), "goal-id", 4, "jwt-user"); err != nil {
+	if _, err := client.ExplainStudyPlan(context.Background(), "goal-id", 4, testLearnerActor); err != nil {
 		t.Fatal(err)
 	}
 	ordinal := 2
-	if _, err := client.SubmitStudyPlanFeedback(context.Background(), "goal-id", StudyPlanFeedbackInput{PlanVersion: 4, Action: "skip", Ordinal: &ordinal}, "feedback-id", "jwt-user"); err != nil {
+	if _, err := client.SubmitStudyPlanFeedback(context.Background(), "goal-id", StudyPlanFeedbackInput{PlanVersion: 4, Action: "skip", Ordinal: &ordinal}, "feedback-id", testLearnerActor); err != nil {
 		t.Fatal(err)
 	}
 	for _, call := range []func(context.Context, string, int64, int, string) (StudyPlan, error){client.StartStudyPlanStep, client.CompleteStudyPlanStepActivity, client.RecordStudyPlanStepAssessment} {
-		if _, err := call(context.Background(), "goal-id", 4, 2, "jwt-user"); err != nil {
+		if _, err := call(context.Background(), "goal-id", 4, 2, testLearnerActor); err != nil {
 			t.Fatal(err)
 		}
 	}
