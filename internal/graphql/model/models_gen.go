@@ -341,6 +341,130 @@ type ITTaskSummary struct {
 	UpdatedAt     string           `json:"updatedAt"`
 }
 
+type LearnerAvailability struct {
+	WeeklyMinutes int    `json:"weeklyMinutes"`
+	Timezone      string `json:"timezone"`
+	Version       int    `json:"version"`
+	UpdatedAt     string `json:"updatedAt"`
+}
+
+type LearnerAvailabilityInput struct {
+	WeeklyMinutes int    `json:"weeklyMinutes"`
+	Timezone      string `json:"timezone"`
+}
+
+type LearnerDiagnosticOutcome struct {
+	TaskID            string `json:"taskId"`
+	TaskVersionID     string `json:"taskVersionId"`
+	TopicID           string `json:"topicId"`
+	SubmissionID      string `json:"submissionId"`
+	EventID           string `json:"eventId"`
+	CorrectionVersion int    `json:"correctionVersion"`
+	Verdict           string `json:"verdict"`
+	GradedAt          string `json:"gradedAt"`
+}
+
+type LearnerDiagnosticReport struct {
+	Assigned int                               `json:"assigned"`
+	Assessed int                               `json:"assessed"`
+	Topics   []*LearnerDiagnosticTopicCoverage `json:"topics"`
+	Outcomes []*LearnerDiagnosticOutcome       `json:"outcomes"`
+}
+
+type LearnerDiagnosticSession struct {
+	ID               string                     `json:"id"`
+	GoalID           string                     `json:"goalId"`
+	GoalVersion      int                        `json:"goalVersion"`
+	Status           string                     `json:"status"`
+	Baseline         string                     `json:"baseline"`
+	Tasks            []*LearnerDiagnosticTask   `json:"tasks"`
+	EstimatedMinutes int                        `json:"estimatedMinutes"`
+	StopRule         *LearnerDiagnosticStopRule `json:"stopRule"`
+	StartedAt        string                     `json:"startedAt"`
+	ExpiresAt        string                     `json:"expiresAt"`
+	SkippedAt        *string                    `json:"skippedAt,omitempty"`
+	FinalizedAt      *string                    `json:"finalizedAt,omitempty"`
+	Report           *LearnerDiagnosticReport   `json:"report,omitempty"`
+}
+
+type LearnerDiagnosticStopRule struct {
+	PolicyVersion string `json:"policyVersion"`
+	MaxTasks      int    `json:"maxTasks"`
+	BudgetMinutes int    `json:"budgetMinutes"`
+}
+
+type LearnerDiagnosticTask struct {
+	TaskID           string `json:"taskId"`
+	TaskVersionID    string `json:"taskVersionId"`
+	TopicID          string `json:"topicId"`
+	EstimatedMinutes int    `json:"estimatedMinutes"`
+}
+
+type LearnerDiagnosticTopicCoverage struct {
+	TopicID     string `json:"topicId"`
+	Assigned    int    `json:"assigned"`
+	Assessed    int    `json:"assessed"`
+	Observation string `json:"observation"`
+	Uncertainty string `json:"uncertainty"`
+}
+
+type LearnerGoal struct {
+	ID                string                   `json:"id"`
+	Title             string                   `json:"title"`
+	TemplateVersion   string                   `json:"templateVersion"`
+	TargetTopics      []string                 `json:"targetTopics"`
+	Deadline          string                   `json:"deadline"`
+	WeeklyMinutes     int                      `json:"weeklyMinutes"`
+	Active            bool                     `json:"active"`
+	Languages         []string                 `json:"languages"`
+	Formats           []string                 `json:"formats"`
+	SelfAssessments   []*LearnerSelfAssessment `json:"selfAssessments"`
+	Timezone          string                   `json:"timezone"`
+	Version           int                      `json:"version"`
+	CreatedAt         string                   `json:"createdAt"`
+	UpdatedAt         string                   `json:"updatedAt"`
+	Skills            []*LearnerTopicSkill     `json:"skills"`
+	Feasibility       string                   `json:"feasibility"`
+	FeasibilityReason string                   `json:"feasibilityReason"`
+}
+
+type LearnerGoalInput struct {
+	Title           string                        `json:"title"`
+	TemplateVersion *string                       `json:"templateVersion,omitempty"`
+	TargetTopics    []string                      `json:"targetTopics"`
+	Deadline        *string                       `json:"deadline,omitempty"`
+	WeeklyMinutes   int                           `json:"weeklyMinutes"`
+	Active          bool                          `json:"active"`
+	Languages       []string                      `json:"languages"`
+	Formats         []string                      `json:"formats"`
+	SelfAssessments []*LearnerSelfAssessmentInput `json:"selfAssessments"`
+}
+
+type LearnerGoalTemplate struct {
+	Version          string `json:"version"`
+	Title            string `json:"title"`
+	SuggestsDeadline bool   `json:"suggestsDeadline"`
+}
+
+type LearnerProfile struct {
+	Availability *LearnerAvailability `json:"availability,omitempty"`
+}
+
+type LearnerSelfAssessment struct {
+	TopicID string `json:"topicId"`
+	Level   string `json:"level"`
+}
+
+type LearnerSelfAssessmentInput struct {
+	TopicID string `json:"topicId"`
+	Level   string `json:"level"`
+}
+
+type LearnerTopicSkill struct {
+	TopicID string `json:"topicId"`
+	State   string `json:"state"`
+}
+
 type LearningMaterial struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`

@@ -3,6 +3,7 @@ package recommendations
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -108,6 +109,32 @@ type Error struct {
 }
 
 func (e *Error) Error() string { return e.Code }
+
+func (e *Error) UnmarshalJSON(data []byte) error {
+	var payload struct {
+		Code string `json:"code"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+	if safeRecommendationCode(payload.Code) {
+		e.Code = payload.Code
+	}
+
+	return nil
+}
+
+func safeRecommendationCode(code string) bool {
+	switch code {
+	case "BUDGET_EXCEEDED", "DIAGNOSTIC_BUDGET", "DIAGNOSTIC_NOT_STARTED", "DIAGNOSTIC_SESSION_CHANGED",
+		"DIAGNOSTIC_TASK_UNAVAILABLE", "GOAL_LIMIT", "GRADE_PENDING", "IDEMPOTENCY_CONFLICT", "INFEASIBLE_GOAL",
+		"INVALID_ARGUMENT", "NOT_FOUND", "PERMISSION_DENIED", "PLAN_LIMIT", "PROFILE_REQUIRED", "RESOURCE_UNAVAILABLE",
+		"REVIEW_NOT_DUE", "SERVICE_UNAVAILABLE", "STEP_BLOCKED", "UNKNOWN_TEMPLATE", "UNKNOWN_TOPIC", "VERSION_CONFLICT", "WRITE_LIMIT":
+		return true
+	default:
+		return false
+	}
+}
 
 type Service interface {
 	PracticePlan(context.Context, Request, string) (Plan, error)

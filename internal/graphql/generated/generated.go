@@ -223,6 +223,108 @@ type ComplexityRoot struct {
 		VersionNumber func(childComplexity int) int
 	}
 
+	LearnerAvailability struct {
+		Timezone      func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+		Version       func(childComplexity int) int
+		WeeklyMinutes func(childComplexity int) int
+	}
+
+	LearnerDiagnosticOutcome struct {
+		CorrectionVersion func(childComplexity int) int
+		EventID           func(childComplexity int) int
+		GradedAt          func(childComplexity int) int
+		SubmissionID      func(childComplexity int) int
+		TaskID            func(childComplexity int) int
+		TaskVersionID     func(childComplexity int) int
+		TopicID           func(childComplexity int) int
+		Verdict           func(childComplexity int) int
+	}
+
+	LearnerDiagnosticReport struct {
+		Assessed func(childComplexity int) int
+		Assigned func(childComplexity int) int
+		Outcomes func(childComplexity int) int
+		Topics   func(childComplexity int) int
+	}
+
+	LearnerDiagnosticSession struct {
+		Baseline         func(childComplexity int) int
+		EstimatedMinutes func(childComplexity int) int
+		ExpiresAt        func(childComplexity int) int
+		FinalizedAt      func(childComplexity int) int
+		GoalID           func(childComplexity int) int
+		GoalVersion      func(childComplexity int) int
+		ID               func(childComplexity int) int
+		Report           func(childComplexity int) int
+		SkippedAt        func(childComplexity int) int
+		StartedAt        func(childComplexity int) int
+		Status           func(childComplexity int) int
+		StopRule         func(childComplexity int) int
+		Tasks            func(childComplexity int) int
+	}
+
+	LearnerDiagnosticStopRule struct {
+		BudgetMinutes func(childComplexity int) int
+		MaxTasks      func(childComplexity int) int
+		PolicyVersion func(childComplexity int) int
+	}
+
+	LearnerDiagnosticTask struct {
+		EstimatedMinutes func(childComplexity int) int
+		TaskID           func(childComplexity int) int
+		TaskVersionID    func(childComplexity int) int
+		TopicID          func(childComplexity int) int
+	}
+
+	LearnerDiagnosticTopicCoverage struct {
+		Assessed    func(childComplexity int) int
+		Assigned    func(childComplexity int) int
+		Observation func(childComplexity int) int
+		TopicID     func(childComplexity int) int
+		Uncertainty func(childComplexity int) int
+	}
+
+	LearnerGoal struct {
+		Active            func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		Deadline          func(childComplexity int) int
+		Feasibility       func(childComplexity int) int
+		FeasibilityReason func(childComplexity int) int
+		Formats           func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Languages         func(childComplexity int) int
+		SelfAssessments   func(childComplexity int) int
+		Skills            func(childComplexity int) int
+		TargetTopics      func(childComplexity int) int
+		TemplateVersion   func(childComplexity int) int
+		Timezone          func(childComplexity int) int
+		Title             func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
+		Version           func(childComplexity int) int
+		WeeklyMinutes     func(childComplexity int) int
+	}
+
+	LearnerGoalTemplate struct {
+		SuggestsDeadline func(childComplexity int) int
+		Title            func(childComplexity int) int
+		Version          func(childComplexity int) int
+	}
+
+	LearnerProfile struct {
+		Availability func(childComplexity int) int
+	}
+
+	LearnerSelfAssessment struct {
+		Level   func(childComplexity int) int
+		TopicID func(childComplexity int) int
+	}
+
+	LearnerTopicSkill struct {
+		State   func(childComplexity int) int
+		TopicID func(childComplexity int) int
+	}
+
 	LearningMaterial struct {
 		Action  func(childComplexity int) int
 		ID      func(childComplexity int) int
@@ -486,6 +588,7 @@ type ComplexityRoot struct {
 		CompleteMediaUpload             func(childComplexity int, input model.CompleteMediaUploadInput) int
 		CreateCourse                    func(childComplexity int, input model.CreateCourseInput) int
 		CreateITTask                    func(childComplexity int, input model.ITTaskInput) int
+		CreateLearnerGoal               func(childComplexity int, input model.LearnerGoalInput, requestID string) int
 		CreateMaterialDraft             func(childComplexity int, input model.CreateMaterialDraftInput) int
 		CreateMaterialReviewThread      func(childComplexity int, input model.CreateMaterialReviewThreadInput) int
 		CreateMediaUpload               func(childComplexity int, input model.CreateMediaUploadInput) int
@@ -495,12 +598,14 @@ type ComplexityRoot struct {
 		CreateUniversity                func(childComplexity int, input model.CreateUniversityInput) int
 		DeleteCourse                    func(childComplexity int, id string) int
 		DeleteITTask                    func(childComplexity int, id string) int
+		DeleteLearnerGoal               func(childComplexity int, id string, expectedVersion int, requestID string) int
 		DeleteMediaFile                 func(childComplexity int, id string) int
 		DeletePracticeGoal              func(childComplexity int) int
 		DeleteProgram                   func(childComplexity int, id string) int
 		DeleteTopic                     func(childComplexity int, id string) int
 		DeleteUniversity                func(childComplexity int, id string) int
 		DeleteUser                      func(childComplexity int, id string) int
+		FinalizeLearnerDiagnostic       func(childComplexity int, goalID string, goalVersion int, sessionID string, allowPartial bool) int
 		Login                           func(childComplexity int, input model.LoginInput) int
 		Logout                          func(childComplexity int) int
 		MergeMaterialChange             func(childComplexity int, proposalID string, expectedHeadID string) int
@@ -514,6 +619,7 @@ type ComplexityRoot struct {
 		RemoveTopicPrerequisite         func(childComplexity int, input model.TopicPrerequisiteInput) int
 		ReplyToMaterialReviewThread     func(childComplexity int, proposalID string, threadID string, body string) int
 		RestoreMaterialRevision         func(childComplexity int, materialID string, expectedPublishedRevisionID string, sourceRevisionID string) int
+		SaveLearnerProfile              func(childComplexity int, input model.LearnerAvailabilityInput, expectedVersion int, requestID string) int
 		SaveLearningPlan                func(childComplexity int, goal string, minutes int, sessionCount int, requestID string) int
 		SaveMaterialDraft               func(childComplexity int, input model.SaveMaterialDraftInput) int
 		SavePracticeGoal                func(childComplexity int, topicIds []string, minutes int, sessionCount *int) int
@@ -524,12 +630,15 @@ type ComplexityRoot struct {
 		SetMyPracticeStatsPublic        func(childComplexity int, public bool) int
 		SetUserAdmin                    func(childComplexity int, id string, admin bool) int
 		SetUserAdminByUsername          func(childComplexity int, username string, admin bool) int
+		SkipLearnerDiagnostic           func(childComplexity int, goalID string, goalVersion int) int
+		StartLearnerDiagnostic          func(childComplexity int, goalID string, goalVersion int, budgetMinutes int) int
 		StartTaskCollection             func(childComplexity int, input model.StartTaskCollectionInput) int
 		SubmitITTaskAnswer              func(childComplexity int, taskID string, input model.ITSubmissionInput) int
 		SubmitITTaskCode                func(childComplexity int, taskID string, input model.ITCodeSubmissionInput) int
 		SubmitMaterialReview            func(childComplexity int, input model.SubmitMaterialReviewInput) int
 		UpdateCourse                    func(childComplexity int, id string, input model.UpdateCourseInput) int
 		UpdateITTask                    func(childComplexity int, id string, input model.ITTaskInput) int
+		UpdateLearnerGoal               func(childComplexity int, id string, input model.LearnerGoalInput, expectedVersion int, requestID string) int
 		UpdateLearningMaterial          func(childComplexity int, id string, revision int, materialID string, status model.MaterialProgress) int
 		UpdateProgram                   func(childComplexity int, id string, input model.UpdateProgramInput) int
 		UpdateTaskCandidate             func(childComplexity int, id string, input model.TaskCandidateReviewInput) int
@@ -698,6 +807,11 @@ type ComplexityRoot struct {
 		ItSubmission                        func(childComplexity int, id string) int
 		ItTask                              func(childComplexity int, id string) int
 		ItTasks                             func(childComplexity int, filter *model.ITTaskFilter, pagination *model.PaginationInput) int
+		LearnerDiagnostic                   func(childComplexity int, goalID string) int
+		LearnerGoal                         func(childComplexity int, id string) int
+		LearnerGoalTemplates                func(childComplexity int) int
+		LearnerGoals                        func(childComplexity int) int
+		LearnerProfile                      func(childComplexity int) int
 		LearningPlan                        func(childComplexity int, goal string, minutes int, sessionCount int) int
 		Material                            func(childComplexity int, id string) int
 		MaterialChangeDiff                  func(childComplexity int, proposalID string, revisionID *string) int
@@ -947,6 +1061,13 @@ type MutationResolver interface {
 	CreateMaterialReviewThread(ctx context.Context, input model.CreateMaterialReviewThreadInput) (*model.MaterialReviewThread, error)
 	ReplyToMaterialReviewThread(ctx context.Context, proposalID string, threadID string, body string) (*model.MaterialReviewReply, error)
 	SetMaterialReviewThreadResolved(ctx context.Context, proposalID string, threadID string, resolved bool) (*model.MaterialReviewThread, error)
+	SaveLearnerProfile(ctx context.Context, input model.LearnerAvailabilityInput, expectedVersion int, requestID string) (*model.LearnerProfile, error)
+	CreateLearnerGoal(ctx context.Context, input model.LearnerGoalInput, requestID string) (*model.LearnerGoal, error)
+	UpdateLearnerGoal(ctx context.Context, id string, input model.LearnerGoalInput, expectedVersion int, requestID string) (*model.LearnerGoal, error)
+	DeleteLearnerGoal(ctx context.Context, id string, expectedVersion int, requestID string) (bool, error)
+	StartLearnerDiagnostic(ctx context.Context, goalID string, goalVersion int, budgetMinutes int) (*model.LearnerDiagnosticSession, error)
+	SkipLearnerDiagnostic(ctx context.Context, goalID string, goalVersion int) (*model.LearnerDiagnosticSession, error)
+	FinalizeLearnerDiagnostic(ctx context.Context, goalID string, goalVersion int, sessionID string, allowPartial bool) (*model.LearnerDiagnosticSession, error)
 	SaveLearningPlan(ctx context.Context, goal string, minutes int, sessionCount int, requestID string) (*model.SavedLearningPlan, error)
 	RemoveLearningPlanTask(ctx context.Context, id string, revision int, taskID string) (*model.SavedLearningPlan, error)
 	UpdateLearningMaterial(ctx context.Context, id string, revision int, materialID string, status model.MaterialProgress) (*model.SavedLearningPlan, error)
@@ -1011,6 +1132,11 @@ type QueryResolver interface {
 	MaterialReviewThreads(ctx context.Context, proposalID string, limit int, afterID *string) (*model.MaterialReviewThreadPage, error)
 	MaterialReviewReplies(ctx context.Context, proposalID string, threadID string, limit int, afterID *string) (*model.MaterialReviewReplyPage, error)
 	MaterialModeration(ctx context.Context, id string) (*model.MaterialModerationState, error)
+	LearnerGoalTemplates(ctx context.Context) ([]*model.LearnerGoalTemplate, error)
+	LearnerProfile(ctx context.Context) (*model.LearnerProfile, error)
+	LearnerGoals(ctx context.Context) ([]*model.LearnerGoal, error)
+	LearnerGoal(ctx context.Context, id string) (*model.LearnerGoal, error)
+	LearnerDiagnostic(ctx context.Context, goalID string) (*model.LearnerDiagnosticSession, error)
 	MyLearningPlans(ctx context.Context) ([]*model.SavedLearningPlan, error)
 	SavedLearningPlan(ctx context.Context, id string) (*model.SavedLearningPlan, error)
 	LearningPlan(ctx context.Context, goal string, minutes int, sessionCount int) (*model.LearningPlan, error)
@@ -1816,6 +1942,414 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ITTaskSummary.VersionNumber(childComplexity), true
+
+	case "LearnerAvailability.timezone":
+		if e.complexity.LearnerAvailability.Timezone == nil {
+			break
+		}
+
+		return e.complexity.LearnerAvailability.Timezone(childComplexity), true
+	case "LearnerAvailability.updatedAt":
+		if e.complexity.LearnerAvailability.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.LearnerAvailability.UpdatedAt(childComplexity), true
+	case "LearnerAvailability.version":
+		if e.complexity.LearnerAvailability.Version == nil {
+			break
+		}
+
+		return e.complexity.LearnerAvailability.Version(childComplexity), true
+	case "LearnerAvailability.weeklyMinutes":
+		if e.complexity.LearnerAvailability.WeeklyMinutes == nil {
+			break
+		}
+
+		return e.complexity.LearnerAvailability.WeeklyMinutes(childComplexity), true
+
+	case "LearnerDiagnosticOutcome.correctionVersion":
+		if e.complexity.LearnerDiagnosticOutcome.CorrectionVersion == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticOutcome.CorrectionVersion(childComplexity), true
+	case "LearnerDiagnosticOutcome.eventId":
+		if e.complexity.LearnerDiagnosticOutcome.EventID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticOutcome.EventID(childComplexity), true
+	case "LearnerDiagnosticOutcome.gradedAt":
+		if e.complexity.LearnerDiagnosticOutcome.GradedAt == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticOutcome.GradedAt(childComplexity), true
+	case "LearnerDiagnosticOutcome.submissionId":
+		if e.complexity.LearnerDiagnosticOutcome.SubmissionID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticOutcome.SubmissionID(childComplexity), true
+	case "LearnerDiagnosticOutcome.taskId":
+		if e.complexity.LearnerDiagnosticOutcome.TaskID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticOutcome.TaskID(childComplexity), true
+	case "LearnerDiagnosticOutcome.taskVersionId":
+		if e.complexity.LearnerDiagnosticOutcome.TaskVersionID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticOutcome.TaskVersionID(childComplexity), true
+	case "LearnerDiagnosticOutcome.topicId":
+		if e.complexity.LearnerDiagnosticOutcome.TopicID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticOutcome.TopicID(childComplexity), true
+	case "LearnerDiagnosticOutcome.verdict":
+		if e.complexity.LearnerDiagnosticOutcome.Verdict == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticOutcome.Verdict(childComplexity), true
+
+	case "LearnerDiagnosticReport.assessed":
+		if e.complexity.LearnerDiagnosticReport.Assessed == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticReport.Assessed(childComplexity), true
+	case "LearnerDiagnosticReport.assigned":
+		if e.complexity.LearnerDiagnosticReport.Assigned == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticReport.Assigned(childComplexity), true
+	case "LearnerDiagnosticReport.outcomes":
+		if e.complexity.LearnerDiagnosticReport.Outcomes == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticReport.Outcomes(childComplexity), true
+	case "LearnerDiagnosticReport.topics":
+		if e.complexity.LearnerDiagnosticReport.Topics == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticReport.Topics(childComplexity), true
+
+	case "LearnerDiagnosticSession.baseline":
+		if e.complexity.LearnerDiagnosticSession.Baseline == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.Baseline(childComplexity), true
+	case "LearnerDiagnosticSession.estimatedMinutes":
+		if e.complexity.LearnerDiagnosticSession.EstimatedMinutes == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.EstimatedMinutes(childComplexity), true
+	case "LearnerDiagnosticSession.expiresAt":
+		if e.complexity.LearnerDiagnosticSession.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.ExpiresAt(childComplexity), true
+	case "LearnerDiagnosticSession.finalizedAt":
+		if e.complexity.LearnerDiagnosticSession.FinalizedAt == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.FinalizedAt(childComplexity), true
+	case "LearnerDiagnosticSession.goalId":
+		if e.complexity.LearnerDiagnosticSession.GoalID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.GoalID(childComplexity), true
+	case "LearnerDiagnosticSession.goalVersion":
+		if e.complexity.LearnerDiagnosticSession.GoalVersion == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.GoalVersion(childComplexity), true
+	case "LearnerDiagnosticSession.id":
+		if e.complexity.LearnerDiagnosticSession.ID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.ID(childComplexity), true
+	case "LearnerDiagnosticSession.report":
+		if e.complexity.LearnerDiagnosticSession.Report == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.Report(childComplexity), true
+	case "LearnerDiagnosticSession.skippedAt":
+		if e.complexity.LearnerDiagnosticSession.SkippedAt == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.SkippedAt(childComplexity), true
+	case "LearnerDiagnosticSession.startedAt":
+		if e.complexity.LearnerDiagnosticSession.StartedAt == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.StartedAt(childComplexity), true
+	case "LearnerDiagnosticSession.status":
+		if e.complexity.LearnerDiagnosticSession.Status == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.Status(childComplexity), true
+	case "LearnerDiagnosticSession.stopRule":
+		if e.complexity.LearnerDiagnosticSession.StopRule == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.StopRule(childComplexity), true
+	case "LearnerDiagnosticSession.tasks":
+		if e.complexity.LearnerDiagnosticSession.Tasks == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticSession.Tasks(childComplexity), true
+
+	case "LearnerDiagnosticStopRule.budgetMinutes":
+		if e.complexity.LearnerDiagnosticStopRule.BudgetMinutes == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticStopRule.BudgetMinutes(childComplexity), true
+	case "LearnerDiagnosticStopRule.maxTasks":
+		if e.complexity.LearnerDiagnosticStopRule.MaxTasks == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticStopRule.MaxTasks(childComplexity), true
+	case "LearnerDiagnosticStopRule.policyVersion":
+		if e.complexity.LearnerDiagnosticStopRule.PolicyVersion == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticStopRule.PolicyVersion(childComplexity), true
+
+	case "LearnerDiagnosticTask.estimatedMinutes":
+		if e.complexity.LearnerDiagnosticTask.EstimatedMinutes == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTask.EstimatedMinutes(childComplexity), true
+	case "LearnerDiagnosticTask.taskId":
+		if e.complexity.LearnerDiagnosticTask.TaskID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTask.TaskID(childComplexity), true
+	case "LearnerDiagnosticTask.taskVersionId":
+		if e.complexity.LearnerDiagnosticTask.TaskVersionID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTask.TaskVersionID(childComplexity), true
+	case "LearnerDiagnosticTask.topicId":
+		if e.complexity.LearnerDiagnosticTask.TopicID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTask.TopicID(childComplexity), true
+
+	case "LearnerDiagnosticTopicCoverage.assessed":
+		if e.complexity.LearnerDiagnosticTopicCoverage.Assessed == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTopicCoverage.Assessed(childComplexity), true
+	case "LearnerDiagnosticTopicCoverage.assigned":
+		if e.complexity.LearnerDiagnosticTopicCoverage.Assigned == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTopicCoverage.Assigned(childComplexity), true
+	case "LearnerDiagnosticTopicCoverage.observation":
+		if e.complexity.LearnerDiagnosticTopicCoverage.Observation == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTopicCoverage.Observation(childComplexity), true
+	case "LearnerDiagnosticTopicCoverage.topicId":
+		if e.complexity.LearnerDiagnosticTopicCoverage.TopicID == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTopicCoverage.TopicID(childComplexity), true
+	case "LearnerDiagnosticTopicCoverage.uncertainty":
+		if e.complexity.LearnerDiagnosticTopicCoverage.Uncertainty == nil {
+			break
+		}
+
+		return e.complexity.LearnerDiagnosticTopicCoverage.Uncertainty(childComplexity), true
+
+	case "LearnerGoal.active":
+		if e.complexity.LearnerGoal.Active == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Active(childComplexity), true
+	case "LearnerGoal.createdAt":
+		if e.complexity.LearnerGoal.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.CreatedAt(childComplexity), true
+	case "LearnerGoal.deadline":
+		if e.complexity.LearnerGoal.Deadline == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Deadline(childComplexity), true
+	case "LearnerGoal.feasibility":
+		if e.complexity.LearnerGoal.Feasibility == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Feasibility(childComplexity), true
+	case "LearnerGoal.feasibilityReason":
+		if e.complexity.LearnerGoal.FeasibilityReason == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.FeasibilityReason(childComplexity), true
+	case "LearnerGoal.formats":
+		if e.complexity.LearnerGoal.Formats == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Formats(childComplexity), true
+	case "LearnerGoal.id":
+		if e.complexity.LearnerGoal.ID == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.ID(childComplexity), true
+	case "LearnerGoal.languages":
+		if e.complexity.LearnerGoal.Languages == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Languages(childComplexity), true
+	case "LearnerGoal.selfAssessments":
+		if e.complexity.LearnerGoal.SelfAssessments == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.SelfAssessments(childComplexity), true
+	case "LearnerGoal.skills":
+		if e.complexity.LearnerGoal.Skills == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Skills(childComplexity), true
+	case "LearnerGoal.targetTopics":
+		if e.complexity.LearnerGoal.TargetTopics == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.TargetTopics(childComplexity), true
+	case "LearnerGoal.templateVersion":
+		if e.complexity.LearnerGoal.TemplateVersion == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.TemplateVersion(childComplexity), true
+	case "LearnerGoal.timezone":
+		if e.complexity.LearnerGoal.Timezone == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Timezone(childComplexity), true
+	case "LearnerGoal.title":
+		if e.complexity.LearnerGoal.Title == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Title(childComplexity), true
+	case "LearnerGoal.updatedAt":
+		if e.complexity.LearnerGoal.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.UpdatedAt(childComplexity), true
+	case "LearnerGoal.version":
+		if e.complexity.LearnerGoal.Version == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.Version(childComplexity), true
+	case "LearnerGoal.weeklyMinutes":
+		if e.complexity.LearnerGoal.WeeklyMinutes == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoal.WeeklyMinutes(childComplexity), true
+
+	case "LearnerGoalTemplate.suggestsDeadline":
+		if e.complexity.LearnerGoalTemplate.SuggestsDeadline == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoalTemplate.SuggestsDeadline(childComplexity), true
+	case "LearnerGoalTemplate.title":
+		if e.complexity.LearnerGoalTemplate.Title == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoalTemplate.Title(childComplexity), true
+	case "LearnerGoalTemplate.version":
+		if e.complexity.LearnerGoalTemplate.Version == nil {
+			break
+		}
+
+		return e.complexity.LearnerGoalTemplate.Version(childComplexity), true
+
+	case "LearnerProfile.availability":
+		if e.complexity.LearnerProfile.Availability == nil {
+			break
+		}
+
+		return e.complexity.LearnerProfile.Availability(childComplexity), true
+
+	case "LearnerSelfAssessment.level":
+		if e.complexity.LearnerSelfAssessment.Level == nil {
+			break
+		}
+
+		return e.complexity.LearnerSelfAssessment.Level(childComplexity), true
+	case "LearnerSelfAssessment.topicId":
+		if e.complexity.LearnerSelfAssessment.TopicID == nil {
+			break
+		}
+
+		return e.complexity.LearnerSelfAssessment.TopicID(childComplexity), true
+
+	case "LearnerTopicSkill.state":
+		if e.complexity.LearnerTopicSkill.State == nil {
+			break
+		}
+
+		return e.complexity.LearnerTopicSkill.State(childComplexity), true
+	case "LearnerTopicSkill.topicId":
+		if e.complexity.LearnerTopicSkill.TopicID == nil {
+			break
+		}
+
+		return e.complexity.LearnerTopicSkill.TopicID(childComplexity), true
 
 	case "LearningMaterial.action":
 		if e.complexity.LearningMaterial.Action == nil {
@@ -2949,6 +3483,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateITTask(childComplexity, args["input"].(model.ITTaskInput)), true
+	case "Mutation.createLearnerGoal":
+		if e.complexity.Mutation.CreateLearnerGoal == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createLearnerGoal_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateLearnerGoal(childComplexity, args["input"].(model.LearnerGoalInput), args["requestId"].(string)), true
 	case "Mutation.createMaterialDraft":
 		if e.complexity.Mutation.CreateMaterialDraft == nil {
 			break
@@ -3048,6 +3593,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.DeleteITTask(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteLearnerGoal":
+		if e.complexity.Mutation.DeleteLearnerGoal == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteLearnerGoal_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteLearnerGoal(childComplexity, args["id"].(string), args["expectedVersion"].(int), args["requestId"].(string)), true
 	case "Mutation.deleteMediaFile":
 		if e.complexity.Mutation.DeleteMediaFile == nil {
 			break
@@ -3109,6 +3665,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.DeleteUser(childComplexity, args["id"].(string)), true
+	case "Mutation.finalizeLearnerDiagnostic":
+		if e.complexity.Mutation.FinalizeLearnerDiagnostic == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_finalizeLearnerDiagnostic_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.FinalizeLearnerDiagnostic(childComplexity, args["goalId"].(string), args["goalVersion"].(int), args["sessionId"].(string), args["allowPartial"].(bool)), true
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
 			break
@@ -3242,6 +3809,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RestoreMaterialRevision(childComplexity, args["materialId"].(string), args["expectedPublishedRevisionId"].(string), args["sourceRevisionId"].(string)), true
+	case "Mutation.saveLearnerProfile":
+		if e.complexity.Mutation.SaveLearnerProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveLearnerProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SaveLearnerProfile(childComplexity, args["input"].(model.LearnerAvailabilityInput), args["expectedVersion"].(int), args["requestId"].(string)), true
 	case "Mutation.saveLearningPlan":
 		if e.complexity.Mutation.SaveLearningPlan == nil {
 			break
@@ -3352,6 +3930,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SetUserAdminByUsername(childComplexity, args["username"].(string), args["admin"].(bool)), true
+	case "Mutation.skipLearnerDiagnostic":
+		if e.complexity.Mutation.SkipLearnerDiagnostic == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_skipLearnerDiagnostic_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SkipLearnerDiagnostic(childComplexity, args["goalId"].(string), args["goalVersion"].(int)), true
+	case "Mutation.startLearnerDiagnostic":
+		if e.complexity.Mutation.StartLearnerDiagnostic == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_startLearnerDiagnostic_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.StartLearnerDiagnostic(childComplexity, args["goalId"].(string), args["goalVersion"].(int), args["budgetMinutes"].(int)), true
 	case "Mutation.startTaskCollection":
 		if e.complexity.Mutation.StartTaskCollection == nil {
 			break
@@ -3418,6 +4018,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.UpdateITTask(childComplexity, args["id"].(string), args["input"].(model.ITTaskInput)), true
+	case "Mutation.updateLearnerGoal":
+		if e.complexity.Mutation.UpdateLearnerGoal == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateLearnerGoal_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateLearnerGoal(childComplexity, args["id"].(string), args["input"].(model.LearnerGoalInput), args["expectedVersion"].(int), args["requestId"].(string)), true
 	case "Mutation.updateLearningMaterial":
 		if e.complexity.Mutation.UpdateLearningMaterial == nil {
 			break
@@ -4205,6 +4816,46 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.ItTasks(childComplexity, args["filter"].(*model.ITTaskFilter), args["pagination"].(*model.PaginationInput)), true
+	case "Query.learnerDiagnostic":
+		if e.complexity.Query.LearnerDiagnostic == nil {
+			break
+		}
+
+		args, err := ec.field_Query_learnerDiagnostic_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.LearnerDiagnostic(childComplexity, args["goalId"].(string)), true
+	case "Query.learnerGoal":
+		if e.complexity.Query.LearnerGoal == nil {
+			break
+		}
+
+		args, err := ec.field_Query_learnerGoal_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.LearnerGoal(childComplexity, args["id"].(string)), true
+	case "Query.learnerGoalTemplates":
+		if e.complexity.Query.LearnerGoalTemplates == nil {
+			break
+		}
+
+		return e.complexity.Query.LearnerGoalTemplates(childComplexity), true
+	case "Query.learnerGoals":
+		if e.complexity.Query.LearnerGoals == nil {
+			break
+		}
+
+		return e.complexity.Query.LearnerGoals(childComplexity), true
+	case "Query.learnerProfile":
+		if e.complexity.Query.LearnerProfile == nil {
+			break
+		}
+
+		return e.complexity.Query.LearnerProfile(childComplexity), true
 	case "Query.learningPlan":
 		if e.complexity.Query.LearningPlan == nil {
 			break
@@ -5540,6 +6191,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputITTaskFilter,
 		ec.unmarshalInputITTaskInput,
 		ec.unmarshalInputITTaskOptionInput,
+		ec.unmarshalInputLearnerAvailabilityInput,
+		ec.unmarshalInputLearnerGoalInput,
+		ec.unmarshalInputLearnerSelfAssessmentInput,
 		ec.unmarshalInputLoginInput,
 		ec.unmarshalInputMaterialAttachmentInput,
 		ec.unmarshalInputMaterialCatalogFilter,
@@ -6186,6 +6840,11 @@ type Query {
   materialReviewThreads(proposalId: ID!, limit: Int! = 20, afterId: ID): MaterialReviewThreadPage
   materialReviewReplies(proposalId: ID!, threadId: ID!, limit: Int! = 20, afterId: ID): MaterialReviewReplyPage
   materialModeration(id: ID!): MaterialModerationState
+  learnerGoalTemplates: [LearnerGoalTemplate!]!
+  learnerProfile: LearnerProfile!
+  learnerGoals: [LearnerGoal!]!
+  learnerGoal(id: ID!): LearnerGoal!
+  learnerDiagnostic(goalId: ID!): LearnerDiagnosticSession!
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
   learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
@@ -6249,6 +6908,13 @@ type Mutation {
   createMaterialReviewThread(input: CreateMaterialReviewThreadInput!): MaterialReviewThread
   replyToMaterialReviewThread(proposalId: ID!, threadId: ID!, body: String!): MaterialReviewReply
   setMaterialReviewThreadResolved(proposalId: ID!, threadId: ID!, resolved: Boolean!): MaterialReviewThread
+  saveLearnerProfile(input: LearnerAvailabilityInput!, expectedVersion: Int!, requestId: ID!): LearnerProfile!
+  createLearnerGoal(input: LearnerGoalInput!, requestId: ID!): LearnerGoal!
+  updateLearnerGoal(id: ID!, input: LearnerGoalInput!, expectedVersion: Int!, requestId: ID!): LearnerGoal!
+  deleteLearnerGoal(id: ID!, expectedVersion: Int!, requestId: ID!): Boolean!
+  startLearnerDiagnostic(goalId: ID!, goalVersion: Int!, budgetMinutes: Int! = 0): LearnerDiagnosticSession!
+  skipLearnerDiagnostic(goalId: ID!, goalVersion: Int!): LearnerDiagnosticSession!
+  finalizeLearnerDiagnostic(goalId: ID!, goalVersion: Int!, sessionId: ID!, allowPartial: Boolean! = false): LearnerDiagnosticSession!
   saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
   removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
   updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!
@@ -6416,6 +7082,128 @@ type SavedLearningPlan {
  materials: [SavedLearningMaterial!]!
  tasks: [SavedLearningTask!]!
  progressAvailable: Boolean!
+}
+
+type LearnerGoalTemplate {
+  version: String!
+  title: String!
+  suggestsDeadline: Boolean!
+}
+
+input LearnerAvailabilityInput {
+  weeklyMinutes: Int!
+  timezone: String!
+}
+
+type LearnerAvailability {
+  weeklyMinutes: Int!
+  timezone: String!
+  version: Int!
+  updatedAt: String!
+}
+
+type LearnerProfile { availability: LearnerAvailability }
+
+input LearnerSelfAssessmentInput {
+  topicId: ID!
+  level: String!
+}
+
+input LearnerGoalInput {
+  title: String!
+  templateVersion: String
+  targetTopics: [ID!]!
+  deadline: String
+  weeklyMinutes: Int!
+  active: Boolean!
+  languages: [String!]!
+  formats: [String!]!
+  selfAssessments: [LearnerSelfAssessmentInput!]!
+}
+
+type LearnerSelfAssessment {
+  topicId: ID!
+  level: String!
+}
+
+type LearnerTopicSkill {
+  topicId: ID!
+  state: String!
+}
+
+type LearnerGoal {
+  id: ID!
+  title: String!
+  templateVersion: String!
+  targetTopics: [ID!]!
+  deadline: String!
+  weeklyMinutes: Int!
+  active: Boolean!
+  languages: [String!]!
+  formats: [String!]!
+  selfAssessments: [LearnerSelfAssessment!]!
+  timezone: String!
+  version: Int!
+  createdAt: String!
+  updatedAt: String!
+  skills: [LearnerTopicSkill!]!
+  feasibility: String!
+  feasibilityReason: String!
+}
+
+type LearnerDiagnosticTask {
+  taskId: ID!
+  taskVersionId: ID!
+  topicId: ID!
+  estimatedMinutes: Int!
+}
+
+type LearnerDiagnosticStopRule {
+  policyVersion: String!
+  maxTasks: Int!
+  budgetMinutes: Int!
+}
+
+type LearnerDiagnosticTopicCoverage {
+  topicId: ID!
+  assigned: Int!
+  assessed: Int!
+  observation: String!
+  uncertainty: String!
+}
+
+type LearnerDiagnosticOutcome {
+  taskId: ID!
+  taskVersionId: ID!
+  topicId: ID!
+  submissionId: ID!
+  eventId: ID!
+  correctionVersion: Int!
+  verdict: String!
+  gradedAt: String!
+}
+
+type LearnerDiagnosticReport {
+  assigned: Int!
+  assessed: Int!
+  topics: [LearnerDiagnosticTopicCoverage!]!
+  outcomes: [LearnerDiagnosticOutcome!]!
+}
+
+type LearnerDiagnosticSession {
+  id: ID!
+  goalId: ID!
+  goalVersion: Int!
+  status: String!
+  baseline: String!
+  tasks: [LearnerDiagnosticTask!]!
+  estimatedMinutes: Int!
+  stopRule: LearnerDiagnosticStopRule!
+  startedAt: String!
+  expiresAt: String!
+  skippedAt: String
+  finalizedAt: String
+  report: LearnerDiagnosticReport
 }
 `, BuiltIn: false},
 }
@@ -6614,6 +7402,22 @@ func (ec *executionContext) field_Mutation_createITTask_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createLearnerGoal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNLearnerGoalInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "requestId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["requestId"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createMaterialDraft_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -6718,6 +7522,27 @@ func (ec *executionContext) field_Mutation_deleteITTask_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteLearnerGoal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "expectedVersion", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["expectedVersion"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "requestId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["requestId"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteMediaFile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -6770,6 +7595,32 @@ func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, 
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_finalizeLearnerDiagnostic_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "goalId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["goalId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "goalVersion", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["goalVersion"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "sessionId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["sessionId"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "allowPartial", ec.unmarshalNBoolean2bool)
+	if err != nil {
+		return nil, err
+	}
+	args["allowPartial"] = arg3
 	return args, nil
 }
 
@@ -6944,6 +7795,27 @@ func (ec *executionContext) field_Mutation_restoreMaterialRevision_args(ctx cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_saveLearnerProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNLearnerAvailabilityInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerAvailabilityInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "expectedVersion", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["expectedVersion"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "requestId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["requestId"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_saveLearningPlan_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -7109,6 +7981,43 @@ func (ec *executionContext) field_Mutation_setUserAdmin_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_skipLearnerDiagnostic_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "goalId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["goalId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "goalVersion", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["goalVersion"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_startLearnerDiagnostic_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "goalId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["goalId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "goalVersion", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["goalVersion"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "budgetMinutes", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["budgetMinutes"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_startTaskCollection_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -7192,6 +8101,32 @@ func (ec *executionContext) field_Mutation_updateITTask_args(ctx context.Context
 		return nil, err
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateLearnerGoal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNLearnerGoalInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "expectedVersion", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["expectedVersion"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "requestId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["requestId"] = arg3
 	return args, nil
 }
 
@@ -7450,6 +8385,28 @@ func (ec *executionContext) field_Query_itTasks_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_learnerDiagnostic_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "goalId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["goalId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_learnerGoal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -11820,6 +12777,2000 @@ func (ec *executionContext) _ITTaskSummary_updatedAt(ctx context.Context, field 
 func (ec *executionContext) fieldContext_ITTaskSummary_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ITTaskSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerAvailability_weeklyMinutes(ctx context.Context, field graphql.CollectedField, obj *model.LearnerAvailability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerAvailability_weeklyMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.WeeklyMinutes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerAvailability_weeklyMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerAvailability",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerAvailability_timezone(ctx context.Context, field graphql.CollectedField, obj *model.LearnerAvailability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerAvailability_timezone,
+		func(ctx context.Context) (any, error) {
+			return obj.Timezone, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerAvailability_timezone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerAvailability",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerAvailability_version(ctx context.Context, field graphql.CollectedField, obj *model.LearnerAvailability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerAvailability_version,
+		func(ctx context.Context) (any, error) {
+			return obj.Version, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerAvailability_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerAvailability",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerAvailability_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.LearnerAvailability) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerAvailability_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerAvailability_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerAvailability",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome_taskId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticOutcome) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticOutcome_taskId,
+		func(ctx context.Context) (any, error) {
+			return obj.TaskID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticOutcome_taskId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticOutcome",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome_taskVersionId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticOutcome) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticOutcome_taskVersionId,
+		func(ctx context.Context) (any, error) {
+			return obj.TaskVersionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticOutcome_taskVersionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticOutcome",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome_topicId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticOutcome) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticOutcome_topicId,
+		func(ctx context.Context) (any, error) {
+			return obj.TopicID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticOutcome_topicId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticOutcome",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome_submissionId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticOutcome) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticOutcome_submissionId,
+		func(ctx context.Context) (any, error) {
+			return obj.SubmissionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticOutcome_submissionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticOutcome",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome_eventId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticOutcome) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticOutcome_eventId,
+		func(ctx context.Context) (any, error) {
+			return obj.EventID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticOutcome_eventId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticOutcome",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome_correctionVersion(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticOutcome) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticOutcome_correctionVersion,
+		func(ctx context.Context) (any, error) {
+			return obj.CorrectionVersion, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticOutcome_correctionVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticOutcome",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome_verdict(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticOutcome) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticOutcome_verdict,
+		func(ctx context.Context) (any, error) {
+			return obj.Verdict, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticOutcome_verdict(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticOutcome",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome_gradedAt(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticOutcome) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticOutcome_gradedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.GradedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticOutcome_gradedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticOutcome",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticReport_assigned(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticReport) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticReport_assigned,
+		func(ctx context.Context) (any, error) {
+			return obj.Assigned, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticReport_assigned(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticReport_assessed(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticReport) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticReport_assessed,
+		func(ctx context.Context) (any, error) {
+			return obj.Assessed, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticReport_assessed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticReport_topics(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticReport) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticReport_topics,
+		func(ctx context.Context) (any, error) {
+			return obj.Topics, nil
+		},
+		nil,
+		ec.marshalNLearnerDiagnosticTopicCoverage2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticTopicCoverageᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticReport_topics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "topicId":
+				return ec.fieldContext_LearnerDiagnosticTopicCoverage_topicId(ctx, field)
+			case "assigned":
+				return ec.fieldContext_LearnerDiagnosticTopicCoverage_assigned(ctx, field)
+			case "assessed":
+				return ec.fieldContext_LearnerDiagnosticTopicCoverage_assessed(ctx, field)
+			case "observation":
+				return ec.fieldContext_LearnerDiagnosticTopicCoverage_observation(ctx, field)
+			case "uncertainty":
+				return ec.fieldContext_LearnerDiagnosticTopicCoverage_uncertainty(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticTopicCoverage", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticReport_outcomes(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticReport) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticReport_outcomes,
+		func(ctx context.Context) (any, error) {
+			return obj.Outcomes, nil
+		},
+		nil,
+		ec.marshalNLearnerDiagnosticOutcome2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticOutcomeᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticReport_outcomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "taskId":
+				return ec.fieldContext_LearnerDiagnosticOutcome_taskId(ctx, field)
+			case "taskVersionId":
+				return ec.fieldContext_LearnerDiagnosticOutcome_taskVersionId(ctx, field)
+			case "topicId":
+				return ec.fieldContext_LearnerDiagnosticOutcome_topicId(ctx, field)
+			case "submissionId":
+				return ec.fieldContext_LearnerDiagnosticOutcome_submissionId(ctx, field)
+			case "eventId":
+				return ec.fieldContext_LearnerDiagnosticOutcome_eventId(ctx, field)
+			case "correctionVersion":
+				return ec.fieldContext_LearnerDiagnosticOutcome_correctionVersion(ctx, field)
+			case "verdict":
+				return ec.fieldContext_LearnerDiagnosticOutcome_verdict(ctx, field)
+			case "gradedAt":
+				return ec.fieldContext_LearnerDiagnosticOutcome_gradedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticOutcome", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_id(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_goalId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_goalId,
+		func(ctx context.Context) (any, error) {
+			return obj.GoalID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_goalId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_goalVersion(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_goalVersion,
+		func(ctx context.Context) (any, error) {
+			return obj.GoalVersion, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_goalVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_status(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_baseline(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_baseline,
+		func(ctx context.Context) (any, error) {
+			return obj.Baseline, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_baseline(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_tasks(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_tasks,
+		func(ctx context.Context) (any, error) {
+			return obj.Tasks, nil
+		},
+		nil,
+		ec.marshalNLearnerDiagnosticTask2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticTaskᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_tasks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "taskId":
+				return ec.fieldContext_LearnerDiagnosticTask_taskId(ctx, field)
+			case "taskVersionId":
+				return ec.fieldContext_LearnerDiagnosticTask_taskVersionId(ctx, field)
+			case "topicId":
+				return ec.fieldContext_LearnerDiagnosticTask_topicId(ctx, field)
+			case "estimatedMinutes":
+				return ec.fieldContext_LearnerDiagnosticTask_estimatedMinutes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticTask", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_estimatedMinutes(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_estimatedMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.EstimatedMinutes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_estimatedMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_stopRule(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_stopRule,
+		func(ctx context.Context) (any, error) {
+			return obj.StopRule, nil
+		},
+		nil,
+		ec.marshalNLearnerDiagnosticStopRule2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticStopRule,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_stopRule(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "policyVersion":
+				return ec.fieldContext_LearnerDiagnosticStopRule_policyVersion(ctx, field)
+			case "maxTasks":
+				return ec.fieldContext_LearnerDiagnosticStopRule_maxTasks(ctx, field)
+			case "budgetMinutes":
+				return ec.fieldContext_LearnerDiagnosticStopRule_budgetMinutes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticStopRule", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_startedAt(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_startedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.StartedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_startedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_expiresAt(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_expiresAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ExpiresAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_expiresAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_skippedAt(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_skippedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.SkippedAt, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_skippedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_finalizedAt(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_finalizedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.FinalizedAt, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_finalizedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticSession_report(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticSession_report,
+		func(ctx context.Context) (any, error) {
+			return obj.Report, nil
+		},
+		nil,
+		ec.marshalOLearnerDiagnosticReport2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticReport,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticSession_report(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "assigned":
+				return ec.fieldContext_LearnerDiagnosticReport_assigned(ctx, field)
+			case "assessed":
+				return ec.fieldContext_LearnerDiagnosticReport_assessed(ctx, field)
+			case "topics":
+				return ec.fieldContext_LearnerDiagnosticReport_topics(ctx, field)
+			case "outcomes":
+				return ec.fieldContext_LearnerDiagnosticReport_outcomes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticReport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticStopRule_policyVersion(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticStopRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticStopRule_policyVersion,
+		func(ctx context.Context) (any, error) {
+			return obj.PolicyVersion, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticStopRule_policyVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticStopRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticStopRule_maxTasks(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticStopRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticStopRule_maxTasks,
+		func(ctx context.Context) (any, error) {
+			return obj.MaxTasks, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticStopRule_maxTasks(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticStopRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticStopRule_budgetMinutes(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticStopRule) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticStopRule_budgetMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.BudgetMinutes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticStopRule_budgetMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticStopRule",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTask_taskId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTask_taskId,
+		func(ctx context.Context) (any, error) {
+			return obj.TaskID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTask_taskId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTask_taskVersionId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTask_taskVersionId,
+		func(ctx context.Context) (any, error) {
+			return obj.TaskVersionID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTask_taskVersionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTask_topicId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTask_topicId,
+		func(ctx context.Context) (any, error) {
+			return obj.TopicID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTask_topicId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTask_estimatedMinutes(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTask_estimatedMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.EstimatedMinutes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTask_estimatedMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTopicCoverage_topicId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTopicCoverage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTopicCoverage_topicId,
+		func(ctx context.Context) (any, error) {
+			return obj.TopicID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTopicCoverage_topicId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTopicCoverage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTopicCoverage_assigned(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTopicCoverage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTopicCoverage_assigned,
+		func(ctx context.Context) (any, error) {
+			return obj.Assigned, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTopicCoverage_assigned(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTopicCoverage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTopicCoverage_assessed(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTopicCoverage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTopicCoverage_assessed,
+		func(ctx context.Context) (any, error) {
+			return obj.Assessed, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTopicCoverage_assessed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTopicCoverage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTopicCoverage_observation(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTopicCoverage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTopicCoverage_observation,
+		func(ctx context.Context) (any, error) {
+			return obj.Observation, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTopicCoverage_observation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTopicCoverage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerDiagnosticTopicCoverage_uncertainty(ctx context.Context, field graphql.CollectedField, obj *model.LearnerDiagnosticTopicCoverage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerDiagnosticTopicCoverage_uncertainty,
+		func(ctx context.Context) (any, error) {
+			return obj.Uncertainty, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerDiagnosticTopicCoverage_uncertainty(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerDiagnosticTopicCoverage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_id(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_title(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_title,
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_templateVersion(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_templateVersion,
+		func(ctx context.Context) (any, error) {
+			return obj.TemplateVersion, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_templateVersion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_targetTopics(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_targetTopics,
+		func(ctx context.Context) (any, error) {
+			return obj.TargetTopics, nil
+		},
+		nil,
+		ec.marshalNID2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_targetTopics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_deadline(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_deadline,
+		func(ctx context.Context) (any, error) {
+			return obj.Deadline, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_deadline(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_weeklyMinutes(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_weeklyMinutes,
+		func(ctx context.Context) (any, error) {
+			return obj.WeeklyMinutes, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_weeklyMinutes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_active(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_active,
+		func(ctx context.Context) (any, error) {
+			return obj.Active, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_active(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_languages(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_languages,
+		func(ctx context.Context) (any, error) {
+			return obj.Languages, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_languages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_formats(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_formats,
+		func(ctx context.Context) (any, error) {
+			return obj.Formats, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_formats(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_selfAssessments(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_selfAssessments,
+		func(ctx context.Context) (any, error) {
+			return obj.SelfAssessments, nil
+		},
+		nil,
+		ec.marshalNLearnerSelfAssessment2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerSelfAssessmentᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_selfAssessments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "topicId":
+				return ec.fieldContext_LearnerSelfAssessment_topicId(ctx, field)
+			case "level":
+				return ec.fieldContext_LearnerSelfAssessment_level(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerSelfAssessment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_timezone(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_timezone,
+		func(ctx context.Context) (any, error) {
+			return obj.Timezone, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_timezone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_version(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_version,
+		func(ctx context.Context) (any, error) {
+			return obj.Version, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_updatedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_skills(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_skills,
+		func(ctx context.Context) (any, error) {
+			return obj.Skills, nil
+		},
+		nil,
+		ec.marshalNLearnerTopicSkill2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerTopicSkillᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_skills(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "topicId":
+				return ec.fieldContext_LearnerTopicSkill_topicId(ctx, field)
+			case "state":
+				return ec.fieldContext_LearnerTopicSkill_state(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerTopicSkill", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_feasibility(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_feasibility,
+		func(ctx context.Context) (any, error) {
+			return obj.Feasibility, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_feasibility(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoal_feasibilityReason(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoal_feasibilityReason,
+		func(ctx context.Context) (any, error) {
+			return obj.FeasibilityReason, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoal_feasibilityReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoalTemplate_version(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoalTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoalTemplate_version,
+		func(ctx context.Context) (any, error) {
+			return obj.Version, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoalTemplate_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoalTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoalTemplate_title(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoalTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoalTemplate_title,
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoalTemplate_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoalTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerGoalTemplate_suggestsDeadline(ctx context.Context, field graphql.CollectedField, obj *model.LearnerGoalTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerGoalTemplate_suggestsDeadline,
+		func(ctx context.Context) (any, error) {
+			return obj.SuggestsDeadline, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerGoalTemplate_suggestsDeadline(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerGoalTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerProfile_availability(ctx context.Context, field graphql.CollectedField, obj *model.LearnerProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerProfile_availability,
+		func(ctx context.Context) (any, error) {
+			return obj.Availability, nil
+		},
+		nil,
+		ec.marshalOLearnerAvailability2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerAvailability,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerProfile_availability(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "weeklyMinutes":
+				return ec.fieldContext_LearnerAvailability_weeklyMinutes(ctx, field)
+			case "timezone":
+				return ec.fieldContext_LearnerAvailability_timezone(ctx, field)
+			case "version":
+				return ec.fieldContext_LearnerAvailability_version(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_LearnerAvailability_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerAvailability", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerSelfAssessment_topicId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerSelfAssessment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerSelfAssessment_topicId,
+		func(ctx context.Context) (any, error) {
+			return obj.TopicID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerSelfAssessment_topicId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerSelfAssessment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerSelfAssessment_level(ctx context.Context, field graphql.CollectedField, obj *model.LearnerSelfAssessment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerSelfAssessment_level,
+		func(ctx context.Context) (any, error) {
+			return obj.Level, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerSelfAssessment_level(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerSelfAssessment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerTopicSkill_topicId(ctx context.Context, field graphql.CollectedField, obj *model.LearnerTopicSkill) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerTopicSkill_topicId,
+		func(ctx context.Context) (any, error) {
+			return obj.TopicID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerTopicSkill_topicId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerTopicSkill",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LearnerTopicSkill_state(ctx context.Context, field graphql.CollectedField, obj *model.LearnerTopicSkill) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_LearnerTopicSkill_state,
+		func(ctx context.Context) (any, error) {
+			return obj.State, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_LearnerTopicSkill_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LearnerTopicSkill",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -17450,6 +20401,453 @@ func (ec *executionContext) fieldContext_Mutation_setMaterialReviewThreadResolve
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_setMaterialReviewThreadResolved_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_saveLearnerProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_saveLearnerProfile,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SaveLearnerProfile(ctx, fc.Args["input"].(model.LearnerAvailabilityInput), fc.Args["expectedVersion"].(int), fc.Args["requestId"].(string))
+		},
+		nil,
+		ec.marshalNLearnerProfile2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerProfile,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_saveLearnerProfile(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "availability":
+				return ec.fieldContext_LearnerProfile_availability(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerProfile", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_saveLearnerProfile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createLearnerGoal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createLearnerGoal,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CreateLearnerGoal(ctx, fc.Args["input"].(model.LearnerGoalInput), fc.Args["requestId"].(string))
+		},
+		nil,
+		ec.marshalNLearnerGoal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoal,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createLearnerGoal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LearnerGoal_id(ctx, field)
+			case "title":
+				return ec.fieldContext_LearnerGoal_title(ctx, field)
+			case "templateVersion":
+				return ec.fieldContext_LearnerGoal_templateVersion(ctx, field)
+			case "targetTopics":
+				return ec.fieldContext_LearnerGoal_targetTopics(ctx, field)
+			case "deadline":
+				return ec.fieldContext_LearnerGoal_deadline(ctx, field)
+			case "weeklyMinutes":
+				return ec.fieldContext_LearnerGoal_weeklyMinutes(ctx, field)
+			case "active":
+				return ec.fieldContext_LearnerGoal_active(ctx, field)
+			case "languages":
+				return ec.fieldContext_LearnerGoal_languages(ctx, field)
+			case "formats":
+				return ec.fieldContext_LearnerGoal_formats(ctx, field)
+			case "selfAssessments":
+				return ec.fieldContext_LearnerGoal_selfAssessments(ctx, field)
+			case "timezone":
+				return ec.fieldContext_LearnerGoal_timezone(ctx, field)
+			case "version":
+				return ec.fieldContext_LearnerGoal_version(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_LearnerGoal_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_LearnerGoal_updatedAt(ctx, field)
+			case "skills":
+				return ec.fieldContext_LearnerGoal_skills(ctx, field)
+			case "feasibility":
+				return ec.fieldContext_LearnerGoal_feasibility(ctx, field)
+			case "feasibilityReason":
+				return ec.fieldContext_LearnerGoal_feasibilityReason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerGoal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createLearnerGoal_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateLearnerGoal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateLearnerGoal,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().UpdateLearnerGoal(ctx, fc.Args["id"].(string), fc.Args["input"].(model.LearnerGoalInput), fc.Args["expectedVersion"].(int), fc.Args["requestId"].(string))
+		},
+		nil,
+		ec.marshalNLearnerGoal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoal,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateLearnerGoal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LearnerGoal_id(ctx, field)
+			case "title":
+				return ec.fieldContext_LearnerGoal_title(ctx, field)
+			case "templateVersion":
+				return ec.fieldContext_LearnerGoal_templateVersion(ctx, field)
+			case "targetTopics":
+				return ec.fieldContext_LearnerGoal_targetTopics(ctx, field)
+			case "deadline":
+				return ec.fieldContext_LearnerGoal_deadline(ctx, field)
+			case "weeklyMinutes":
+				return ec.fieldContext_LearnerGoal_weeklyMinutes(ctx, field)
+			case "active":
+				return ec.fieldContext_LearnerGoal_active(ctx, field)
+			case "languages":
+				return ec.fieldContext_LearnerGoal_languages(ctx, field)
+			case "formats":
+				return ec.fieldContext_LearnerGoal_formats(ctx, field)
+			case "selfAssessments":
+				return ec.fieldContext_LearnerGoal_selfAssessments(ctx, field)
+			case "timezone":
+				return ec.fieldContext_LearnerGoal_timezone(ctx, field)
+			case "version":
+				return ec.fieldContext_LearnerGoal_version(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_LearnerGoal_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_LearnerGoal_updatedAt(ctx, field)
+			case "skills":
+				return ec.fieldContext_LearnerGoal_skills(ctx, field)
+			case "feasibility":
+				return ec.fieldContext_LearnerGoal_feasibility(ctx, field)
+			case "feasibilityReason":
+				return ec.fieldContext_LearnerGoal_feasibilityReason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerGoal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateLearnerGoal_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteLearnerGoal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteLearnerGoal,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().DeleteLearnerGoal(ctx, fc.Args["id"].(string), fc.Args["expectedVersion"].(int), fc.Args["requestId"].(string))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteLearnerGoal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteLearnerGoal_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_startLearnerDiagnostic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_startLearnerDiagnostic,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().StartLearnerDiagnostic(ctx, fc.Args["goalId"].(string), fc.Args["goalVersion"].(int), fc.Args["budgetMinutes"].(int))
+		},
+		nil,
+		ec.marshalNLearnerDiagnosticSession2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticSession,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_startLearnerDiagnostic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LearnerDiagnosticSession_id(ctx, field)
+			case "goalId":
+				return ec.fieldContext_LearnerDiagnosticSession_goalId(ctx, field)
+			case "goalVersion":
+				return ec.fieldContext_LearnerDiagnosticSession_goalVersion(ctx, field)
+			case "status":
+				return ec.fieldContext_LearnerDiagnosticSession_status(ctx, field)
+			case "baseline":
+				return ec.fieldContext_LearnerDiagnosticSession_baseline(ctx, field)
+			case "tasks":
+				return ec.fieldContext_LearnerDiagnosticSession_tasks(ctx, field)
+			case "estimatedMinutes":
+				return ec.fieldContext_LearnerDiagnosticSession_estimatedMinutes(ctx, field)
+			case "stopRule":
+				return ec.fieldContext_LearnerDiagnosticSession_stopRule(ctx, field)
+			case "startedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_startedAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_LearnerDiagnosticSession_expiresAt(ctx, field)
+			case "skippedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_skippedAt(ctx, field)
+			case "finalizedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_finalizedAt(ctx, field)
+			case "report":
+				return ec.fieldContext_LearnerDiagnosticSession_report(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticSession", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_startLearnerDiagnostic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_skipLearnerDiagnostic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_skipLearnerDiagnostic,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SkipLearnerDiagnostic(ctx, fc.Args["goalId"].(string), fc.Args["goalVersion"].(int))
+		},
+		nil,
+		ec.marshalNLearnerDiagnosticSession2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticSession,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_skipLearnerDiagnostic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LearnerDiagnosticSession_id(ctx, field)
+			case "goalId":
+				return ec.fieldContext_LearnerDiagnosticSession_goalId(ctx, field)
+			case "goalVersion":
+				return ec.fieldContext_LearnerDiagnosticSession_goalVersion(ctx, field)
+			case "status":
+				return ec.fieldContext_LearnerDiagnosticSession_status(ctx, field)
+			case "baseline":
+				return ec.fieldContext_LearnerDiagnosticSession_baseline(ctx, field)
+			case "tasks":
+				return ec.fieldContext_LearnerDiagnosticSession_tasks(ctx, field)
+			case "estimatedMinutes":
+				return ec.fieldContext_LearnerDiagnosticSession_estimatedMinutes(ctx, field)
+			case "stopRule":
+				return ec.fieldContext_LearnerDiagnosticSession_stopRule(ctx, field)
+			case "startedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_startedAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_LearnerDiagnosticSession_expiresAt(ctx, field)
+			case "skippedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_skippedAt(ctx, field)
+			case "finalizedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_finalizedAt(ctx, field)
+			case "report":
+				return ec.fieldContext_LearnerDiagnosticSession_report(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticSession", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_skipLearnerDiagnostic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_finalizeLearnerDiagnostic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_finalizeLearnerDiagnostic,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().FinalizeLearnerDiagnostic(ctx, fc.Args["goalId"].(string), fc.Args["goalVersion"].(int), fc.Args["sessionId"].(string), fc.Args["allowPartial"].(bool))
+		},
+		nil,
+		ec.marshalNLearnerDiagnosticSession2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticSession,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_finalizeLearnerDiagnostic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LearnerDiagnosticSession_id(ctx, field)
+			case "goalId":
+				return ec.fieldContext_LearnerDiagnosticSession_goalId(ctx, field)
+			case "goalVersion":
+				return ec.fieldContext_LearnerDiagnosticSession_goalVersion(ctx, field)
+			case "status":
+				return ec.fieldContext_LearnerDiagnosticSession_status(ctx, field)
+			case "baseline":
+				return ec.fieldContext_LearnerDiagnosticSession_baseline(ctx, field)
+			case "tasks":
+				return ec.fieldContext_LearnerDiagnosticSession_tasks(ctx, field)
+			case "estimatedMinutes":
+				return ec.fieldContext_LearnerDiagnosticSession_estimatedMinutes(ctx, field)
+			case "stopRule":
+				return ec.fieldContext_LearnerDiagnosticSession_stopRule(ctx, field)
+			case "startedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_startedAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_LearnerDiagnosticSession_expiresAt(ctx, field)
+			case "skippedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_skippedAt(ctx, field)
+			case "finalizedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_finalizedAt(ctx, field)
+			case "report":
+				return ec.fieldContext_LearnerDiagnosticSession_report(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticSession", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_finalizeLearnerDiagnostic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -24037,6 +27435,287 @@ func (ec *executionContext) fieldContext_Query_materialModeration(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_materialModeration_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_learnerGoalTemplates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_learnerGoalTemplates,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().LearnerGoalTemplates(ctx)
+		},
+		nil,
+		ec.marshalNLearnerGoalTemplate2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalTemplateᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_learnerGoalTemplates(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "version":
+				return ec.fieldContext_LearnerGoalTemplate_version(ctx, field)
+			case "title":
+				return ec.fieldContext_LearnerGoalTemplate_title(ctx, field)
+			case "suggestsDeadline":
+				return ec.fieldContext_LearnerGoalTemplate_suggestsDeadline(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerGoalTemplate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_learnerProfile(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_learnerProfile,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().LearnerProfile(ctx)
+		},
+		nil,
+		ec.marshalNLearnerProfile2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerProfile,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_learnerProfile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "availability":
+				return ec.fieldContext_LearnerProfile_availability(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerProfile", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_learnerGoals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_learnerGoals,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().LearnerGoals(ctx)
+		},
+		nil,
+		ec.marshalNLearnerGoal2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_learnerGoals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LearnerGoal_id(ctx, field)
+			case "title":
+				return ec.fieldContext_LearnerGoal_title(ctx, field)
+			case "templateVersion":
+				return ec.fieldContext_LearnerGoal_templateVersion(ctx, field)
+			case "targetTopics":
+				return ec.fieldContext_LearnerGoal_targetTopics(ctx, field)
+			case "deadline":
+				return ec.fieldContext_LearnerGoal_deadline(ctx, field)
+			case "weeklyMinutes":
+				return ec.fieldContext_LearnerGoal_weeklyMinutes(ctx, field)
+			case "active":
+				return ec.fieldContext_LearnerGoal_active(ctx, field)
+			case "languages":
+				return ec.fieldContext_LearnerGoal_languages(ctx, field)
+			case "formats":
+				return ec.fieldContext_LearnerGoal_formats(ctx, field)
+			case "selfAssessments":
+				return ec.fieldContext_LearnerGoal_selfAssessments(ctx, field)
+			case "timezone":
+				return ec.fieldContext_LearnerGoal_timezone(ctx, field)
+			case "version":
+				return ec.fieldContext_LearnerGoal_version(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_LearnerGoal_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_LearnerGoal_updatedAt(ctx, field)
+			case "skills":
+				return ec.fieldContext_LearnerGoal_skills(ctx, field)
+			case "feasibility":
+				return ec.fieldContext_LearnerGoal_feasibility(ctx, field)
+			case "feasibilityReason":
+				return ec.fieldContext_LearnerGoal_feasibilityReason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerGoal", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_learnerGoal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_learnerGoal,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().LearnerGoal(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		ec.marshalNLearnerGoal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoal,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_learnerGoal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LearnerGoal_id(ctx, field)
+			case "title":
+				return ec.fieldContext_LearnerGoal_title(ctx, field)
+			case "templateVersion":
+				return ec.fieldContext_LearnerGoal_templateVersion(ctx, field)
+			case "targetTopics":
+				return ec.fieldContext_LearnerGoal_targetTopics(ctx, field)
+			case "deadline":
+				return ec.fieldContext_LearnerGoal_deadline(ctx, field)
+			case "weeklyMinutes":
+				return ec.fieldContext_LearnerGoal_weeklyMinutes(ctx, field)
+			case "active":
+				return ec.fieldContext_LearnerGoal_active(ctx, field)
+			case "languages":
+				return ec.fieldContext_LearnerGoal_languages(ctx, field)
+			case "formats":
+				return ec.fieldContext_LearnerGoal_formats(ctx, field)
+			case "selfAssessments":
+				return ec.fieldContext_LearnerGoal_selfAssessments(ctx, field)
+			case "timezone":
+				return ec.fieldContext_LearnerGoal_timezone(ctx, field)
+			case "version":
+				return ec.fieldContext_LearnerGoal_version(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_LearnerGoal_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_LearnerGoal_updatedAt(ctx, field)
+			case "skills":
+				return ec.fieldContext_LearnerGoal_skills(ctx, field)
+			case "feasibility":
+				return ec.fieldContext_LearnerGoal_feasibility(ctx, field)
+			case "feasibilityReason":
+				return ec.fieldContext_LearnerGoal_feasibilityReason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerGoal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_learnerGoal_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_learnerDiagnostic(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_learnerDiagnostic,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().LearnerDiagnostic(ctx, fc.Args["goalId"].(string))
+		},
+		nil,
+		ec.marshalNLearnerDiagnosticSession2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticSession,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_learnerDiagnostic(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LearnerDiagnosticSession_id(ctx, field)
+			case "goalId":
+				return ec.fieldContext_LearnerDiagnosticSession_goalId(ctx, field)
+			case "goalVersion":
+				return ec.fieldContext_LearnerDiagnosticSession_goalVersion(ctx, field)
+			case "status":
+				return ec.fieldContext_LearnerDiagnosticSession_status(ctx, field)
+			case "baseline":
+				return ec.fieldContext_LearnerDiagnosticSession_baseline(ctx, field)
+			case "tasks":
+				return ec.fieldContext_LearnerDiagnosticSession_tasks(ctx, field)
+			case "estimatedMinutes":
+				return ec.fieldContext_LearnerDiagnosticSession_estimatedMinutes(ctx, field)
+			case "stopRule":
+				return ec.fieldContext_LearnerDiagnosticSession_stopRule(ctx, field)
+			case "startedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_startedAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_LearnerDiagnosticSession_expiresAt(ctx, field)
+			case "skippedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_skippedAt(ctx, field)
+			case "finalizedAt":
+				return ec.fieldContext_LearnerDiagnosticSession_finalizedAt(ctx, field)
+			case "report":
+				return ec.fieldContext_LearnerDiagnosticSession_report(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LearnerDiagnosticSession", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_learnerDiagnostic_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -33625,6 +37304,157 @@ func (ec *executionContext) unmarshalInputITTaskOptionInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputLearnerAvailabilityInput(ctx context.Context, obj any) (model.LearnerAvailabilityInput, error) {
+	var it model.LearnerAvailabilityInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"weeklyMinutes", "timezone"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "weeklyMinutes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("weeklyMinutes"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WeeklyMinutes = data
+		case "timezone":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timezone"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Timezone = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLearnerGoalInput(ctx context.Context, obj any) (model.LearnerGoalInput, error) {
+	var it model.LearnerGoalInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"title", "templateVersion", "targetTopics", "deadline", "weeklyMinutes", "active", "languages", "formats", "selfAssessments"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "templateVersion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("templateVersion"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TemplateVersion = data
+		case "targetTopics":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetTopics"))
+			data, err := ec.unmarshalNID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TargetTopics = data
+		case "deadline":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deadline"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Deadline = data
+		case "weeklyMinutes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("weeklyMinutes"))
+			data, err := ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WeeklyMinutes = data
+		case "active":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("active"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Active = data
+		case "languages":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("languages"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Languages = data
+		case "formats":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("formats"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Formats = data
+		case "selfAssessments":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("selfAssessments"))
+			data, err := ec.unmarshalNLearnerSelfAssessmentInput2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerSelfAssessmentInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SelfAssessments = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLearnerSelfAssessmentInput(ctx context.Context, obj any) (model.LearnerSelfAssessmentInput, error) {
+	var it model.LearnerSelfAssessmentInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"topicId", "level"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "topicId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("topicId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TopicID = data
+		case "level":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("level"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Level = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj any) (model.LoginInput, error) {
 	var it model.LoginInput
 	asMap := map[string]any{}
@@ -36207,6 +40037,732 @@ func (ec *executionContext) _ITTaskSummary(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var learnerAvailabilityImplementors = []string{"LearnerAvailability"}
+
+func (ec *executionContext) _LearnerAvailability(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerAvailability) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerAvailabilityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerAvailability")
+		case "weeklyMinutes":
+			out.Values[i] = ec._LearnerAvailability_weeklyMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timezone":
+			out.Values[i] = ec._LearnerAvailability_timezone(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "version":
+			out.Values[i] = ec._LearnerAvailability_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._LearnerAvailability_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerDiagnosticOutcomeImplementors = []string{"LearnerDiagnosticOutcome"}
+
+func (ec *executionContext) _LearnerDiagnosticOutcome(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerDiagnosticOutcome) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerDiagnosticOutcomeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerDiagnosticOutcome")
+		case "taskId":
+			out.Values[i] = ec._LearnerDiagnosticOutcome_taskId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "taskVersionId":
+			out.Values[i] = ec._LearnerDiagnosticOutcome_taskVersionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "topicId":
+			out.Values[i] = ec._LearnerDiagnosticOutcome_topicId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "submissionId":
+			out.Values[i] = ec._LearnerDiagnosticOutcome_submissionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "eventId":
+			out.Values[i] = ec._LearnerDiagnosticOutcome_eventId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "correctionVersion":
+			out.Values[i] = ec._LearnerDiagnosticOutcome_correctionVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "verdict":
+			out.Values[i] = ec._LearnerDiagnosticOutcome_verdict(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "gradedAt":
+			out.Values[i] = ec._LearnerDiagnosticOutcome_gradedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerDiagnosticReportImplementors = []string{"LearnerDiagnosticReport"}
+
+func (ec *executionContext) _LearnerDiagnosticReport(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerDiagnosticReport) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerDiagnosticReportImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerDiagnosticReport")
+		case "assigned":
+			out.Values[i] = ec._LearnerDiagnosticReport_assigned(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "assessed":
+			out.Values[i] = ec._LearnerDiagnosticReport_assessed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "topics":
+			out.Values[i] = ec._LearnerDiagnosticReport_topics(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "outcomes":
+			out.Values[i] = ec._LearnerDiagnosticReport_outcomes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerDiagnosticSessionImplementors = []string{"LearnerDiagnosticSession"}
+
+func (ec *executionContext) _LearnerDiagnosticSession(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerDiagnosticSession) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerDiagnosticSessionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerDiagnosticSession")
+		case "id":
+			out.Values[i] = ec._LearnerDiagnosticSession_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "goalId":
+			out.Values[i] = ec._LearnerDiagnosticSession_goalId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "goalVersion":
+			out.Values[i] = ec._LearnerDiagnosticSession_goalVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._LearnerDiagnosticSession_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "baseline":
+			out.Values[i] = ec._LearnerDiagnosticSession_baseline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasks":
+			out.Values[i] = ec._LearnerDiagnosticSession_tasks(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "estimatedMinutes":
+			out.Values[i] = ec._LearnerDiagnosticSession_estimatedMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "stopRule":
+			out.Values[i] = ec._LearnerDiagnosticSession_stopRule(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startedAt":
+			out.Values[i] = ec._LearnerDiagnosticSession_startedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "expiresAt":
+			out.Values[i] = ec._LearnerDiagnosticSession_expiresAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "skippedAt":
+			out.Values[i] = ec._LearnerDiagnosticSession_skippedAt(ctx, field, obj)
+		case "finalizedAt":
+			out.Values[i] = ec._LearnerDiagnosticSession_finalizedAt(ctx, field, obj)
+		case "report":
+			out.Values[i] = ec._LearnerDiagnosticSession_report(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerDiagnosticStopRuleImplementors = []string{"LearnerDiagnosticStopRule"}
+
+func (ec *executionContext) _LearnerDiagnosticStopRule(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerDiagnosticStopRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerDiagnosticStopRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerDiagnosticStopRule")
+		case "policyVersion":
+			out.Values[i] = ec._LearnerDiagnosticStopRule_policyVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxTasks":
+			out.Values[i] = ec._LearnerDiagnosticStopRule_maxTasks(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "budgetMinutes":
+			out.Values[i] = ec._LearnerDiagnosticStopRule_budgetMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerDiagnosticTaskImplementors = []string{"LearnerDiagnosticTask"}
+
+func (ec *executionContext) _LearnerDiagnosticTask(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerDiagnosticTask) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerDiagnosticTaskImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerDiagnosticTask")
+		case "taskId":
+			out.Values[i] = ec._LearnerDiagnosticTask_taskId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "taskVersionId":
+			out.Values[i] = ec._LearnerDiagnosticTask_taskVersionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "topicId":
+			out.Values[i] = ec._LearnerDiagnosticTask_topicId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "estimatedMinutes":
+			out.Values[i] = ec._LearnerDiagnosticTask_estimatedMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerDiagnosticTopicCoverageImplementors = []string{"LearnerDiagnosticTopicCoverage"}
+
+func (ec *executionContext) _LearnerDiagnosticTopicCoverage(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerDiagnosticTopicCoverage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerDiagnosticTopicCoverageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerDiagnosticTopicCoverage")
+		case "topicId":
+			out.Values[i] = ec._LearnerDiagnosticTopicCoverage_topicId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "assigned":
+			out.Values[i] = ec._LearnerDiagnosticTopicCoverage_assigned(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "assessed":
+			out.Values[i] = ec._LearnerDiagnosticTopicCoverage_assessed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "observation":
+			out.Values[i] = ec._LearnerDiagnosticTopicCoverage_observation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "uncertainty":
+			out.Values[i] = ec._LearnerDiagnosticTopicCoverage_uncertainty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerGoalImplementors = []string{"LearnerGoal"}
+
+func (ec *executionContext) _LearnerGoal(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerGoal) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerGoalImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerGoal")
+		case "id":
+			out.Values[i] = ec._LearnerGoal_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._LearnerGoal_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "templateVersion":
+			out.Values[i] = ec._LearnerGoal_templateVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "targetTopics":
+			out.Values[i] = ec._LearnerGoal_targetTopics(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deadline":
+			out.Values[i] = ec._LearnerGoal_deadline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "weeklyMinutes":
+			out.Values[i] = ec._LearnerGoal_weeklyMinutes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "active":
+			out.Values[i] = ec._LearnerGoal_active(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "languages":
+			out.Values[i] = ec._LearnerGoal_languages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "formats":
+			out.Values[i] = ec._LearnerGoal_formats(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "selfAssessments":
+			out.Values[i] = ec._LearnerGoal_selfAssessments(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timezone":
+			out.Values[i] = ec._LearnerGoal_timezone(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "version":
+			out.Values[i] = ec._LearnerGoal_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._LearnerGoal_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._LearnerGoal_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "skills":
+			out.Values[i] = ec._LearnerGoal_skills(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "feasibility":
+			out.Values[i] = ec._LearnerGoal_feasibility(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "feasibilityReason":
+			out.Values[i] = ec._LearnerGoal_feasibilityReason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerGoalTemplateImplementors = []string{"LearnerGoalTemplate"}
+
+func (ec *executionContext) _LearnerGoalTemplate(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerGoalTemplate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerGoalTemplateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerGoalTemplate")
+		case "version":
+			out.Values[i] = ec._LearnerGoalTemplate_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._LearnerGoalTemplate_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "suggestsDeadline":
+			out.Values[i] = ec._LearnerGoalTemplate_suggestsDeadline(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerProfileImplementors = []string{"LearnerProfile"}
+
+func (ec *executionContext) _LearnerProfile(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerProfile) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerProfileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerProfile")
+		case "availability":
+			out.Values[i] = ec._LearnerProfile_availability(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerSelfAssessmentImplementors = []string{"LearnerSelfAssessment"}
+
+func (ec *executionContext) _LearnerSelfAssessment(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerSelfAssessment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerSelfAssessmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerSelfAssessment")
+		case "topicId":
+			out.Values[i] = ec._LearnerSelfAssessment_topicId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "level":
+			out.Values[i] = ec._LearnerSelfAssessment_level(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var learnerTopicSkillImplementors = []string{"LearnerTopicSkill"}
+
+func (ec *executionContext) _LearnerTopicSkill(ctx context.Context, sel ast.SelectionSet, obj *model.LearnerTopicSkill) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, learnerTopicSkillImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LearnerTopicSkill")
+		case "topicId":
+			out.Values[i] = ec._LearnerTopicSkill_topicId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._LearnerTopicSkill_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var learningMaterialImplementors = []string{"LearningMaterial"}
 
 func (ec *executionContext) _LearningMaterial(ctx context.Context, sel ast.SelectionSet, obj *model.LearningMaterial) graphql.Marshaler {
@@ -38011,6 +42567,55 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_setMaterialReviewThreadResolved(ctx, field)
 			})
+		case "saveLearnerProfile":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_saveLearnerProfile(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createLearnerGoal":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createLearnerGoal(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateLearnerGoal":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateLearnerGoal(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteLearnerGoal":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteLearnerGoal(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startLearnerDiagnostic":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_startLearnerDiagnostic(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "skipLearnerDiagnostic":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_skipLearnerDiagnostic(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "finalizeLearnerDiagnostic":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_finalizeLearnerDiagnostic(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "saveLearningPlan":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveLearningPlan(ctx, field)
@@ -39676,6 +44281,116 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_materialModeration(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "learnerGoalTemplates":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_learnerGoalTemplates(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "learnerProfile":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_learnerProfile(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "learnerGoals":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_learnerGoals(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "learnerGoal":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_learnerGoal(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "learnerDiagnostic":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_learnerDiagnostic(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -43170,6 +47885,456 @@ func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.S
 	return ret
 }
 
+func (ec *executionContext) unmarshalNLearnerAvailabilityInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerAvailabilityInput(ctx context.Context, v any) (model.LearnerAvailabilityInput, error) {
+	res, err := ec.unmarshalInputLearnerAvailabilityInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticOutcome2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticOutcomeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LearnerDiagnosticOutcome) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLearnerDiagnosticOutcome2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticOutcome(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticOutcome2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticOutcome(ctx context.Context, sel ast.SelectionSet, v *model.LearnerDiagnosticOutcome) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerDiagnosticOutcome(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticSession2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticSession(ctx context.Context, sel ast.SelectionSet, v model.LearnerDiagnosticSession) graphql.Marshaler {
+	return ec._LearnerDiagnosticSession(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticSession2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticSession(ctx context.Context, sel ast.SelectionSet, v *model.LearnerDiagnosticSession) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerDiagnosticSession(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticStopRule2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticStopRule(ctx context.Context, sel ast.SelectionSet, v *model.LearnerDiagnosticStopRule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerDiagnosticStopRule(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticTask2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticTaskᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LearnerDiagnosticTask) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLearnerDiagnosticTask2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticTask(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticTask2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticTask(ctx context.Context, sel ast.SelectionSet, v *model.LearnerDiagnosticTask) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerDiagnosticTask(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticTopicCoverage2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticTopicCoverageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LearnerDiagnosticTopicCoverage) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLearnerDiagnosticTopicCoverage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticTopicCoverage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLearnerDiagnosticTopicCoverage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticTopicCoverage(ctx context.Context, sel ast.SelectionSet, v *model.LearnerDiagnosticTopicCoverage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerDiagnosticTopicCoverage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLearnerGoal2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoal(ctx context.Context, sel ast.SelectionSet, v model.LearnerGoal) graphql.Marshaler {
+	return ec._LearnerGoal(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLearnerGoal2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LearnerGoal) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLearnerGoal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoal(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLearnerGoal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoal(ctx context.Context, sel ast.SelectionSet, v *model.LearnerGoal) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerGoal(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNLearnerGoalInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalInput(ctx context.Context, v any) (model.LearnerGoalInput, error) {
+	res, err := ec.unmarshalInputLearnerGoalInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNLearnerGoalTemplate2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalTemplateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LearnerGoalTemplate) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLearnerGoalTemplate2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalTemplate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLearnerGoalTemplate2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerGoalTemplate(ctx context.Context, sel ast.SelectionSet, v *model.LearnerGoalTemplate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerGoalTemplate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLearnerProfile2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerProfile(ctx context.Context, sel ast.SelectionSet, v model.LearnerProfile) graphql.Marshaler {
+	return ec._LearnerProfile(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLearnerProfile2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerProfile(ctx context.Context, sel ast.SelectionSet, v *model.LearnerProfile) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerProfile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLearnerSelfAssessment2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerSelfAssessmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LearnerSelfAssessment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLearnerSelfAssessment2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerSelfAssessment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLearnerSelfAssessment2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerSelfAssessment(ctx context.Context, sel ast.SelectionSet, v *model.LearnerSelfAssessment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerSelfAssessment(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNLearnerSelfAssessmentInput2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerSelfAssessmentInputᚄ(ctx context.Context, v any) ([]*model.LearnerSelfAssessmentInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.LearnerSelfAssessmentInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNLearnerSelfAssessmentInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerSelfAssessmentInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNLearnerSelfAssessmentInput2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerSelfAssessmentInput(ctx context.Context, v any) (*model.LearnerSelfAssessmentInput, error) {
+	res, err := ec.unmarshalInputLearnerSelfAssessmentInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNLearnerTopicSkill2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerTopicSkillᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LearnerTopicSkill) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLearnerTopicSkill2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerTopicSkill(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNLearnerTopicSkill2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerTopicSkill(ctx context.Context, sel ast.SelectionSet, v *model.LearnerTopicSkill) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LearnerTopicSkill(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNLearningMaterial2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearningMaterialᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LearningMaterial) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -46086,6 +51251,20 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOLearnerAvailability2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerAvailability(ctx context.Context, sel ast.SelectionSet, v *model.LearnerAvailability) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LearnerAvailability(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLearnerDiagnosticReport2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐLearnerDiagnosticReport(ctx context.Context, sel ast.SelectionSet, v *model.LearnerDiagnosticReport) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LearnerDiagnosticReport(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOMaterial2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v *model.Material) graphql.Marshaler {

@@ -524,6 +524,11 @@ type Query {
   materialReviewThreads(proposalId: ID!, limit: Int! = 20, afterId: ID): MaterialReviewThreadPage
   materialReviewReplies(proposalId: ID!, threadId: ID!, limit: Int! = 20, afterId: ID): MaterialReviewReplyPage
   materialModeration(id: ID!): MaterialModerationState
+  learnerGoalTemplates: [LearnerGoalTemplate!]!
+  learnerProfile: LearnerProfile!
+  learnerGoals: [LearnerGoal!]!
+  learnerGoal(id: ID!): LearnerGoal!
+  learnerDiagnostic(goalId: ID!): LearnerDiagnosticSession!
   myLearningPlans: [SavedLearningPlan!]!
   savedLearningPlan(id: ID!): SavedLearningPlan!
   learningPlan(goal: String!, minutes: Int!, sessionCount: Int!): LearningPlan!
@@ -587,6 +592,13 @@ type Mutation {
   createMaterialReviewThread(input: CreateMaterialReviewThreadInput!): MaterialReviewThread
   replyToMaterialReviewThread(proposalId: ID!, threadId: ID!, body: String!): MaterialReviewReply
   setMaterialReviewThreadResolved(proposalId: ID!, threadId: ID!, resolved: Boolean!): MaterialReviewThread
+  saveLearnerProfile(input: LearnerAvailabilityInput!, expectedVersion: Int!, requestId: ID!): LearnerProfile!
+  createLearnerGoal(input: LearnerGoalInput!, requestId: ID!): LearnerGoal!
+  updateLearnerGoal(id: ID!, input: LearnerGoalInput!, expectedVersion: Int!, requestId: ID!): LearnerGoal!
+  deleteLearnerGoal(id: ID!, expectedVersion: Int!, requestId: ID!): Boolean!
+  startLearnerDiagnostic(goalId: ID!, goalVersion: Int!, budgetMinutes: Int! = 0): LearnerDiagnosticSession!
+  skipLearnerDiagnostic(goalId: ID!, goalVersion: Int!): LearnerDiagnosticSession!
+  finalizeLearnerDiagnostic(goalId: ID!, goalVersion: Int!, sessionId: ID!, allowPartial: Boolean! = false): LearnerDiagnosticSession!
   saveLearningPlan(goal: String!, minutes: Int!, sessionCount: Int!, requestId: ID!): SavedLearningPlan!
   removeLearningPlanTask(id: ID!, revision: Int!, taskId: ID!): SavedLearningPlan!
   updateLearningMaterial(id: ID!, revision: Int!, materialId: ID!, status: MaterialProgress!): SavedLearningPlan!
@@ -754,4 +766,126 @@ type SavedLearningPlan {
  materials: [SavedLearningMaterial!]!
  tasks: [SavedLearningTask!]!
  progressAvailable: Boolean!
+}
+
+type LearnerGoalTemplate {
+  version: String!
+  title: String!
+  suggestsDeadline: Boolean!
+}
+
+input LearnerAvailabilityInput {
+  weeklyMinutes: Int!
+  timezone: String!
+}
+
+type LearnerAvailability {
+  weeklyMinutes: Int!
+  timezone: String!
+  version: Int!
+  updatedAt: String!
+}
+
+type LearnerProfile { availability: LearnerAvailability }
+
+input LearnerSelfAssessmentInput {
+  topicId: ID!
+  level: String!
+}
+
+input LearnerGoalInput {
+  title: String!
+  templateVersion: String
+  targetTopics: [ID!]!
+  deadline: String
+  weeklyMinutes: Int!
+  active: Boolean!
+  languages: [String!]!
+  formats: [String!]!
+  selfAssessments: [LearnerSelfAssessmentInput!]!
+}
+
+type LearnerSelfAssessment {
+  topicId: ID!
+  level: String!
+}
+
+type LearnerTopicSkill {
+  topicId: ID!
+  state: String!
+}
+
+type LearnerGoal {
+  id: ID!
+  title: String!
+  templateVersion: String!
+  targetTopics: [ID!]!
+  deadline: String!
+  weeklyMinutes: Int!
+  active: Boolean!
+  languages: [String!]!
+  formats: [String!]!
+  selfAssessments: [LearnerSelfAssessment!]!
+  timezone: String!
+  version: Int!
+  createdAt: String!
+  updatedAt: String!
+  skills: [LearnerTopicSkill!]!
+  feasibility: String!
+  feasibilityReason: String!
+}
+
+type LearnerDiagnosticTask {
+  taskId: ID!
+  taskVersionId: ID!
+  topicId: ID!
+  estimatedMinutes: Int!
+}
+
+type LearnerDiagnosticStopRule {
+  policyVersion: String!
+  maxTasks: Int!
+  budgetMinutes: Int!
+}
+
+type LearnerDiagnosticTopicCoverage {
+  topicId: ID!
+  assigned: Int!
+  assessed: Int!
+  observation: String!
+  uncertainty: String!
+}
+
+type LearnerDiagnosticOutcome {
+  taskId: ID!
+  taskVersionId: ID!
+  topicId: ID!
+  submissionId: ID!
+  eventId: ID!
+  correctionVersion: Int!
+  verdict: String!
+  gradedAt: String!
+}
+
+type LearnerDiagnosticReport {
+  assigned: Int!
+  assessed: Int!
+  topics: [LearnerDiagnosticTopicCoverage!]!
+  outcomes: [LearnerDiagnosticOutcome!]!
+}
+
+type LearnerDiagnosticSession {
+  id: ID!
+  goalId: ID!
+  goalVersion: Int!
+  status: String!
+  baseline: String!
+  tasks: [LearnerDiagnosticTask!]!
+  estimatedMinutes: Int!
+  stopRule: LearnerDiagnosticStopRule!
+  startedAt: String!
+  expiresAt: String!
+  skippedAt: String
+  finalizedAt: String
+  report: LearnerDiagnosticReport
 }
