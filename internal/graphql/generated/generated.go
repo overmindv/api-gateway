@@ -579,16 +579,17 @@ type ComplexityRoot struct {
 	}
 
 	MaterialChangeProposal struct {
-		AuthorID         func(childComplexity int) int
-		BaseOutdated     func(childComplexity int) int
-		BaseRevisionID   func(childComplexity int) int
-		ClosedAt         func(childComplexity int) int
-		CreatedAt        func(childComplexity int) int
-		Head             func(childComplexity int) int
-		ID               func(childComplexity int) int
-		MaterialID       func(childComplexity int) int
-		MergedRevisionID func(childComplexity int) int
-		Status           func(childComplexity int) int
+		AuthorID           func(childComplexity int) int
+		BaseOutdated       func(childComplexity int) int
+		BaseRevisionID     func(childComplexity int) int
+		ClosedAt           func(childComplexity int) int
+		CreatedAt          func(childComplexity int) int
+		Head               func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		InitialPublication func(childComplexity int) int
+		MaterialID         func(childComplexity int) int
+		MergedRevisionID   func(childComplexity int) int
+		Status             func(childComplexity int) int
 	}
 
 	MaterialChangeRevision struct {
@@ -814,6 +815,7 @@ type ComplexityRoot struct {
 		SubmitITTaskAnswer               func(childComplexity int, taskID string, input model.ITSubmissionInput) int
 		SubmitITTaskCode                 func(childComplexity int, taskID string, input model.ITCodeSubmissionInput) int
 		SubmitLearningPlanFeedback       func(childComplexity int, goalID string, input model.LearnerStudyPlanFeedbackInput, requestID string) int
+		SubmitMaterialPublication        func(childComplexity int, id string, expectedRevisionID string) int
 		SubmitMaterialReview             func(childComplexity int, input model.SubmitMaterialReviewInput) int
 		UpdateCourse                     func(childComplexity int, id string, input model.UpdateCourseInput) int
 		UpdateITTask                     func(childComplexity int, id string, input model.ITTaskInput) int
@@ -1231,6 +1233,7 @@ type MutationResolver interface {
 	RefreshSession(ctx context.Context) (*string, error)
 	CreateMaterialDraft(ctx context.Context, input model.CreateMaterialDraftInput) (*model.Material, error)
 	SaveMaterialDraft(ctx context.Context, input model.SaveMaterialDraftInput) (*model.MaterialRevision, error)
+	SubmitMaterialPublication(ctx context.Context, id string, expectedRevisionID string) (*model.MaterialChangeProposal, error)
 	OpenMaterialChange(ctx context.Context, input model.OpenMaterialChangeInput) (*model.MaterialChangeProposal, error)
 	AppendMaterialChange(ctx context.Context, input model.AppendMaterialChangeInput) (*model.MaterialChangeProposal, error)
 	CloseMaterialChange(ctx context.Context, proposalID string) (*model.MaterialChangeProposal, error)
@@ -3623,6 +3626,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.MaterialChangeProposal.ID(childComplexity), true
+	case "MaterialChangeProposal.initialPublication":
+		if e.complexity.MaterialChangeProposal.InitialPublication == nil {
+			break
+		}
+
+		return e.complexity.MaterialChangeProposal.InitialPublication(childComplexity), true
 	case "MaterialChangeProposal.materialId":
 		if e.complexity.MaterialChangeProposal.MaterialID == nil {
 			break
@@ -4949,6 +4958,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SubmitLearningPlanFeedback(childComplexity, args["goalId"].(string), args["input"].(model.LearnerStudyPlanFeedbackInput), args["requestId"].(string)), true
+	case "Mutation.submitMaterialPublication":
+		if e.complexity.Mutation.SubmitMaterialPublication == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_submitMaterialPublication_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SubmitMaterialPublication(childComplexity, args["id"].(string), args["expectedRevisionId"].(string)), true
 	case "Mutation.submitMaterialReview":
 		if e.complexity.Mutation.SubmitMaterialReview == nil {
 			break
@@ -7709,6 +7729,7 @@ type MaterialChangeProposal {
   createdAt: String!
   closedAt: String
   baseOutdated: Boolean!
+  initialPublication: Boolean!
   mergedRevisionId: ID
 }
 type MaterialChangeRevision {
@@ -7886,6 +7907,7 @@ type Mutation {
   refreshSession: String
   createMaterialDraft(input: CreateMaterialDraftInput!): Material
   saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
+  submitMaterialPublication(id: ID!, expectedRevisionId: ID!): MaterialChangeProposal
   openMaterialChange(input: OpenMaterialChangeInput!): MaterialChangeProposal
   appendMaterialChange(input: AppendMaterialChangeInput!): MaterialChangeProposal
   closeMaterialChange(proposalId: ID!): MaterialChangeProposal
@@ -9358,6 +9380,22 @@ func (ec *executionContext) field_Mutation_submitLearningPlanFeedback_args(ctx c
 		return nil, err
 	}
 	args["requestId"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_submitMaterialPublication_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "expectedRevisionId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["expectedRevisionId"] = arg1
 	return args, nil
 }
 
@@ -21630,6 +21668,35 @@ func (ec *executionContext) fieldContext_MaterialChangeProposal_baseOutdated(_ c
 	return fc, nil
 }
 
+func (ec *executionContext) _MaterialChangeProposal_initialPublication(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MaterialChangeProposal_initialPublication,
+		func(ctx context.Context) (any, error) {
+			return obj.InitialPublication, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MaterialChangeProposal_initialPublication(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MaterialChangeProposal",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MaterialChangeProposal_mergedRevisionId(ctx context.Context, field graphql.CollectedField, obj *model.MaterialChangeProposal) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -24718,6 +24785,71 @@ func (ec *executionContext) fieldContext_Mutation_saveMaterialDraft(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_submitMaterialPublication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_submitMaterialPublication,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SubmitMaterialPublication(ctx, fc.Args["id"].(string), fc.Args["expectedRevisionId"].(string))
+		},
+		nil,
+		ec.marshalOMaterialChangeProposal2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐMaterialChangeProposal,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_submitMaterialPublication(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MaterialChangeProposal_id(ctx, field)
+			case "materialId":
+				return ec.fieldContext_MaterialChangeProposal_materialId(ctx, field)
+			case "baseRevisionId":
+				return ec.fieldContext_MaterialChangeProposal_baseRevisionId(ctx, field)
+			case "authorId":
+				return ec.fieldContext_MaterialChangeProposal_authorId(ctx, field)
+			case "status":
+				return ec.fieldContext_MaterialChangeProposal_status(ctx, field)
+			case "head":
+				return ec.fieldContext_MaterialChangeProposal_head(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MaterialChangeProposal_createdAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
+			case "baseOutdated":
+				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			case "initialPublication":
+				return ec.fieldContext_MaterialChangeProposal_initialPublication(ctx, field)
+			case "mergedRevisionId":
+				return ec.fieldContext_MaterialChangeProposal_mergedRevisionId(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MaterialChangeProposal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_submitMaterialPublication_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_openMaterialChange(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -24761,6 +24893,8 @@ func (ec *executionContext) fieldContext_Mutation_openMaterialChange(ctx context
 				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
 			case "baseOutdated":
 				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			case "initialPublication":
+				return ec.fieldContext_MaterialChangeProposal_initialPublication(ctx, field)
 			case "mergedRevisionId":
 				return ec.fieldContext_MaterialChangeProposal_mergedRevisionId(ctx, field)
 			}
@@ -24824,6 +24958,8 @@ func (ec *executionContext) fieldContext_Mutation_appendMaterialChange(ctx conte
 				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
 			case "baseOutdated":
 				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			case "initialPublication":
+				return ec.fieldContext_MaterialChangeProposal_initialPublication(ctx, field)
 			case "mergedRevisionId":
 				return ec.fieldContext_MaterialChangeProposal_mergedRevisionId(ctx, field)
 			}
@@ -24887,6 +25023,8 @@ func (ec *executionContext) fieldContext_Mutation_closeMaterialChange(ctx contex
 				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
 			case "baseOutdated":
 				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			case "initialPublication":
+				return ec.fieldContext_MaterialChangeProposal_initialPublication(ctx, field)
 			case "mergedRevisionId":
 				return ec.fieldContext_MaterialChangeProposal_mergedRevisionId(ctx, field)
 			}
@@ -24950,6 +25088,8 @@ func (ec *executionContext) fieldContext_Mutation_rebaseMaterialChange(ctx conte
 				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
 			case "baseOutdated":
 				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			case "initialPublication":
+				return ec.fieldContext_MaterialChangeProposal_initialPublication(ctx, field)
 			case "mergedRevisionId":
 				return ec.fieldContext_MaterialChangeProposal_mergedRevisionId(ctx, field)
 			}
@@ -32502,6 +32642,8 @@ func (ec *executionContext) fieldContext_Query_materialChangeProposal(ctx contex
 				return ec.fieldContext_MaterialChangeProposal_closedAt(ctx, field)
 			case "baseOutdated":
 				return ec.fieldContext_MaterialChangeProposal_baseOutdated(ctx, field)
+			case "initialPublication":
+				return ec.fieldContext_MaterialChangeProposal_initialPublication(ctx, field)
 			case "mergedRevisionId":
 				return ec.fieldContext_MaterialChangeProposal_mergedRevisionId(ctx, field)
 			}
@@ -48091,6 +48233,11 @@ func (ec *executionContext) _MaterialChangeProposal(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "initialPublication":
+			out.Values[i] = ec._MaterialChangeProposal_initialPublication(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "mergedRevisionId":
 			out.Values[i] = ec._MaterialChangeProposal_mergedRevisionId(ctx, field, obj)
 		default:
@@ -49267,6 +49414,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "saveMaterialDraft":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_saveMaterialDraft(ctx, field)
+			})
+		case "submitMaterialPublication":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_submitMaterialPublication(ctx, field)
 			})
 		case "openMaterialChange":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {

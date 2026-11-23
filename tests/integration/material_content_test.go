@@ -138,6 +138,15 @@ func TestMaterialContentContract(t *testing.T) {
 		stored.Title != nextTitle || stored.Revision == nil || *stored.Revision != *saved {
 		t.Error("read did not return the saved title and revision after rejected requests")
 	}
+
+	const submit = `mutation($id:ID!,$revisionId:ID!) {
+	  submitMaterialPublication(id:$id,expectedRevisionId:$revisionId) { id initialPublication }
+	}`
+	currentSubmission := map[string]any{"id": draft.ID, "revisionId": saved.ID}
+	requireMaterialContractError(t, run(readerCookie, submit, currentSubmission), "NOT_FOUND")
+	requireMaterialContractError(t, run(ownerCookie, submit, map[string]any{"id": draft.ID, "revisionId": draft.Revision.ID}), "REVISION_CONFLICT")
+	requireMaterialContractError(t, run(ownerCookie, submit, currentSubmission), "INVALID_ARGUMENT")
+	requireMaterialContractError(t, run(readerCookie, published, find), "NOT_FOUND")
 }
 
 func materialContractHandler(t *testing.T, address, token string) (http.Handler, func(string) string) {

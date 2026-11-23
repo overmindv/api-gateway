@@ -745,16 +745,17 @@ type MaterialChangeHistoryPage struct {
 }
 
 type MaterialChangeProposal struct {
-	ID               string                  `json:"id"`
-	MaterialID       string                  `json:"materialId"`
-	BaseRevisionID   string                  `json:"baseRevisionId"`
-	AuthorID         string                  `json:"authorId"`
-	Status           MaterialChangeStatus    `json:"status"`
-	Head             *MaterialChangeRevision `json:"head"`
-	CreatedAt        string                  `json:"createdAt"`
-	ClosedAt         *string                 `json:"closedAt,omitempty"`
-	BaseOutdated     bool                    `json:"baseOutdated"`
-	MergedRevisionID *string                 `json:"mergedRevisionId,omitempty"`
+	ID                 string                  `json:"id"`
+	MaterialID         string                  `json:"materialId"`
+	BaseRevisionID     string                  `json:"baseRevisionId"`
+	AuthorID           string                  `json:"authorId"`
+	Status             MaterialChangeStatus    `json:"status"`
+	Head               *MaterialChangeRevision `json:"head"`
+	CreatedAt          string                  `json:"createdAt"`
+	ClosedAt           *string                 `json:"closedAt,omitempty"`
+	BaseOutdated       bool                    `json:"baseOutdated"`
+	InitialPublication bool                    `json:"initialPublication"`
+	MergedRevisionID   *string                 `json:"mergedRevisionId,omitempty"`
 }
 
 type MaterialChangeRevision struct {

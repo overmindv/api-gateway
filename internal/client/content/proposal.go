@@ -8,6 +8,7 @@ import (
 
 type ProposalService interface {
 	ReviewService
+	SubmitInitialPublication(context.Context, Actor, *pb.SubmitInitialPublicationRequest) (*pb.SubmitInitialPublicationResponse, error)
 	RebaseProposal(context.Context, Actor, *pb.RebaseChangeProposalRequest) (*pb.RebaseChangeProposalResponse, error)
 	MergeProposal(context.Context, Actor, *pb.MergeChangeProposalRequest) (*pb.MergeChangeProposalResponse, error)
 	OpenProposal(context.Context, Actor, *pb.OpenChangeProposalRequest) (*pb.OpenChangeProposalResponse, error)
@@ -16,6 +17,10 @@ type ProposalService interface {
 	CloseProposal(context.Context, Actor, *pb.CloseChangeProposalRequest) (*pb.CloseChangeProposalResponse, error)
 	ProposalHistory(context.Context, Actor, *pb.ListChangeProposalHistoryRequest) (*pb.ListChangeProposalHistoryResponse, error)
 	ProposalDiff(context.Context, Actor, *pb.GetChangeProposalDiffRequest) (*pb.GetChangeProposalDiffResponse, error)
+}
+
+func (c *Client) SubmitInitialPublication(ctx context.Context, actor Actor, req *pb.SubmitInitialPublicationRequest) (*pb.SubmitInitialPublicationResponse, error) {
+	return call(ctx, c, actor, req, c.rpc.SubmitInitialPublication)
 }
 
 func (c *Client) OpenProposal(ctx context.Context, actor Actor, req *pb.OpenChangeProposalRequest) (*pb.OpenChangeProposalResponse, error) {
