@@ -1789,16 +1789,18 @@ type ITProgrammingLanguage string
 const (
 	ITProgrammingLanguagePython ITProgrammingLanguage = "python"
 	ITProgrammingLanguageGo     ITProgrammingLanguage = "go"
+	ITProgrammingLanguageSqlite ITProgrammingLanguage = "sqlite"
 )
 
 var AllITProgrammingLanguage = []ITProgrammingLanguage{
 	ITProgrammingLanguagePython,
 	ITProgrammingLanguageGo,
+	ITProgrammingLanguageSqlite,
 }
 
 func (e ITProgrammingLanguage) IsValid() bool {
 	switch e {
-	case ITProgrammingLanguagePython, ITProgrammingLanguageGo:
+	case ITProgrammingLanguagePython, ITProgrammingLanguageGo, ITProgrammingLanguageSqlite:
 		return true
 	}
 	return false
