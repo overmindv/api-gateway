@@ -7420,7 +7420,7 @@ enum ITTaskStatus { draft published archived }
 enum ITTaskType { single_choice multiple_choice programming }
 enum ITTaskDifficulty { easy medium hard }
 enum ITSubmissionVerdict { accepted wrong_answer }
-enum ITProgrammingLanguage { python go }
+enum ITProgrammingLanguage { python go sqlite }
 enum ITCodeRunMode { samples graded }
 enum ITCodeSubmissionStatus { queued completed }
 enum ITExecutionVerdict { accepted wrong_answer compilation_error runtime_error time_limit_exceeded memory_limit_exceeded output_limit_exceeded checker_error infrastructure_error cancelled }
