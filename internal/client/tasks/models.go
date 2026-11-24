@@ -1,10 +1,24 @@
 package tasks
 
-import "io"
+import (
+	"io"
+	"strings"
+)
 
 type Actor struct {
 	UserID string
 	Roles  []string
+}
+
+// IsAdmin повторяет правило ролей gateway: admin или superuser.
+func (a Actor) IsAdmin() bool {
+	for _, role := range a.Roles {
+		if strings.EqualFold(role, "admin") || strings.EqualFold(role, "superuser") {
+			return true
+		}
+	}
+
+	return false
 }
 
 type TaskFilter struct {
@@ -240,6 +254,7 @@ type ProblemListSummary struct {
 	Name        string `json:"name"`
 	SourceID    string `json:"source_id"`
 	SourceURL   string `json:"source_url"`
+	Truncated   bool   `json:"truncated"`
 	MemberCount int    `json:"member_count"`
 	CreatedAt   string `json:"created_at"`
 	UpdatedAt   string `json:"updated_at"`
