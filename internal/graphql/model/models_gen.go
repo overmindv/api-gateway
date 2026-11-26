@@ -1414,6 +1414,61 @@ type UserAvatar struct {
 	MediumURL string `json:"mediumUrl"`
 }
 
+type AccountRecoveryPurpose string
+
+const (
+	AccountRecoveryPurposeReset  AccountRecoveryPurpose = "reset"
+	AccountRecoveryPurposeVerify AccountRecoveryPurpose = "verify"
+)
+
+var AllAccountRecoveryPurpose = []AccountRecoveryPurpose{
+	AccountRecoveryPurposeReset,
+	AccountRecoveryPurposeVerify,
+}
+
+func (e AccountRecoveryPurpose) IsValid() bool {
+	switch e {
+	case AccountRecoveryPurposeReset, AccountRecoveryPurposeVerify:
+		return true
+	}
+	return false
+}
+
+func (e AccountRecoveryPurpose) String() string {
+	return string(e)
+}
+
+func (e *AccountRecoveryPurpose) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AccountRecoveryPurpose(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AccountRecoveryPurpose", str)
+	}
+	return nil
+}
+
+func (e AccountRecoveryPurpose) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AccountRecoveryPurpose) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AccountRecoveryPurpose) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 type CatalogStatus string
 
 const (

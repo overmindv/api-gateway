@@ -241,6 +241,12 @@ input LoginInput {
   password: String!
 }
 
+# Назначение письма восстановления доступа.
+enum AccountRecoveryPurpose {
+  reset
+  verify
+}
+
 input UpdateUserInput {
   username: String
   firstName: String
@@ -623,6 +629,10 @@ type Mutation {
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!
+  # Восстановление доступа не требует активной сессии и не раскрывает существование email.
+  requestAccountRecovery(email: String!, purpose: AccountRecoveryPurpose = reset): Boolean!
+  resetAccountPassword(token: String!, password: String!): Boolean!
+  verifyAccountEmail(token: String!): Boolean!
   updateUser(id: ID!, input: UpdateUserInput!): User!
   setMyAvatar(fileId: ID): User!
   deleteUser(id: ID!): Boolean!

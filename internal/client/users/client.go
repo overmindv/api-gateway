@@ -307,7 +307,7 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	}
 
 	request.Header.Set("Content-Type", "application/json")
-	if operation == "Login" {
+	if signsClientIP(operation) {
 		c.signClientIP(request)
 	}
 	if requestID := middleware.RequestID(ctx); requestID != "" {
@@ -372,6 +372,17 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	}
 
 	return nil
+}
+
+// signsClientIP перечисляет операции, для которых users применяет IP-лимиты
+// к доверенному адресу браузера, а не к адресу gateway.
+func signsClientIP(operation string) bool {
+	switch operation {
+	case "Login", "RequestAccountRecovery", "ResetAccountPassword", "VerifyAccountEmail":
+		return true
+	}
+
+	return false
 }
 
 func extensionCode(extensions map[string]any) string {
