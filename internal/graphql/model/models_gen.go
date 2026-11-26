@@ -11,6 +11,50 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+type AccountExport struct {
+	Profile  *AccountExportProfile   `json:"profile"`
+	Services []*AccountExportService `json:"services"`
+}
+
+type AccountExportPage struct {
+	UserID     string                 `json:"userId"`
+	Watermark  string                 `json:"watermark"`
+	NextCursor *string                `json:"nextCursor,omitempty"`
+	Records    []*AccountExportRecord `json:"records"`
+}
+
+type AccountExportProfile struct {
+	ID                 string  `json:"id"`
+	Email              string  `json:"email"`
+	Username           string  `json:"username"`
+	FirstName          string  `json:"firstName"`
+	LastName           string  `json:"lastName"`
+	BirthDate          *string `json:"birthDate,omitempty"`
+	Phone              *string `json:"phone,omitempty"`
+	AvatarFileID       *string `json:"avatarFileId,omitempty"`
+	Timezone           string  `json:"timezone"`
+	Locale             string  `json:"locale"`
+	PublicName         bool    `json:"publicName"`
+	LeaderboardVisible bool    `json:"leaderboardVisible"`
+	CreatedAt          string  `json:"createdAt"`
+}
+
+type AccountExportRecord struct {
+	UserID     string  `json:"userId"`
+	ID         string  `json:"id"`
+	Kind       string  `json:"kind"`
+	OccurredAt string  `json:"occurredAt"`
+	ResourceID *string `json:"resourceId,omitempty"`
+	Title      *string `json:"title,omitempty"`
+	Text       *string `json:"text,omitempty"`
+	Result     *string `json:"result,omitempty"`
+}
+
+type AccountExportService struct {
+	Owner string               `json:"owner"`
+	Pages []*AccountExportPage `json:"pages"`
+}
+
 type AppendMaterialChangeInput struct {
 	ProposalID     string                     `json:"proposalId"`
 	ExpectedHeadID string                     `json:"expectedHeadId"`
@@ -1037,6 +1081,27 @@ type PracticeTopicInsight struct {
 type PracticeTopicRef struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
+}
+
+type PrivacyOwnerStatus struct {
+	Owner     string  `json:"owner"`
+	State     string  `json:"state"`
+	ErrorCode *string `json:"errorCode,omitempty"`
+}
+
+type PrivacyRequest struct {
+	ID          string                `json:"id"`
+	Kind        string                `json:"kind"`
+	State       string                `json:"state"`
+	Publication *string               `json:"publication,omitempty"`
+	CreatedAt   string                `json:"createdAt"`
+	ExpiresAt   string                `json:"expiresAt"`
+	Owners      []*PrivacyOwnerStatus `json:"owners"`
+}
+
+type PrivacyRequestStart struct {
+	Request *PrivacyRequest `json:"request"`
+	Receipt string          `json:"receipt"`
 }
 
 type ProblemList struct {
