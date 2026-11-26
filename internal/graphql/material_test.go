@@ -295,6 +295,7 @@ func TestMaterialGraphQLThroughGRPC(t *testing.T) {
 	run(materialReader, fmt.Sprintf(`{ material(id:%q) { revision { a:source b:source c:source d:source e:source f:source g:source } } }`, materialFixtureID),
 		`"code":"COMPLEXITY_LIMIT_EXCEEDED"`)
 	checkProposalGraphQL(t, run)
+	checkInitialPublicationGraphQL(t, run)
 	checkReviewGraphQL(run)
 	checkPublishedAttachmentGraphQL(t, run)
 }
@@ -326,21 +327,27 @@ func BenchmarkMaterialGateway(b *testing.B) {
 			}
 		}
 	})
-	b.Run("review", func(b *testing.B) {
-		b.ReportAllocs()
-		query, err := json.Marshal(map[string]string{"query": fmt.Sprintf(
-			`{ materialReviewStatus(proposalId:%q,revisionId:%q) { current outcome decisions { legacy } } }`, proposalFixtureID, proposalHeadID)})
-		if err != nil {
-			b.Fatal(err)
-		}
-		for b.Loop() {
-			request := httptest.NewRequestWithContext(ctx, http.MethodPost, "/graphql", bytes.NewReader(query))
-			request.Header.Set("Content-Type", "application/json")
-			response := httptest.NewRecorder()
-			gateway.ServeHTTP(response, request)
-			if response.Code != http.StatusOK || !bytes.Contains(response.Body.Bytes(), []byte(`"current":true`)) {
-				b.Fatal("review request failed")
+	for _, tc := range []struct{ name, document, want string }{
+		{"review", fmt.Sprintf(`{ materialReviewStatus(proposalId:%q,revisionId:%q) { current outcome decisions { legacy } } }`,
+			proposalFixtureID, proposalHeadID), `"current":true`},
+		{"submit-publication", fmt.Sprintf(`mutation { submitMaterialPublication(id:%q,expectedRevisionId:%q) { id initialPublication } }`,
+			materialFixtureID, materialDraftID), `"initialPublication":true`},
+	} {
+		b.Run(tc.name, func(b *testing.B) {
+			b.ReportAllocs()
+			query, err := json.Marshal(map[string]string{"query": tc.document})
+			if err != nil {
+				b.Fatal(err)
 			}
-		}
-	})
+			for b.Loop() {
+				request := httptest.NewRequestWithContext(ctx, http.MethodPost, "/graphql", bytes.NewReader(query))
+				request.Header.Set("Content-Type", "application/json")
+				response := httptest.NewRecorder()
+				gateway.ServeHTTP(response, request)
+				if response.Code != http.StatusOK || !bytes.Contains(response.Body.Bytes(), []byte(tc.want)) {
+					b.Fatal("request failed")
+				}
+			}
+		})
+	}
 }

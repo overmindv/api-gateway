@@ -47,6 +47,20 @@ func (r *queryResolver) MaterialChangeDiff(ctx context.Context, proposalID strin
 	return resolveProposal(ctx, r.Resolver, req, err, contentclient.ProposalService.ProposalDiff, proposalDiffModel)
 }
 
+func (r *mutationResolver) SubmitMaterialPublication(ctx context.Context, id string, expectedRevisionID string) (*model.MaterialChangeProposal, error) {
+	itemID, err := materialID(id)
+	var revisionID string
+	if err == nil {
+		revisionID, err = materialID(expectedRevisionID)
+	}
+	req := &pb.SubmitInitialPublicationRequest{ContentItemId: itemID, ExpectedRevisionId: revisionID}
+
+	return resolveProposal(ctx, r.Resolver, req, err, contentclient.ProposalService.SubmitInitialPublication,
+		func(resp *pb.SubmitInitialPublicationResponse) *model.MaterialChangeProposal {
+			return proposalModel(resp.GetProposal())
+		})
+}
+
 func (r *mutationResolver) OpenMaterialChange(ctx context.Context, input model.OpenMaterialChangeInput) (*model.MaterialChangeProposal, error) {
 	id, revision, err := proposalWriteInput(input.MaterialID, input.BaseRevisionID, input.Source, input.Message)
 	req := &pb.OpenChangeProposalRequest{
@@ -140,7 +154,8 @@ func proposalModel(item *pb.ChangeProposal) *model.MaterialChangeProposal {
 		ID: item.GetId(), MaterialID: item.GetContentItemId(), BaseRevisionID: item.GetBaseRevisionId(), AuthorID: item.GetAuthorId(),
 		Status: model.MaterialChangeStatus(item.GetStatus()), CreatedAt: materialTimestamp(item.GetCreatedAt()),
 		ClosedAt: materialOptional(materialTimestamp(item.GetClosedAt())), BaseOutdated: item.GetBaseOutdated(),
-		MergedRevisionID: materialOptional(item.GetMergedRevisionId()),
+		InitialPublication: item.GetInitialPublication(),
+		MergedRevisionID:   materialOptional(item.GetMergedRevisionId()),
 		Head: &model.MaterialChangeRevision{
 			ID: head.GetId(), ParentRevisionID: materialOptional(head.GetParentRevisionId()), Ordinal: int(head.GetOrdinal()),
 			Source: head.GetSource(), Message: head.GetMessage(), CreatedAt: materialTimestamp(head.GetCreatedAt()),

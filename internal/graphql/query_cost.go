@@ -30,7 +30,7 @@ func (s costSchema) Complexity(_ context.Context, object, field string, child in
 	}
 	if object == objectMutation {
 		switch field {
-		case "mergeMaterialChange", "rebaseMaterialChange", "restoreMaterialRevision", "setMaterialModeration":
+		case "mergeMaterialChange", "rebaseMaterialChange", "restoreMaterialRevision", "setMaterialModeration", "submitMaterialPublication":
 			return 6000 + child, true
 		case "submitMaterialReview", "createMaterialReviewThread", "replyToMaterialReviewThread", "setMaterialReviewThreadResolved":
 			return 2000 + child, true

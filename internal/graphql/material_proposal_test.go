@@ -29,6 +29,21 @@ func proposalFixture(source string) *pb.ChangeProposal {
 	}
 }
 
+func (materialRPCFixture) SubmitInitialPublication(ctx context.Context, req *pb.SubmitInitialPublicationRequest) (*pb.SubmitInitialPublicationResponse, error) {
+	if materialRPCActor(ctx) != materialOwner || req.GetContentItemId() != materialFixtureID {
+		return nil, status.Error(codes.NotFound, proposalDetail)
+	}
+	if req.GetExpectedRevisionId() != materialDraftID {
+		return nil, status.Error(codes.Aborted, proposalDetail)
+	}
+	proposal := proposalFixture(proposalText)
+	proposal.AuthorId = materialOwner
+	proposal.BaseRevisionId = materialDraftID
+	proposal.InitialPublication = true
+
+	return &pb.SubmitInitialPublicationResponse{Proposal: proposal}, nil
+}
+
 func (materialRPCFixture) OpenChangeProposal(ctx context.Context, req *pb.OpenChangeProposalRequest) (*pb.OpenChangeProposalResponse, error) {
 	if materialRPCActor(ctx) != materialReader || req.GetContentItemId() != materialFixtureID {
 		return nil, status.Error(codes.NotFound, proposalDetail)
@@ -109,10 +124,10 @@ func (materialRPCFixture) GetChangeProposalDiff(ctx context.Context, req *pb.Get
 func checkProposalGraphQL(t *testing.T, run func(string, string, ...string)) {
 	t.Helper()
 
-	get := fmt.Sprintf(`{ materialChangeProposal(id:%q){ baseOutdated head{ source } } }`, proposalFixtureID)
+	get := fmt.Sprintf(`{ materialChangeProposal(id:%q){ baseOutdated initialPublication head{ source } } }`, proposalFixtureID)
 	run("", get, `"code":"UNAUTHENTICATED"`)
 	run(proposalStranger, get, `"code":"NOT_FOUND"`)
-	run(materialOwner, get, `"baseOutdated":true`, proposalText)
+	run(materialOwner, get, `"baseOutdated":true`, `"initialPublication":false`, proposalText)
 	merged := fmt.Sprintf(`{ materialChangeProposal(id:%q){ status } }`, proposalMergedID)
 	run(materialOwner, merged, `"status":"merged"`)
 	run(proposalStranger, merged, `"code":"NOT_FOUND"`)
@@ -143,4 +158,24 @@ func checkProposalGraphQL(t *testing.T, run func(string, string, ...string)) {
 		aliases = append(aliases, fmt.Sprintf("part%d: materialChangeProposal(id:%q){ id }", i, proposalFixtureID))
 	}
 	run(materialOwner, "{ "+strings.Join(aliases, " ")+" }", `"code":"COMPLEXITY_LIMIT_EXCEEDED"`)
+}
+
+func checkInitialPublicationGraphQL(t *testing.T, run func(string, string, ...string)) {
+	t.Helper()
+
+	const field = `submitMaterialPublication(id:%q,expectedRevisionId:%q){ id authorId baseRevisionId initialPublication }`
+	submit := func(id, revision string) string { return "mutation { " + fmt.Sprintf(field, id, revision) + " }" }
+	valid := submit(materialFixtureID, materialDraftID)
+	run("", valid, `"code":"UNAUTHENTICATED"`)
+	run(materialReader, valid, `"code":"NOT_FOUND"`)
+	run(materialOwner, submit("invalid", materialDraftID), `"code":"INVALID_ARGUMENT"`)
+	run(materialOwner, submit(materialFixtureID, "invalid"), `"code":"INVALID_ARGUMENT"`)
+	run(materialOwner, submit(materialFixtureID, materialPublishedID), `"code":"REVISION_CONFLICT"`)
+	run(materialOwner, valid, proposalFixtureID, materialOwner, materialDraftID, `"initialPublication":true`)
+
+	aliases := make([]string, 0, 5)
+	for i := range 5 {
+		aliases = append(aliases, fmt.Sprintf("part%d: ", i)+fmt.Sprintf(field, materialFixtureID, materialDraftID))
+	}
+	run(materialOwner, "mutation { "+strings.Join(aliases, " ")+" }", `"code":"COMPLEXITY_LIMIT_EXCEEDED"`)
 }

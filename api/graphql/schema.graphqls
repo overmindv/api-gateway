@@ -406,6 +406,7 @@ type MaterialChangeProposal {
   createdAt: String!
   closedAt: String
   baseOutdated: Boolean!
+  initialPublication: Boolean!
   mergedRevisionId: ID
 }
 type MaterialChangeRevision {
@@ -583,6 +584,7 @@ type Mutation {
   refreshSession: String
   createMaterialDraft(input: CreateMaterialDraftInput!): Material
   saveMaterialDraft(input: SaveMaterialDraftInput!): MaterialRevision
+  submitMaterialPublication(id: ID!, expectedRevisionId: ID!): MaterialChangeProposal
   openMaterialChange(input: OpenMaterialChangeInput!): MaterialChangeProposal
   appendMaterialChange(input: AppendMaterialChangeInput!): MaterialChangeProposal
   closeMaterialChange(proposalId: ID!): MaterialChangeProposal
