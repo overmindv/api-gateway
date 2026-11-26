@@ -1044,6 +1044,7 @@ type ProblemList struct {
 	Name              string               `json:"name"`
 	SourceID          string               `json:"sourceId"`
 	SourceURL         string               `json:"sourceUrl"`
+	Truncated         bool                 `json:"truncated"`
 	MemberCount       int                  `json:"memberCount"`
 	PendingCandidates int                  `json:"pendingCandidates"`
 	CreatedAt         string               `json:"createdAt"`

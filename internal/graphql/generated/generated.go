@@ -931,6 +931,7 @@ type ComplexityRoot struct {
 		PendingCandidates func(childComplexity int) int
 		SourceID          func(childComplexity int) int
 		SourceURL         func(childComplexity int) int
+		Truncated         func(childComplexity int) int
 		UpdatedAt         func(childComplexity int) int
 	}
 
@@ -5505,6 +5506,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ProblemList.SourceURL(childComplexity), true
+	case "ProblemList.truncated":
+		if e.complexity.ProblemList.Truncated == nil {
+			break
+		}
+
+		return e.complexity.ProblemList.Truncated(childComplexity), true
 	case "ProblemList.updatedAt":
 		if e.complexity.ProblemList.UpdatedAt == nil {
 			break
@@ -7528,7 +7535,9 @@ input TaskCandidateReviewInput { expectedRevision: Int!, topicId: ID, title: Str
 
 # Problem list — именованный набор задач, собранных из внешнего /problem-list/.
 type ProblemListMember { taskId: ID!, title: String!, difficulty: ITTaskDifficulty!, status: ITTaskStatus! }
-type ProblemList { id: ID!, name: String!, sourceId: String!, sourceUrl: String!, memberCount: Int!, pendingCandidates: Int!, createdAt: String!, updatedAt: String!, members: [ProblemListMember!]! }
+# truncated — источник собрал список частично.
+# pendingCandidates для обычного пользователя равен 0: tasks не раскрывает очередь модерации.
+type ProblemList { id: ID!, name: String!, sourceId: String!, sourceUrl: String!, truncated: Boolean!, memberCount: Int!, pendingCandidates: Int!, createdAt: String!, updatedAt: String!, members: [ProblemListMember!]! }
 type ProblemListPage { items: [ProblemList!]!, limit: Int!, offset: Int! }
 
 enum TaskCollectionJobStatus { queued running succeeded partial failed }
@@ -31334,6 +31343,35 @@ func (ec *executionContext) fieldContext_ProblemList_sourceUrl(_ context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _ProblemList_truncated(ctx context.Context, field graphql.CollectedField, obj *model.ProblemList) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ProblemList_truncated,
+		func(ctx context.Context) (any, error) {
+			return obj.Truncated, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ProblemList_truncated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ProblemList",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ProblemList_memberCount(ctx context.Context, field graphql.CollectedField, obj *model.ProblemList) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -31637,6 +31675,8 @@ func (ec *executionContext) fieldContext_ProblemListPage_items(_ context.Context
 				return ec.fieldContext_ProblemList_sourceId(ctx, field)
 			case "sourceUrl":
 				return ec.fieldContext_ProblemList_sourceUrl(ctx, field)
+			case "truncated":
+				return ec.fieldContext_ProblemList_truncated(ctx, field)
 			case "memberCount":
 				return ec.fieldContext_ProblemList_memberCount(ctx, field)
 			case "pendingCandidates":
@@ -35837,6 +35877,8 @@ func (ec *executionContext) fieldContext_Query_problemList(ctx context.Context, 
 				return ec.fieldContext_ProblemList_sourceId(ctx, field)
 			case "sourceUrl":
 				return ec.fieldContext_ProblemList_sourceUrl(ctx, field)
+			case "truncated":
+				return ec.fieldContext_ProblemList_truncated(ctx, field)
 			case "memberCount":
 				return ec.fieldContext_ProblemList_memberCount(ctx, field)
 			case "pendingCandidates":
@@ -50627,6 +50669,11 @@ func (ec *executionContext) _ProblemList(ctx context.Context, sel ast.SelectionS
 			}
 		case "sourceUrl":
 			out.Values[i] = ec._ProblemList_sourceUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "truncated":
+			out.Values[i] = ec._ProblemList_truncated(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

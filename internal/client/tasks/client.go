@@ -16,7 +16,12 @@ import (
 	"github.com/overmindv/api-gateway/internal/client/httpx"
 )
 
-const runModeSamples = "samples"
+const (
+	runModeSamples = "samples"
+
+	publicProblemListsPath = "/v1/problem-lists"
+	adminProblemListsPath  = "/v1/admin/problem-lists"
+)
 
 const maxCodeSourceSize = 256 << 10
 
@@ -70,17 +75,33 @@ func (c *Client) ListCandidates(ctx context.Context, filter CandidateFilter, act
 }
 
 // ListProblemLists получает журнал списков задач.
+// Администратор видит все списки, остальные — только опубликованные подборки.
 func (c *Client) ListProblemLists(ctx context.Context, limit, offset int, actor Actor) (ProblemListList, error) {
 	values := url.Values{}
 	values.Set("limit", strconv.Itoa(httpx.ClampLimit(limit)))
 	values.Set("offset", strconv.Itoa(offset))
+	path := problemListsPath(actor, "")
 
-	return request[ProblemListList](c, ctx, http.MethodGet, pathWithQuery("/v1/admin/problem-lists", values), nil, actor)
+	return request[ProblemListList](c, ctx, http.MethodGet, pathWithQuery(path, values), nil, actor)
 }
 
 // GetProblemList получает детали списка вместе с опубликованными задачами.
 func (c *Client) GetProblemList(ctx context.Context, id string, actor Actor) (ProblemListDetail, error) {
-	return request[ProblemListDetail](c, ctx, http.MethodGet, "/v1/admin/problem-lists/"+url.PathEscape(id), nil, actor)
+	return request[ProblemListDetail](c, ctx, http.MethodGet, problemListsPath(actor, id), nil, actor)
+}
+
+// problemListsPath выбирает публичный или административный маршрут по роли.
+// visibility решает tasks: публичный маршрут скрывает черновики и удалённые задачи.
+func problemListsPath(actor Actor, id string) string {
+	path := publicProblemListsPath
+	if actor.IsAdmin() {
+		path = adminProblemListsPath
+	}
+	if id != "" {
+		path += "/" + url.PathEscape(id)
+	}
+
+	return path
 }
 
 // GetCandidate получает кандидата с immutable provenance.

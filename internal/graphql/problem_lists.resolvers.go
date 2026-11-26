@@ -7,9 +7,10 @@ import (
 	"github.com/overmindv/api-gateway/internal/graphql/model"
 )
 
-// ProblemLists возвращает журнал списков задач с числом опубликованных задач.
+// ProblemLists возвращает журнал подборок задач.
+// Администратор видит полную очередь, остальные — только опубликованные задачи.
 func (r *queryResolver) ProblemLists(ctx context.Context, pagination *model.PaginationInput) (*model.ProblemListPage, error) {
-	actor, err := tasksActor(ctx, true)
+	actor, err := tasksActor(ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -30,9 +31,9 @@ func (r *queryResolver) ProblemLists(ctx context.Context, pagination *model.Pagi
 	return &model.ProblemListPage{Items: result, Limit: items.Limit, Offset: items.Offset}, nil
 }
 
-// ProblemList возвращает детали списка вместе с опубликованными задачами.
+// ProblemList возвращает детали подборки вместе с опубликованными задачами.
 func (r *queryResolver) ProblemList(ctx context.Context, id string) (*model.ProblemList, error) {
-	actor, err := tasksActor(ctx, true)
+	actor, err := tasksActor(ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -48,11 +49,12 @@ func (r *queryResolver) ProblemList(ctx context.Context, id string) (*model.Prob
 func problemListSummaryModel(item tasks.ProblemListSummary) *model.ProblemList {
 	return &model.ProblemList{
 		ID: item.ID, Name: item.Name, SourceID: item.SourceID, SourceURL: item.SourceURL,
-		MemberCount: item.MemberCount, CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt,
+		Truncated: item.Truncated, MemberCount: item.MemberCount, CreatedAt: item.CreatedAt, UpdatedAt: item.UpdatedAt,
 	}
 }
 
 // problemListDetailModel преобразует детали списка с членами в GraphQL-модель.
+// pendingCandidates приходит из tasks: для обычного пользователя там 0.
 func problemListDetailModel(item tasks.ProblemListDetail) *model.ProblemList {
 	members := make([]*model.ProblemListMember, 0, len(item.Members))
 	for _, member := range item.Members {

@@ -205,7 +205,9 @@ input TaskCandidateReviewInput { expectedRevision: Int!, topicId: ID, title: Str
 
 # Problem list — именованный набор задач, собранных из внешнего /problem-list/.
 type ProblemListMember { taskId: ID!, title: String!, difficulty: ITTaskDifficulty!, status: ITTaskStatus! }
-type ProblemList { id: ID!, name: String!, sourceId: String!, sourceUrl: String!, memberCount: Int!, pendingCandidates: Int!, createdAt: String!, updatedAt: String!, members: [ProblemListMember!]! }
+# truncated — источник собрал список частично.
+# pendingCandidates для обычного пользователя равен 0: tasks не раскрывает очередь модерации.
+type ProblemList { id: ID!, name: String!, sourceId: String!, sourceUrl: String!, truncated: Boolean!, memberCount: Int!, pendingCandidates: Int!, createdAt: String!, updatedAt: String!, members: [ProblemListMember!]! }
 type ProblemListPage { items: [ProblemList!]!, limit: Int!, offset: Int! }
 
 enum TaskCollectionJobStatus { queued running succeeded partial failed }
