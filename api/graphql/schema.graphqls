@@ -241,6 +241,79 @@ input LoginInput {
   password: String!
 }
 
+# Назначение письма восстановления доступа.
+enum AccountRecoveryPurpose {
+  reset
+  verify
+}
+
+# Состояние запроса экспорта/удаления. Значения задаёт Users.
+type PrivacyRequest {
+  id: ID!
+  kind: String!
+  state: String!
+  publication: String
+  createdAt: String!
+  expiresAt: String!
+  owners: [PrivacyOwnerStatus!]!
+}
+
+type PrivacyOwnerStatus {
+  owner: String!
+  state: String!
+  errorCode: String
+}
+
+# Receipt подтверждает владение запросом: не логируется и не попадает в URL.
+type PrivacyRequestStart {
+  request: PrivacyRequest!
+  receipt: String!
+}
+
+type AccountExportProfile {
+  id: ID!
+  email: String!
+  username: String!
+  firstName: String!
+  lastName: String!
+  birthDate: String
+  phone: String
+  avatarFileId: ID
+  timezone: String!
+  locale: String!
+  publicName: Boolean!
+  leaderboardVisible: Boolean!
+  createdAt: String!
+}
+
+type AccountExportRecord {
+  userId: ID!
+  id: ID!
+  kind: String!
+  occurredAt: String!
+  resourceId: ID
+  title: String
+  text: String
+  result: String
+}
+
+type AccountExportPage {
+  userId: ID!
+  watermark: String!
+  nextCursor: String
+  records: [AccountExportRecord!]!
+}
+
+type AccountExportService {
+  owner: String!
+  pages: [AccountExportPage!]!
+}
+
+type AccountExport {
+  profile: AccountExportProfile!
+  services: [AccountExportService!]!
+}
+
 input UpdateUserInput {
   username: String
   firstName: String
@@ -580,6 +653,9 @@ type Query {
   myMediaFiles(filter: MediaFileFilter, pagination: PaginationInput): MediaFileConnection!
   mediaDownloadUrl(fileId: ID!, variant: String = "original"): MediaDownload!
   feed(pagination: PaginationInput): FeedConnection!
+  # Статус запроса по receipt доступен без активной сессии; артефакт — только владельцу.
+  privacyRequest(id: ID!, receipt: String!): PrivacyRequest!
+  accountExport(id: ID!): AccountExport!
 }
 
 type Mutation {
@@ -623,6 +699,15 @@ type Mutation {
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!
+  # Восстановление доступа не требует активной сессии и не раскрывает существование email.
+  requestAccountRecovery(email: String!, purpose: AccountRecoveryPurpose = reset): Boolean!
+  resetAccountPassword(token: String!, password: String!): Boolean!
+  verifyAccountEmail(token: String!): Boolean!
+  # Экспорт и удаление требуют активной сессии и текущего пароля.
+  requestAccountExport(password: String!): PrivacyRequestStart!
+  requestAccountDeletion(password: String!): PrivacyRequestStart!
+  # Подтверждение одноразовым receipt из ответа request-операции.
+  confirmPrivacyRequest(id: ID!, receipt: String!): PrivacyRequest!
   updateUser(id: ID!, input: UpdateUserInput!): User!
   setMyAvatar(fileId: ID): User!
   deleteUser(id: ID!): Boolean!

@@ -21,7 +21,7 @@ func TestLoginSignsPeerIPAndIgnoresSpoofedHeaders(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := r.Header.Get("X-Login-Client-IP")
-		if ip != "192.0.2.42" {
+		if ip != testClientIP {
 			t.Errorf("IP = %q", ip)
 		}
 		ts := r.Header.Get("X-Login-Client-Time")

@@ -46,6 +46,50 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AccountExport struct {
+		Profile  func(childComplexity int) int
+		Services func(childComplexity int) int
+	}
+
+	AccountExportPage struct {
+		NextCursor func(childComplexity int) int
+		Records    func(childComplexity int) int
+		UserID     func(childComplexity int) int
+		Watermark  func(childComplexity int) int
+	}
+
+	AccountExportProfile struct {
+		AvatarFileID       func(childComplexity int) int
+		BirthDate          func(childComplexity int) int
+		CreatedAt          func(childComplexity int) int
+		Email              func(childComplexity int) int
+		FirstName          func(childComplexity int) int
+		ID                 func(childComplexity int) int
+		LastName           func(childComplexity int) int
+		LeaderboardVisible func(childComplexity int) int
+		Locale             func(childComplexity int) int
+		Phone              func(childComplexity int) int
+		PublicName         func(childComplexity int) int
+		Timezone           func(childComplexity int) int
+		Username           func(childComplexity int) int
+	}
+
+	AccountExportRecord struct {
+		ID         func(childComplexity int) int
+		Kind       func(childComplexity int) int
+		OccurredAt func(childComplexity int) int
+		ResourceID func(childComplexity int) int
+		Result     func(childComplexity int) int
+		Text       func(childComplexity int) int
+		Title      func(childComplexity int) int
+		UserID     func(childComplexity int) int
+	}
+
+	AccountExportService struct {
+		Owner func(childComplexity int) int
+		Pages func(childComplexity int) int
+	}
+
 	AuthPayload struct {
 		ExpiresAt func(childComplexity int) int
 		Token     func(childComplexity int) int
@@ -762,6 +806,7 @@ type ComplexityRoot struct {
 		CloseMaterialChange              func(childComplexity int, proposalID string) int
 		CompleteLearningPlanStepActivity func(childComplexity int, goalID string, planVersion int, ordinal int) int
 		CompleteMediaUpload              func(childComplexity int, input model.CompleteMediaUploadInput) int
+		ConfirmPrivacyRequest            func(childComplexity int, id string, receipt string) int
 		CreateCourse                     func(childComplexity int, input model.CreateCourseInput) int
 		CreateITTask                     func(childComplexity int, input model.ITTaskInput) int
 		CreateLearnerGoal                func(childComplexity int, input model.LearnerGoalInput, requestID string) int
@@ -796,6 +841,10 @@ type ComplexityRoot struct {
 		RemoveLearningPlanTask           func(childComplexity int, id string, revision int, taskID string) int
 		RemoveTopicPrerequisite          func(childComplexity int, input model.TopicPrerequisiteInput) int
 		ReplyToMaterialReviewThread      func(childComplexity int, proposalID string, threadID string, body string) int
+		RequestAccountDeletion           func(childComplexity int, password string) int
+		RequestAccountExport             func(childComplexity int, password string) int
+		RequestAccountRecovery           func(childComplexity int, email string, purpose *model.AccountRecoveryPurpose) int
+		ResetAccountPassword             func(childComplexity int, token string, password string) int
 		RestoreMaterialRevision          func(childComplexity int, materialID string, expectedPublishedRevisionID string, sourceRevisionID string) int
 		SaveLearnerProfile               func(childComplexity int, input model.LearnerAvailabilityInput, expectedVersion int, requestID string) int
 		SaveLearningPlan                 func(childComplexity int, goal string, minutes int, sessionCount int, requestID string) int
@@ -826,6 +875,7 @@ type ComplexityRoot struct {
 		UpdateTopic                      func(childComplexity int, id string, input model.UpdateTopicInput) int
 		UpdateUniversity                 func(childComplexity int, id string, input model.UpdateUniversityInput) int
 		UpdateUser                       func(childComplexity int, id string, input model.UpdateUserInput) int
+		VerifyAccountEmail               func(childComplexity int, token string) int
 	}
 
 	PracticeGoal struct {
@@ -922,6 +972,27 @@ type ComplexityRoot struct {
 		Title func(childComplexity int) int
 	}
 
+	PrivacyOwnerStatus struct {
+		ErrorCode func(childComplexity int) int
+		Owner     func(childComplexity int) int
+		State     func(childComplexity int) int
+	}
+
+	PrivacyRequest struct {
+		CreatedAt   func(childComplexity int) int
+		ExpiresAt   func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Kind        func(childComplexity int) int
+		Owners      func(childComplexity int) int
+		Publication func(childComplexity int) int
+		State       func(childComplexity int) int
+	}
+
+	PrivacyRequestStart struct {
+		Receipt func(childComplexity int) int
+		Request func(childComplexity int) int
+	}
+
 	ProblemList struct {
 		CreatedAt         func(childComplexity int) int
 		ID                func(childComplexity int) int
@@ -978,6 +1049,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		AccountExport                       func(childComplexity int, id string) int
 		AdminITTask                         func(childComplexity int, id string) int
 		AdminITTasks                        func(childComplexity int, filter *model.ITAdminTaskFilter, pagination *model.PaginationInput) int
 		Course                              func(childComplexity int, id string) int
@@ -1019,6 +1091,7 @@ type ComplexityRoot struct {
 		PracticeLeaderboard                 func(childComplexity int, courseID *string) int
 		PracticePlan                        func(childComplexity int, topicIds []string, minutes int, sessionCount *int, goal *string) int
 		PracticeProgress                    func(childComplexity int, userID string) int
+		PrivacyRequest                      func(childComplexity int, id string, receipt string) int
 		ProblemList                         func(childComplexity int, id string) int
 		ProblemLists                        func(childComplexity int, pagination *model.PaginationInput) int
 		Program                             func(childComplexity int, id string) int
@@ -1270,6 +1343,12 @@ type MutationResolver interface {
 	Register(ctx context.Context, input model.RegisterInput) (*model.AuthPayload, error)
 	Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error)
 	Logout(ctx context.Context) (bool, error)
+	RequestAccountRecovery(ctx context.Context, email string, purpose *model.AccountRecoveryPurpose) (bool, error)
+	ResetAccountPassword(ctx context.Context, token string, password string) (bool, error)
+	VerifyAccountEmail(ctx context.Context, token string) (bool, error)
+	RequestAccountExport(ctx context.Context, password string) (*model.PrivacyRequestStart, error)
+	RequestAccountDeletion(ctx context.Context, password string) (*model.PrivacyRequestStart, error)
+	ConfirmPrivacyRequest(ctx context.Context, id string, receipt string) (*model.PrivacyRequest, error)
 	UpdateUser(ctx context.Context, id string, input model.UpdateUserInput) (*model.User, error)
 	SetMyAvatar(ctx context.Context, fileID *string) (*model.User, error)
 	DeleteUser(ctx context.Context, id string) (bool, error)
@@ -1375,6 +1454,8 @@ type QueryResolver interface {
 	MyMediaFiles(ctx context.Context, filter *model.MediaFileFilter, pagination *model.PaginationInput) (*model.MediaFileConnection, error)
 	MediaDownloadURL(ctx context.Context, fileID string, variant *string) (*model.MediaDownload, error)
 	Feed(ctx context.Context, pagination *model.PaginationInput) (*model.FeedConnection, error)
+	PrivacyRequest(ctx context.Context, id string, receipt string) (*model.PrivacyRequest, error)
+	AccountExport(ctx context.Context, id string) (*model.AccountExport, error)
 }
 
 type executableSchema struct {
@@ -1395,6 +1476,185 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AccountExport.profile":
+		if e.complexity.AccountExport.Profile == nil {
+			break
+		}
+
+		return e.complexity.AccountExport.Profile(childComplexity), true
+	case "AccountExport.services":
+		if e.complexity.AccountExport.Services == nil {
+			break
+		}
+
+		return e.complexity.AccountExport.Services(childComplexity), true
+
+	case "AccountExportPage.nextCursor":
+		if e.complexity.AccountExportPage.NextCursor == nil {
+			break
+		}
+
+		return e.complexity.AccountExportPage.NextCursor(childComplexity), true
+	case "AccountExportPage.records":
+		if e.complexity.AccountExportPage.Records == nil {
+			break
+		}
+
+		return e.complexity.AccountExportPage.Records(childComplexity), true
+	case "AccountExportPage.userId":
+		if e.complexity.AccountExportPage.UserID == nil {
+			break
+		}
+
+		return e.complexity.AccountExportPage.UserID(childComplexity), true
+	case "AccountExportPage.watermark":
+		if e.complexity.AccountExportPage.Watermark == nil {
+			break
+		}
+
+		return e.complexity.AccountExportPage.Watermark(childComplexity), true
+
+	case "AccountExportProfile.avatarFileId":
+		if e.complexity.AccountExportProfile.AvatarFileID == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.AvatarFileID(childComplexity), true
+	case "AccountExportProfile.birthDate":
+		if e.complexity.AccountExportProfile.BirthDate == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.BirthDate(childComplexity), true
+	case "AccountExportProfile.createdAt":
+		if e.complexity.AccountExportProfile.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.CreatedAt(childComplexity), true
+	case "AccountExportProfile.email":
+		if e.complexity.AccountExportProfile.Email == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.Email(childComplexity), true
+	case "AccountExportProfile.firstName":
+		if e.complexity.AccountExportProfile.FirstName == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.FirstName(childComplexity), true
+	case "AccountExportProfile.id":
+		if e.complexity.AccountExportProfile.ID == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.ID(childComplexity), true
+	case "AccountExportProfile.lastName":
+		if e.complexity.AccountExportProfile.LastName == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.LastName(childComplexity), true
+	case "AccountExportProfile.leaderboardVisible":
+		if e.complexity.AccountExportProfile.LeaderboardVisible == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.LeaderboardVisible(childComplexity), true
+	case "AccountExportProfile.locale":
+		if e.complexity.AccountExportProfile.Locale == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.Locale(childComplexity), true
+	case "AccountExportProfile.phone":
+		if e.complexity.AccountExportProfile.Phone == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.Phone(childComplexity), true
+	case "AccountExportProfile.publicName":
+		if e.complexity.AccountExportProfile.PublicName == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.PublicName(childComplexity), true
+	case "AccountExportProfile.timezone":
+		if e.complexity.AccountExportProfile.Timezone == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.Timezone(childComplexity), true
+	case "AccountExportProfile.username":
+		if e.complexity.AccountExportProfile.Username == nil {
+			break
+		}
+
+		return e.complexity.AccountExportProfile.Username(childComplexity), true
+
+	case "AccountExportRecord.id":
+		if e.complexity.AccountExportRecord.ID == nil {
+			break
+		}
+
+		return e.complexity.AccountExportRecord.ID(childComplexity), true
+	case "AccountExportRecord.kind":
+		if e.complexity.AccountExportRecord.Kind == nil {
+			break
+		}
+
+		return e.complexity.AccountExportRecord.Kind(childComplexity), true
+	case "AccountExportRecord.occurredAt":
+		if e.complexity.AccountExportRecord.OccurredAt == nil {
+			break
+		}
+
+		return e.complexity.AccountExportRecord.OccurredAt(childComplexity), true
+	case "AccountExportRecord.resourceId":
+		if e.complexity.AccountExportRecord.ResourceID == nil {
+			break
+		}
+
+		return e.complexity.AccountExportRecord.ResourceID(childComplexity), true
+	case "AccountExportRecord.result":
+		if e.complexity.AccountExportRecord.Result == nil {
+			break
+		}
+
+		return e.complexity.AccountExportRecord.Result(childComplexity), true
+	case "AccountExportRecord.text":
+		if e.complexity.AccountExportRecord.Text == nil {
+			break
+		}
+
+		return e.complexity.AccountExportRecord.Text(childComplexity), true
+	case "AccountExportRecord.title":
+		if e.complexity.AccountExportRecord.Title == nil {
+			break
+		}
+
+		return e.complexity.AccountExportRecord.Title(childComplexity), true
+	case "AccountExportRecord.userId":
+		if e.complexity.AccountExportRecord.UserID == nil {
+			break
+		}
+
+		return e.complexity.AccountExportRecord.UserID(childComplexity), true
+
+	case "AccountExportService.owner":
+		if e.complexity.AccountExportService.Owner == nil {
+			break
+		}
+
+		return e.complexity.AccountExportService.Owner(childComplexity), true
+	case "AccountExportService.pages":
+		if e.complexity.AccountExportService.Pages == nil {
+			break
+		}
+
+		return e.complexity.AccountExportService.Pages(childComplexity), true
 
 	case "AuthPayload.expiresAt":
 		if e.complexity.AuthPayload.ExpiresAt == nil {
@@ -4391,6 +4651,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CompleteMediaUpload(childComplexity, args["input"].(model.CompleteMediaUploadInput)), true
+	case "Mutation.confirmPrivacyRequest":
+		if e.complexity.Mutation.ConfirmPrivacyRequest == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_confirmPrivacyRequest_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ConfirmPrivacyRequest(childComplexity, args["id"].(string), args["receipt"].(string)), true
 	case "Mutation.createCourse":
 		if e.complexity.Mutation.CreateCourse == nil {
 			break
@@ -4750,6 +5021,50 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.ReplyToMaterialReviewThread(childComplexity, args["proposalId"].(string), args["threadId"].(string), args["body"].(string)), true
+	case "Mutation.requestAccountDeletion":
+		if e.complexity.Mutation.RequestAccountDeletion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestAccountDeletion_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestAccountDeletion(childComplexity, args["password"].(string)), true
+	case "Mutation.requestAccountExport":
+		if e.complexity.Mutation.RequestAccountExport == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestAccountExport_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestAccountExport(childComplexity, args["password"].(string)), true
+	case "Mutation.requestAccountRecovery":
+		if e.complexity.Mutation.RequestAccountRecovery == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestAccountRecovery_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RequestAccountRecovery(childComplexity, args["email"].(string), args["purpose"].(*model.AccountRecoveryPurpose)), true
+	case "Mutation.resetAccountPassword":
+		if e.complexity.Mutation.ResetAccountPassword == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_resetAccountPassword_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ResetAccountPassword(childComplexity, args["token"].(string), args["password"].(string)), true
 	case "Mutation.restoreMaterialRevision":
 		if e.complexity.Mutation.RestoreMaterialRevision == nil {
 			break
@@ -5080,6 +5395,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(string), args["input"].(model.UpdateUserInput)), true
+	case "Mutation.verifyAccountEmail":
+		if e.complexity.Mutation.VerifyAccountEmail == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_verifyAccountEmail_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.VerifyAccountEmail(childComplexity, args["token"].(string)), true
 
 	case "PracticeGoal.minutes":
 		if e.complexity.PracticeGoal.Minutes == nil {
@@ -5458,6 +5784,81 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PracticeTopicRef.Title(childComplexity), true
 
+	case "PrivacyOwnerStatus.errorCode":
+		if e.complexity.PrivacyOwnerStatus.ErrorCode == nil {
+			break
+		}
+
+		return e.complexity.PrivacyOwnerStatus.ErrorCode(childComplexity), true
+	case "PrivacyOwnerStatus.owner":
+		if e.complexity.PrivacyOwnerStatus.Owner == nil {
+			break
+		}
+
+		return e.complexity.PrivacyOwnerStatus.Owner(childComplexity), true
+	case "PrivacyOwnerStatus.state":
+		if e.complexity.PrivacyOwnerStatus.State == nil {
+			break
+		}
+
+		return e.complexity.PrivacyOwnerStatus.State(childComplexity), true
+
+	case "PrivacyRequest.createdAt":
+		if e.complexity.PrivacyRequest.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequest.CreatedAt(childComplexity), true
+	case "PrivacyRequest.expiresAt":
+		if e.complexity.PrivacyRequest.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequest.ExpiresAt(childComplexity), true
+	case "PrivacyRequest.id":
+		if e.complexity.PrivacyRequest.ID == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequest.ID(childComplexity), true
+	case "PrivacyRequest.kind":
+		if e.complexity.PrivacyRequest.Kind == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequest.Kind(childComplexity), true
+	case "PrivacyRequest.owners":
+		if e.complexity.PrivacyRequest.Owners == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequest.Owners(childComplexity), true
+	case "PrivacyRequest.publication":
+		if e.complexity.PrivacyRequest.Publication == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequest.Publication(childComplexity), true
+	case "PrivacyRequest.state":
+		if e.complexity.PrivacyRequest.State == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequest.State(childComplexity), true
+
+	case "PrivacyRequestStart.receipt":
+		if e.complexity.PrivacyRequestStart.Receipt == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequestStart.Receipt(childComplexity), true
+	case "PrivacyRequestStart.request":
+		if e.complexity.PrivacyRequestStart.Request == nil {
+			break
+		}
+
+		return e.complexity.PrivacyRequestStart.Request(childComplexity), true
+
 	case "ProblemList.createdAt":
 		if e.complexity.ProblemList.CreatedAt == nil {
 			break
@@ -5686,6 +6087,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PublicUserConnection.Offset(childComplexity), true
 
+	case "Query.accountExport":
+		if e.complexity.Query.AccountExport == nil {
+			break
+		}
+
+		args, err := ec.field_Query_accountExport_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AccountExport(childComplexity, args["id"].(string)), true
 	case "Query.adminITTask":
 		if e.complexity.Query.AdminITTask == nil {
 			break
@@ -6102,6 +6514,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.PracticeProgress(childComplexity, args["userId"].(string)), true
+	case "Query.privacyRequest":
+		if e.complexity.Query.PrivacyRequest == nil {
+			break
+		}
+
+		args, err := ec.field_Query_privacyRequest_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PrivacyRequest(childComplexity, args["id"].(string), args["receipt"].(string)), true
 	case "Query.problemList":
 		if e.complexity.Query.ProblemList == nil {
 			break
@@ -7571,6 +7994,79 @@ input LoginInput {
   password: String!
 }
 
+# Назначение письма восстановления доступа.
+enum AccountRecoveryPurpose {
+  reset
+  verify
+}
+
+# Состояние запроса экспорта/удаления. Значения задаёт Users.
+type PrivacyRequest {
+  id: ID!
+  kind: String!
+  state: String!
+  publication: String
+  createdAt: String!
+  expiresAt: String!
+  owners: [PrivacyOwnerStatus!]!
+}
+
+type PrivacyOwnerStatus {
+  owner: String!
+  state: String!
+  errorCode: String
+}
+
+# Receipt подтверждает владение запросом: не логируется и не попадает в URL.
+type PrivacyRequestStart {
+  request: PrivacyRequest!
+  receipt: String!
+}
+
+type AccountExportProfile {
+  id: ID!
+  email: String!
+  username: String!
+  firstName: String!
+  lastName: String!
+  birthDate: String
+  phone: String
+  avatarFileId: ID
+  timezone: String!
+  locale: String!
+  publicName: Boolean!
+  leaderboardVisible: Boolean!
+  createdAt: String!
+}
+
+type AccountExportRecord {
+  userId: ID!
+  id: ID!
+  kind: String!
+  occurredAt: String!
+  resourceId: ID
+  title: String
+  text: String
+  result: String
+}
+
+type AccountExportPage {
+  userId: ID!
+  watermark: String!
+  nextCursor: String
+  records: [AccountExportRecord!]!
+}
+
+type AccountExportService {
+  owner: String!
+  pages: [AccountExportPage!]!
+}
+
+type AccountExport {
+  profile: AccountExportProfile!
+  services: [AccountExportService!]!
+}
+
 input UpdateUserInput {
   username: String
   firstName: String
@@ -7910,6 +8406,9 @@ type Query {
   myMediaFiles(filter: MediaFileFilter, pagination: PaginationInput): MediaFileConnection!
   mediaDownloadUrl(fileId: ID!, variant: String = "original"): MediaDownload!
   feed(pagination: PaginationInput): FeedConnection!
+  # Статус запроса по receipt доступен без активной сессии; артефакт — только владельцу.
+  privacyRequest(id: ID!, receipt: String!): PrivacyRequest!
+  accountExport(id: ID!): AccountExport!
 }
 
 type Mutation {
@@ -7953,6 +8452,15 @@ type Mutation {
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!
+  # Восстановление доступа не требует активной сессии и не раскрывает существование email.
+  requestAccountRecovery(email: String!, purpose: AccountRecoveryPurpose = reset): Boolean!
+  resetAccountPassword(token: String!, password: String!): Boolean!
+  verifyAccountEmail(token: String!): Boolean!
+  # Экспорт и удаление требуют активной сессии и текущего пароля.
+  requestAccountExport(password: String!): PrivacyRequestStart!
+  requestAccountDeletion(password: String!): PrivacyRequestStart!
+  # Подтверждение одноразовым receipt из ответа request-операции.
+  confirmPrivacyRequest(id: ID!, receipt: String!): PrivacyRequest!
   updateUser(id: ID!, input: UpdateUserInput!): User!
   setMyAvatar(fileId: ID): User!
   deleteUser(id: ID!): Boolean!
@@ -8617,6 +9125,22 @@ func (ec *executionContext) field_Mutation_completeMediaUpload_args(ctx context.
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_confirmPrivacyRequest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "receipt", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["receipt"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createCourse_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -9060,6 +9584,60 @@ func (ec *executionContext) field_Mutation_replyToMaterialReviewThread_args(ctx 
 		return nil, err
 	}
 	args["body"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestAccountDeletion_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "password", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["password"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestAccountExport_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "password", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["password"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestAccountRecovery_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "email", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["email"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "purpose", ec.unmarshalOAccountRecoveryPurpose2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountRecoveryPurpose)
+	if err != nil {
+		return nil, err
+	}
+	args["purpose"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_resetAccountPassword_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "token", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["token"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "password", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["password"] = arg1
 	return args, nil
 }
 
@@ -9583,6 +10161,17 @@ func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_verifyAccountEmail_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "token", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["token"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -9591,6 +10180,17 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_accountExport_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -10103,6 +10703,22 @@ func (ec *executionContext) field_Query_practiceProgress_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_privacyRequest_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "receipt", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["receipt"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_problemList_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -10472,6 +11088,909 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AccountExport_profile(ctx context.Context, field graphql.CollectedField, obj *model.AccountExport) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExport_profile,
+		func(ctx context.Context) (any, error) {
+			return obj.Profile, nil
+		},
+		nil,
+		ec.marshalNAccountExportProfile2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportProfile,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExport_profile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AccountExportProfile_id(ctx, field)
+			case "email":
+				return ec.fieldContext_AccountExportProfile_email(ctx, field)
+			case "username":
+				return ec.fieldContext_AccountExportProfile_username(ctx, field)
+			case "firstName":
+				return ec.fieldContext_AccountExportProfile_firstName(ctx, field)
+			case "lastName":
+				return ec.fieldContext_AccountExportProfile_lastName(ctx, field)
+			case "birthDate":
+				return ec.fieldContext_AccountExportProfile_birthDate(ctx, field)
+			case "phone":
+				return ec.fieldContext_AccountExportProfile_phone(ctx, field)
+			case "avatarFileId":
+				return ec.fieldContext_AccountExportProfile_avatarFileId(ctx, field)
+			case "timezone":
+				return ec.fieldContext_AccountExportProfile_timezone(ctx, field)
+			case "locale":
+				return ec.fieldContext_AccountExportProfile_locale(ctx, field)
+			case "publicName":
+				return ec.fieldContext_AccountExportProfile_publicName(ctx, field)
+			case "leaderboardVisible":
+				return ec.fieldContext_AccountExportProfile_leaderboardVisible(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_AccountExportProfile_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountExportProfile", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExport_services(ctx context.Context, field graphql.CollectedField, obj *model.AccountExport) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExport_services,
+		func(ctx context.Context) (any, error) {
+			return obj.Services, nil
+		},
+		nil,
+		ec.marshalNAccountExportService2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportServiceᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExport_services(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "owner":
+				return ec.fieldContext_AccountExportService_owner(ctx, field)
+			case "pages":
+				return ec.fieldContext_AccountExportService_pages(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountExportService", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportPage_userId(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportPage_userId,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportPage_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportPage_watermark(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportPage_watermark,
+		func(ctx context.Context) (any, error) {
+			return obj.Watermark, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportPage_watermark(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportPage_nextCursor(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportPage_nextCursor,
+		func(ctx context.Context) (any, error) {
+			return obj.NextCursor, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportPage_nextCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportPage_records(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportPage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportPage_records,
+		func(ctx context.Context) (any, error) {
+			return obj.Records, nil
+		},
+		nil,
+		ec.marshalNAccountExportRecord2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportRecordᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportPage_records(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_AccountExportRecord_userId(ctx, field)
+			case "id":
+				return ec.fieldContext_AccountExportRecord_id(ctx, field)
+			case "kind":
+				return ec.fieldContext_AccountExportRecord_kind(ctx, field)
+			case "occurredAt":
+				return ec.fieldContext_AccountExportRecord_occurredAt(ctx, field)
+			case "resourceId":
+				return ec.fieldContext_AccountExportRecord_resourceId(ctx, field)
+			case "title":
+				return ec.fieldContext_AccountExportRecord_title(ctx, field)
+			case "text":
+				return ec.fieldContext_AccountExportRecord_text(ctx, field)
+			case "result":
+				return ec.fieldContext_AccountExportRecord_result(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountExportRecord", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_id(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_email(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_email,
+		func(ctx context.Context) (any, error) {
+			return obj.Email, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_email(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_username(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_username,
+		func(ctx context.Context) (any, error) {
+			return obj.Username, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_username(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_firstName(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_firstName,
+		func(ctx context.Context) (any, error) {
+			return obj.FirstName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_firstName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_lastName(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_lastName,
+		func(ctx context.Context) (any, error) {
+			return obj.LastName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_lastName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_birthDate(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_birthDate,
+		func(ctx context.Context) (any, error) {
+			return obj.BirthDate, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_birthDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_phone(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_phone,
+		func(ctx context.Context) (any, error) {
+			return obj.Phone, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_phone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_avatarFileId(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_avatarFileId,
+		func(ctx context.Context) (any, error) {
+			return obj.AvatarFileID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_avatarFileId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_timezone(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_timezone,
+		func(ctx context.Context) (any, error) {
+			return obj.Timezone, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_timezone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_locale(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_locale,
+		func(ctx context.Context) (any, error) {
+			return obj.Locale, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_locale(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_publicName(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_publicName,
+		func(ctx context.Context) (any, error) {
+			return obj.PublicName, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_publicName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_leaderboardVisible(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_leaderboardVisible,
+		func(ctx context.Context) (any, error) {
+			return obj.LeaderboardVisible, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_leaderboardVisible(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportProfile_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportProfile_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportProfile_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportRecord_userId(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportRecord_userId,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportRecord_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportRecord_id(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportRecord_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportRecord_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportRecord_kind(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportRecord_kind,
+		func(ctx context.Context) (any, error) {
+			return obj.Kind, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportRecord_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportRecord_occurredAt(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportRecord_occurredAt,
+		func(ctx context.Context) (any, error) {
+			return obj.OccurredAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportRecord_occurredAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportRecord_resourceId(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportRecord_resourceId,
+		func(ctx context.Context) (any, error) {
+			return obj.ResourceID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportRecord_resourceId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportRecord_title(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportRecord_title,
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportRecord_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportRecord_text(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportRecord_text,
+		func(ctx context.Context) (any, error) {
+			return obj.Text, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportRecord_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportRecord_result(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportRecord) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportRecord_result,
+		func(ctx context.Context) (any, error) {
+			return obj.Result, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportRecord_result(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportRecord",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportService_owner(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportService) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportService_owner,
+		func(ctx context.Context) (any, error) {
+			return obj.Owner, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportService_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportService",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AccountExportService_pages(ctx context.Context, field graphql.CollectedField, obj *model.AccountExportService) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AccountExportService_pages,
+		func(ctx context.Context) (any, error) {
+			return obj.Pages, nil
+		},
+		nil,
+		ec.marshalNAccountExportPage2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportPageᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_AccountExportService_pages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AccountExportService",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_AccountExportPage_userId(ctx, field)
+			case "watermark":
+				return ec.fieldContext_AccountExportPage_watermark(ctx, field)
+			case "nextCursor":
+				return ec.fieldContext_AccountExportPage_nextCursor(ctx, field)
+			case "records":
+				return ec.fieldContext_AccountExportPage_records(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountExportPage", field.Name)
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _AuthPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.AuthPayload) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -27010,6 +28529,280 @@ func (ec *executionContext) fieldContext_Mutation_logout(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_requestAccountRecovery(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_requestAccountRecovery,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().RequestAccountRecovery(ctx, fc.Args["email"].(string), fc.Args["purpose"].(*model.AccountRecoveryPurpose))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_requestAccountRecovery(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_requestAccountRecovery_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_resetAccountPassword(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_resetAccountPassword,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().ResetAccountPassword(ctx, fc.Args["token"].(string), fc.Args["password"].(string))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_resetAccountPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_resetAccountPassword_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_verifyAccountEmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_verifyAccountEmail,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().VerifyAccountEmail(ctx, fc.Args["token"].(string))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_verifyAccountEmail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_verifyAccountEmail_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_requestAccountExport(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_requestAccountExport,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().RequestAccountExport(ctx, fc.Args["password"].(string))
+		},
+		nil,
+		ec.marshalNPrivacyRequestStart2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequestStart,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_requestAccountExport(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "request":
+				return ec.fieldContext_PrivacyRequestStart_request(ctx, field)
+			case "receipt":
+				return ec.fieldContext_PrivacyRequestStart_receipt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PrivacyRequestStart", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_requestAccountExport_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_requestAccountDeletion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_requestAccountDeletion,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().RequestAccountDeletion(ctx, fc.Args["password"].(string))
+		},
+		nil,
+		ec.marshalNPrivacyRequestStart2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequestStart,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_requestAccountDeletion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "request":
+				return ec.fieldContext_PrivacyRequestStart_request(ctx, field)
+			case "receipt":
+				return ec.fieldContext_PrivacyRequestStart_receipt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PrivacyRequestStart", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_requestAccountDeletion_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_confirmPrivacyRequest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_confirmPrivacyRequest,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().ConfirmPrivacyRequest(ctx, fc.Args["id"].(string), fc.Args["receipt"].(string))
+		},
+		nil,
+		ec.marshalNPrivacyRequest2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequest,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_confirmPrivacyRequest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_PrivacyRequest_id(ctx, field)
+			case "kind":
+				return ec.fieldContext_PrivacyRequest_kind(ctx, field)
+			case "state":
+				return ec.fieldContext_PrivacyRequest_state(ctx, field)
+			case "publication":
+				return ec.fieldContext_PrivacyRequest_publication(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_PrivacyRequest_createdAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_PrivacyRequest_expiresAt(ctx, field)
+			case "owners":
+				return ec.fieldContext_PrivacyRequest_owners(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PrivacyRequest", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_confirmPrivacyRequest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -31217,6 +33010,378 @@ func (ec *executionContext) _PracticeTopicRef_title(ctx context.Context, field g
 func (ec *executionContext) fieldContext_PracticeTopicRef_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PracticeTopicRef",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyOwnerStatus_owner(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyOwnerStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyOwnerStatus_owner,
+		func(ctx context.Context) (any, error) {
+			return obj.Owner, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyOwnerStatus_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyOwnerStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyOwnerStatus_state(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyOwnerStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyOwnerStatus_state,
+		func(ctx context.Context) (any, error) {
+			return obj.State, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyOwnerStatus_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyOwnerStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyOwnerStatus_errorCode(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyOwnerStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyOwnerStatus_errorCode,
+		func(ctx context.Context) (any, error) {
+			return obj.ErrorCode, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyOwnerStatus_errorCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyOwnerStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequest_id(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequest_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequest_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequest_kind(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequest_kind,
+		func(ctx context.Context) (any, error) {
+			return obj.Kind, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequest_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequest_state(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequest_state,
+		func(ctx context.Context) (any, error) {
+			return obj.State, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequest_state(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequest_publication(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequest_publication,
+		func(ctx context.Context) (any, error) {
+			return obj.Publication, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequest_publication(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequest_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequest_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequest_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequest_expiresAt(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequest_expiresAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ExpiresAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequest_expiresAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequest_owners(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequest_owners,
+		func(ctx context.Context) (any, error) {
+			return obj.Owners, nil
+		},
+		nil,
+		ec.marshalNPrivacyOwnerStatus2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyOwnerStatusᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequest_owners(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "owner":
+				return ec.fieldContext_PrivacyOwnerStatus_owner(ctx, field)
+			case "state":
+				return ec.fieldContext_PrivacyOwnerStatus_state(ctx, field)
+			case "errorCode":
+				return ec.fieldContext_PrivacyOwnerStatus_errorCode(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PrivacyOwnerStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequestStart_request(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequestStart) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequestStart_request,
+		func(ctx context.Context) (any, error) {
+			return obj.Request, nil
+		},
+		nil,
+		ec.marshalNPrivacyRequest2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequest,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequestStart_request(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequestStart",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_PrivacyRequest_id(ctx, field)
+			case "kind":
+				return ec.fieldContext_PrivacyRequest_kind(ctx, field)
+			case "state":
+				return ec.fieldContext_PrivacyRequest_state(ctx, field)
+			case "publication":
+				return ec.fieldContext_PrivacyRequest_publication(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_PrivacyRequest_createdAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_PrivacyRequest_expiresAt(ctx, field)
+			case "owners":
+				return ec.fieldContext_PrivacyRequest_owners(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PrivacyRequest", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PrivacyRequestStart_receipt(ctx context.Context, field graphql.CollectedField, obj *model.PrivacyRequestStart) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PrivacyRequestStart_receipt,
+		func(ctx context.Context) (any, error) {
+			return obj.Receipt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PrivacyRequestStart_receipt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PrivacyRequestStart",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -36117,6 +38282,110 @@ func (ec *executionContext) fieldContext_Query_feed(ctx context.Context, field g
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_feed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_privacyRequest(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_privacyRequest,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().PrivacyRequest(ctx, fc.Args["id"].(string), fc.Args["receipt"].(string))
+		},
+		nil,
+		ec.marshalNPrivacyRequest2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequest,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_privacyRequest(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_PrivacyRequest_id(ctx, field)
+			case "kind":
+				return ec.fieldContext_PrivacyRequest_kind(ctx, field)
+			case "state":
+				return ec.fieldContext_PrivacyRequest_state(ctx, field)
+			case "publication":
+				return ec.fieldContext_PrivacyRequest_publication(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_PrivacyRequest_createdAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_PrivacyRequest_expiresAt(ctx, field)
+			case "owners":
+				return ec.fieldContext_PrivacyRequest_owners(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PrivacyRequest", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_privacyRequest_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_accountExport(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_accountExport,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().AccountExport(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		ec.marshalNAccountExport2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExport,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_accountExport(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "profile":
+				return ec.fieldContext_AccountExport_profile(ctx, field)
+			case "services":
+				return ec.fieldContext_AccountExport_services(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountExport", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_accountExport_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -44594,6 +46863,297 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 
 // region    **************************** object.gotpl ****************************
 
+var accountExportImplementors = []string{"AccountExport"}
+
+func (ec *executionContext) _AccountExport(ctx context.Context, sel ast.SelectionSet, obj *model.AccountExport) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountExportImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountExport")
+		case "profile":
+			out.Values[i] = ec._AccountExport_profile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "services":
+			out.Values[i] = ec._AccountExport_services(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var accountExportPageImplementors = []string{"AccountExportPage"}
+
+func (ec *executionContext) _AccountExportPage(ctx context.Context, sel ast.SelectionSet, obj *model.AccountExportPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountExportPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountExportPage")
+		case "userId":
+			out.Values[i] = ec._AccountExportPage_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "watermark":
+			out.Values[i] = ec._AccountExportPage_watermark(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nextCursor":
+			out.Values[i] = ec._AccountExportPage_nextCursor(ctx, field, obj)
+		case "records":
+			out.Values[i] = ec._AccountExportPage_records(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var accountExportProfileImplementors = []string{"AccountExportProfile"}
+
+func (ec *executionContext) _AccountExportProfile(ctx context.Context, sel ast.SelectionSet, obj *model.AccountExportProfile) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountExportProfileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountExportProfile")
+		case "id":
+			out.Values[i] = ec._AccountExportProfile_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "email":
+			out.Values[i] = ec._AccountExportProfile_email(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "username":
+			out.Values[i] = ec._AccountExportProfile_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "firstName":
+			out.Values[i] = ec._AccountExportProfile_firstName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastName":
+			out.Values[i] = ec._AccountExportProfile_lastName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "birthDate":
+			out.Values[i] = ec._AccountExportProfile_birthDate(ctx, field, obj)
+		case "phone":
+			out.Values[i] = ec._AccountExportProfile_phone(ctx, field, obj)
+		case "avatarFileId":
+			out.Values[i] = ec._AccountExportProfile_avatarFileId(ctx, field, obj)
+		case "timezone":
+			out.Values[i] = ec._AccountExportProfile_timezone(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "locale":
+			out.Values[i] = ec._AccountExportProfile_locale(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "publicName":
+			out.Values[i] = ec._AccountExportProfile_publicName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "leaderboardVisible":
+			out.Values[i] = ec._AccountExportProfile_leaderboardVisible(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._AccountExportProfile_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var accountExportRecordImplementors = []string{"AccountExportRecord"}
+
+func (ec *executionContext) _AccountExportRecord(ctx context.Context, sel ast.SelectionSet, obj *model.AccountExportRecord) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountExportRecordImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountExportRecord")
+		case "userId":
+			out.Values[i] = ec._AccountExportRecord_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "id":
+			out.Values[i] = ec._AccountExportRecord_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._AccountExportRecord_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "occurredAt":
+			out.Values[i] = ec._AccountExportRecord_occurredAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "resourceId":
+			out.Values[i] = ec._AccountExportRecord_resourceId(ctx, field, obj)
+		case "title":
+			out.Values[i] = ec._AccountExportRecord_title(ctx, field, obj)
+		case "text":
+			out.Values[i] = ec._AccountExportRecord_text(ctx, field, obj)
+		case "result":
+			out.Values[i] = ec._AccountExportRecord_result(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var accountExportServiceImplementors = []string{"AccountExportService"}
+
+func (ec *executionContext) _AccountExportService(ctx context.Context, sel ast.SelectionSet, obj *model.AccountExportService) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, accountExportServiceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AccountExportService")
+		case "owner":
+			out.Values[i] = ec._AccountExportService_owner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pages":
+			out.Values[i] = ec._AccountExportService_pages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var authPayloadImplementors = []string{"AuthPayload"}
 
 func (ec *executionContext) _AuthPayload(ctx context.Context, sel ast.SelectionSet, obj *model.AuthPayload) graphql.Marshaler {
@@ -49673,6 +52233,48 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "requestAccountRecovery":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_requestAccountRecovery(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "resetAccountPassword":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_resetAccountPassword(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "verifyAccountEmail":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_verifyAccountEmail(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "requestAccountExport":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_requestAccountExport(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "requestAccountDeletion":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_requestAccountDeletion(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "confirmPrivacyRequest":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_confirmPrivacyRequest(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "updateUser":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateUser(ctx, field)
@@ -50615,6 +53217,162 @@ func (ec *executionContext) _PracticeTopicRef(ctx context.Context, sel ast.Selec
 			}
 		case "title":
 			out.Values[i] = ec._PracticeTopicRef_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var privacyOwnerStatusImplementors = []string{"PrivacyOwnerStatus"}
+
+func (ec *executionContext) _PrivacyOwnerStatus(ctx context.Context, sel ast.SelectionSet, obj *model.PrivacyOwnerStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, privacyOwnerStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PrivacyOwnerStatus")
+		case "owner":
+			out.Values[i] = ec._PrivacyOwnerStatus_owner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._PrivacyOwnerStatus_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "errorCode":
+			out.Values[i] = ec._PrivacyOwnerStatus_errorCode(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var privacyRequestImplementors = []string{"PrivacyRequest"}
+
+func (ec *executionContext) _PrivacyRequest(ctx context.Context, sel ast.SelectionSet, obj *model.PrivacyRequest) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, privacyRequestImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PrivacyRequest")
+		case "id":
+			out.Values[i] = ec._PrivacyRequest_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "kind":
+			out.Values[i] = ec._PrivacyRequest_kind(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "state":
+			out.Values[i] = ec._PrivacyRequest_state(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "publication":
+			out.Values[i] = ec._PrivacyRequest_publication(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._PrivacyRequest_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "expiresAt":
+			out.Values[i] = ec._PrivacyRequest_expiresAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "owners":
+			out.Values[i] = ec._PrivacyRequest_owners(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var privacyRequestStartImplementors = []string{"PrivacyRequestStart"}
+
+func (ec *executionContext) _PrivacyRequestStart(ctx context.Context, sel ast.SelectionSet, obj *model.PrivacyRequestStart) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, privacyRequestStartImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PrivacyRequestStart")
+		case "request":
+			out.Values[i] = ec._PrivacyRequestStart_request(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "receipt":
+			out.Values[i] = ec._PrivacyRequestStart_receipt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -52428,6 +55186,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "privacyRequest":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_privacyRequest(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "accountExport":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_accountExport(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -53982,6 +56784,192 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNAccountExport2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExport(ctx context.Context, sel ast.SelectionSet, v model.AccountExport) graphql.Marshaler {
+	return ec._AccountExport(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAccountExport2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExport(ctx context.Context, sel ast.SelectionSet, v *model.AccountExport) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AccountExport(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAccountExportPage2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportPageᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AccountExportPage) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAccountExportPage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportPage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAccountExportPage2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportPage(ctx context.Context, sel ast.SelectionSet, v *model.AccountExportPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AccountExportPage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAccountExportProfile2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportProfile(ctx context.Context, sel ast.SelectionSet, v *model.AccountExportProfile) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AccountExportProfile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAccountExportRecord2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportRecordᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AccountExportRecord) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAccountExportRecord2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportRecord(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAccountExportRecord2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportRecord(ctx context.Context, sel ast.SelectionSet, v *model.AccountExportRecord) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AccountExportRecord(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNAccountExportService2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportServiceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AccountExportService) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAccountExportService2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportService(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAccountExportService2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountExportService(ctx context.Context, sel ast.SelectionSet, v *model.AccountExportService) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AccountExportService(ctx, sel, v)
+}
 
 func (ec *executionContext) unmarshalNAppendMaterialChangeInput2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAppendMaterialChangeInput(ctx context.Context, v any) (model.AppendMaterialChangeInput, error) {
 	res, err := ec.unmarshalInputAppendMaterialChangeInput(ctx, v)
@@ -57169,6 +60157,88 @@ func (ec *executionContext) marshalNPracticeTopicRef2ᚖgithubᚗcomᚋovermindv
 	return ec._PracticeTopicRef(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNPrivacyOwnerStatus2ᚕᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyOwnerStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PrivacyOwnerStatus) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNPrivacyOwnerStatus2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyOwnerStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPrivacyOwnerStatus2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyOwnerStatus(ctx context.Context, sel ast.SelectionSet, v *model.PrivacyOwnerStatus) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PrivacyOwnerStatus(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPrivacyRequest2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequest(ctx context.Context, sel ast.SelectionSet, v model.PrivacyRequest) graphql.Marshaler {
+	return ec._PrivacyRequest(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPrivacyRequest2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequest(ctx context.Context, sel ast.SelectionSet, v *model.PrivacyRequest) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PrivacyRequest(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPrivacyRequestStart2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequestStart(ctx context.Context, sel ast.SelectionSet, v model.PrivacyRequestStart) graphql.Marshaler {
+	return ec._PrivacyRequestStart(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPrivacyRequestStart2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐPrivacyRequestStart(ctx context.Context, sel ast.SelectionSet, v *model.PrivacyRequestStart) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PrivacyRequestStart(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNProblemList2githubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐProblemList(ctx context.Context, sel ast.SelectionSet, v model.ProblemList) graphql.Marshaler {
 	return ec._ProblemList(ctx, sel, &v)
 }
@@ -58505,6 +61575,22 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalOAccountRecoveryPurpose2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountRecoveryPurpose(ctx context.Context, v any) (*model.AccountRecoveryPurpose, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.AccountRecoveryPurpose)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOAccountRecoveryPurpose2ᚖgithubᚗcomᚋovermindvᚋapiᚑgatewayᚋinternalᚋgraphqlᚋmodelᚐAccountRecoveryPurpose(ctx context.Context, sel ast.SelectionSet, v *model.AccountRecoveryPurpose) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {

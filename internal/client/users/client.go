@@ -18,6 +18,10 @@ import (
 const (
 	codeInternalServerError = "INTERNAL_SERVER_ERROR"
 	codeBadGateway          = "BAD_GATEWAY"
+	codeUnauthenticated     = "UNAUTHENTICATED"
+	codeServiceUnavailable  = "SERVICE_UNAVAILABLE"
+	codeDeadlineExceeded    = "DEADLINE_EXCEEDED"
+	codeRateLimited         = "RATE_LIMITED"
 )
 
 const userFields = `id email username firstName lastName birthDate phone avatarFileId roles isAdmin isSuperuser createdAt updatedAt`
@@ -307,7 +311,7 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	}
 
 	request.Header.Set("Content-Type", "application/json")
-	if operation == "Login" {
+	if signsClientIP(operation) {
 		c.signClientIP(request)
 	}
 	if requestID := middleware.RequestID(ctx); requestID != "" {
@@ -317,7 +321,7 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	if authenticated {
 		info, authErr := middleware.RequireAuth(ctx)
 		if authErr != nil {
-			code = "UNAUTHENTICATED"
+			code = codeUnauthenticated
 
 			return authErr
 		}
@@ -327,12 +331,12 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	response, err := c.http.Do(request)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(callCtx.Err(), context.DeadlineExceeded) {
-			code = "DEADLINE_EXCEEDED"
+			code = codeDeadlineExceeded
 
 			return &Error{Code: code, Message: "users request timed out"}
 		}
 
-		code = "SERVICE_UNAVAILABLE"
+		code = codeServiceUnavailable
 
 		return &Error{Code: code, Message: "users is unavailable"}
 	}
@@ -372,6 +376,17 @@ func (c *Client) call(ctx context.Context, operation, query string, variables ma
 	}
 
 	return nil
+}
+
+// signsClientIP перечисляет операции, для которых users применяет IP-лимиты
+// к доверенному адресу браузера, а не к адресу gateway.
+func signsClientIP(operation string) bool {
+	switch operation {
+	case "Login", "RequestAccountRecovery", "ResetAccountPassword", "VerifyAccountEmail":
+		return true
+	}
+
+	return false
 }
 
 func extensionCode(extensions map[string]any) string {
