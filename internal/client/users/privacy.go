@@ -207,10 +207,10 @@ func (c *Client) privacyCall(ctx context.Context, method, suffix string, body an
 	response, err := client.Do(request)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(callCtx.Err(), context.DeadlineExceeded) {
-			return &Error{Code: "DEADLINE_EXCEEDED", Message: "privacy request timed out"}
+			return &Error{Code: codeDeadlineExceeded, Message: "privacy request timed out"}
 		}
 
-		return &Error{Code: "SERVICE_UNAVAILABLE", Message: "users is unavailable"}
+		return &Error{Code: codeServiceUnavailable, Message: "users is unavailable"}
 	}
 	defer func() { _ = response.Body.Close() }()
 
@@ -234,15 +234,15 @@ func privacyStatusError(status int) error {
 	code := codeBadGateway
 	switch status {
 	case http.StatusUnauthorized:
-		code = "UNAUTHENTICATED"
+		code = codeUnauthenticated
 	case http.StatusForbidden:
 		code = "PERMISSION_DENIED"
 	case http.StatusTooManyRequests:
-		code = "RATE_LIMITED"
+		code = codeRateLimited
 	case http.StatusConflict:
 		code = codePrivacyRequestInvalid
 	case http.StatusServiceUnavailable, http.StatusBadGateway, http.StatusGatewayTimeout:
-		code = "SERVICE_UNAVAILABLE"
+		code = codeServiceUnavailable
 	}
 
 	return &Error{Code: code, Message: "privacy request rejected"}

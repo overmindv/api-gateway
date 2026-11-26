@@ -23,7 +23,7 @@ func TestRecoveryUsesSignedClientIPWithoutAccess(t *testing.T) {
 		if r.Header.Get("Authorization") != "" {
 			t.Error("recovery forwarded an access token")
 		}
-		if r.Header.Get("X-Login-Client-IP") != "192.0.2.42" ||
+		if r.Header.Get("X-Login-Client-IP") != testClientIP ||
 			r.Header.Get("X-Login-Client-Time") == "" ||
 			r.Header.Get("X-Login-Client-Signature") == "" {
 			t.Error("recovery request is missing signed client IP")
@@ -55,7 +55,7 @@ func TestRecoveryUsesSignedClientIPWithoutAccess(t *testing.T) {
 		}
 	}))
 	req := httptest.NewRequest(http.MethodPost, "/graphql", nil)
-	req.RemoteAddr = "192.0.2.42:1111"
+	req.RemoteAddr = testClientAddr
 	handler.ServeHTTP(httptest.NewRecorder(), req)
 
 	if seen["user@example.com"]["purpose"] != RecoveryPurposeReset {
@@ -74,7 +74,7 @@ func TestRecoveryKeepsUpstreamRateLimitCode(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"errors":[{"message":"too many","extensions":{"code":"RATE_LIMITED"}}]}`)
+		_, _ = io.WriteString(w, `{"errors":[{"message":"too many","extensions":{"code":"`+codeRateLimited+`"}}]}`)
 	}))
 	defer server.Close()
 
@@ -82,7 +82,7 @@ func TestRecoveryKeepsUpstreamRateLimitCode(t *testing.T) {
 		slog.New(slog.NewTextHandler(io.Discard, nil)))
 	_, err := client.RequestAccountRecovery(context.Background(), "user@example.com", RecoveryPurposeReset)
 	var upstream *Error
-	if !errors.As(err, &upstream) || upstream.Code != "RATE_LIMITED" {
+	if !errors.As(err, &upstream) || upstream.Code != codeRateLimited {
 		t.Fatalf("error = %v", err)
 	}
 }

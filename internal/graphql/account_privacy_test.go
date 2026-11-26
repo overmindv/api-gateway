@@ -12,7 +12,11 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
-const privacyTestRequestID = "2f1d4a5e-3f6b-4d5a-8f2e-1c7d9a0b3e4f"
+const (
+	privacyTestRequestID = "2f1d4a5e-3f6b-4d5a-8f2e-1c7d9a0b3e4f"
+	testPrivacyReceipt   = "receipt-value"
+	testPrivacyEmail     = "user@example.com"
+)
 
 type privacyStub struct {
 	userServiceStub
@@ -59,17 +63,17 @@ func TestPrivacyPrepareUsesOwnerContractAndKeepsReceiptOutOfURL(t *testing.T) {
 
 	svc := &privacyStub{
 		start: users.PrivacyStart{
-			Request: users.PrivacyRequest{ID: privacyTestRequestID, Kind: "delete", State: "awaiting_confirmation", CreatedAt: "2026-11-26T10:00:00Z", ExpiresAt: "2026-11-26T10:15:00Z"},
-			Receipt: "receipt-value",
+			Request: users.PrivacyRequest{ID: privacyTestRequestID, Kind: privacyKindDelete, State: "awaiting_confirmation", CreatedAt: "2026-11-26T10:00:00Z", ExpiresAt: "2026-11-26T10:15:00Z"},
+			Receipt: testPrivacyReceipt,
 		},
 	}
 	resolver := &mutationResolver{&Resolver{Users: svc}}
 	ctx := middleware.ContextWithAuth(context.Background(), middleware.AuthInfo{UserID: "user", Token: "access"})
 	result, err := resolver.RequestAccountDeletion(ctx, "current-password")
-	if err != nil || result.Receipt != "receipt-value" || result.Request.Kind != "delete" {
+	if err != nil || result.Receipt != testPrivacyReceipt || result.Request.Kind != privacyKindDelete {
 		t.Fatalf("start: %v %v", result, err)
 	}
-	if svc.kind != "delete" || svc.password != "current-password" {
+	if svc.kind != privacyKindDelete || svc.password != "current-password" {
 		t.Fatalf("prepare args: %q %q", svc.kind, svc.password)
 	}
 }
@@ -77,11 +81,11 @@ func TestPrivacyPrepareUsesOwnerContractAndKeepsReceiptOutOfURL(t *testing.T) {
 func TestPrivacyDeleteConfirmationClearsBrowserCookies(t *testing.T) {
 	t.Parallel()
 
-	svc := &privacyStub{request: users.PrivacyRequest{ID: privacyTestRequestID, Kind: "delete", State: "processing"}}
+	svc := &privacyStub{request: users.PrivacyRequest{ID: privacyTestRequestID, Kind: privacyKindDelete, State: "processing"}}
 	resolver := &mutationResolver{&Resolver{Users: svc}}
 	handler := middleware.SessionCookie(middleware.SessionConfig{Secure: true}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := middleware.ContextWithAuth(r.Context(), middleware.AuthInfo{UserID: "user", Token: "access"})
-		if _, err := resolver.ConfirmPrivacyRequest(ctx, privacyTestRequestID, "receipt-value"); err != nil {
+		if _, err := resolver.ConfirmPrivacyRequest(ctx, privacyTestRequestID, testPrivacyReceipt); err != nil {
 			t.Error(err)
 		}
 		w.WriteHeader(http.StatusOK)
@@ -112,7 +116,7 @@ func TestPrivacyStatusMapsOwnerStates(t *testing.T) {
 		Owners: []users.PrivacyOwnerStatus{{Owner: "tasks", State: "completed"}, {Owner: "feed", State: "failed", ErrorCode: "processing_failed"}},
 	}}
 	resolver := &queryResolver{&Resolver{Users: svc}}
-	result, err := resolver.PrivacyRequest(context.Background(), privacyTestRequestID, "receipt-value")
+	result, err := resolver.PrivacyRequest(context.Background(), privacyTestRequestID, testPrivacyReceipt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +132,7 @@ func TestAccountExportRequiresAuthAndSortsServices(t *testing.T) {
 	t.Parallel()
 
 	svc := &privacyStub{export: users.AccountExport{
-		Profile: users.AccountExportProfile{ID: privacyTestRequestID, Email: "user@example.com", Username: "user", Timezone: "UTC", Locale: "ru-RU", CreatedAt: "2026-01-01T00:00:00Z"},
+		Profile: users.AccountExportProfile{ID: privacyTestRequestID, Email: testPrivacyEmail, Username: "user", Timezone: "UTC", Locale: "ru-RU", CreatedAt: "2026-01-01T00:00:00Z"},
 		Services: map[string][]users.AccountExportPage{
 			"tasks": {{
 				UserID: privacyTestRequestID, Watermark: "w1",
@@ -149,7 +153,7 @@ func TestAccountExportRequiresAuthAndSortsServices(t *testing.T) {
 	if len(result.Services) != 2 || result.Services[0].Owner != "feed" || result.Services[1].Owner != "tasks" {
 		t.Fatalf("services = %+v", result.Services)
 	}
-	if result.Profile.Email != "user@example.com" || result.Services[1].Pages[0].Records[0].Title == nil {
+	if result.Profile.Email != testPrivacyEmail || result.Services[1].Pages[0].Records[0].Title == nil {
 		t.Fatal("export mapping lost fields")
 	}
 }

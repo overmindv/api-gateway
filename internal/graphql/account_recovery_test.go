@@ -47,15 +47,15 @@ func TestAccountRecoveryDoesNotRequireAuthAndKeepsPurpose(t *testing.T) {
 	resolver := &mutationResolver{&Resolver{Users: svc}}
 
 	purpose := model.AccountRecoveryPurposeVerify
-	ok, err := resolver.RequestAccountRecovery(context.Background(), "user@example.com", &purpose)
+	ok, err := resolver.RequestAccountRecovery(context.Background(), testPrivacyEmail, &purpose)
 	if err != nil || !ok {
 		t.Fatalf("recovery: %v %v", ok, err)
 	}
-	if svc.email != "user@example.com" || svc.purpose != users.RecoveryPurposeVerify {
+	if svc.email != testPrivacyEmail || svc.purpose != users.RecoveryPurposeVerify {
 		t.Fatalf("recovery args: %q %q", svc.email, svc.purpose)
 	}
 
-	ok, err = resolver.RequestAccountRecovery(context.Background(), "user@example.com", nil)
+	ok, err = resolver.RequestAccountRecovery(context.Background(), testPrivacyEmail, nil)
 	if err != nil || !ok || svc.purpose != users.RecoveryPurposeReset {
 		t.Fatalf("default purpose: %q %v", svc.purpose, err)
 	}

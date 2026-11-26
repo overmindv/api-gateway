@@ -10,14 +10,19 @@ import (
 	"github.com/overmindv/api-gateway/internal/middleware"
 )
 
+const (
+	privacyKindExport = "export"
+	privacyKindDelete = "delete"
+)
+
 // RequestAccountExport создаёт запрос экспорта после проверки текущего пароля.
 func (r *mutationResolver) RequestAccountExport(ctx context.Context, password string) (*model.PrivacyRequestStart, error) {
-	return r.preparePrivacy(ctx, "export", password)
+	return r.preparePrivacy(ctx, privacyKindExport, password)
 }
 
 // RequestAccountDeletion создаёт запрос удаления после проверки текущего пароля.
 func (r *mutationResolver) RequestAccountDeletion(ctx context.Context, password string) (*model.PrivacyRequestStart, error) {
-	return r.preparePrivacy(ctx, "delete", password)
+	return r.preparePrivacy(ctx, privacyKindDelete, password)
 }
 
 // ConfirmPrivacyRequest подтверждает запрос одноразовым receipt.
@@ -31,7 +36,7 @@ func (r *mutationResolver) ConfirmPrivacyRequest(ctx context.Context, id string,
 	if err != nil {
 		return nil, err
 	}
-	if request.Kind == "delete" {
+	if request.Kind == privacyKindDelete {
 		middleware.ClearSessionToken(ctx)
 	}
 
